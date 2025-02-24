@@ -20,6 +20,15 @@ export function ChatInterface() {
   const { toast } = useToast();
 
   const formatContent = (content: string) => {
+    const formatBoldText = (text: string) => {
+      return text.split(/(\*\*.*?\*\*)/).map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={index} className="font-bold">{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      });
+    };
+
     const enhancedContent = content
       .replace(/increase/gi, '📈 increase')
       .replace(/decrease/gi, '📉 decrease')
@@ -47,7 +56,7 @@ export function ChatInterface() {
                     `}>
                       {cells.map((cell, cellIndex) => (
                         <td key={cellIndex} className="px-4 py-2 whitespace-pre-wrap break-words">
-                          {cell}
+                          {formatBoldText(cell)}
                         </td>
                       ))}
                     </tr>
@@ -60,7 +69,7 @@ export function ChatInterface() {
         </div>
       );
     }
-    return <div className="whitespace-pre-wrap">{enhancedContent}</div>;
+    return <div className="whitespace-pre-wrap">{formatBoldText(enhancedContent)}</div>;
   };
 
   useEffect(() => {
