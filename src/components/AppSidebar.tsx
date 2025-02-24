@@ -1,5 +1,5 @@
 
-import { Home, Upload, MessageSquare, BarChart } from "lucide-react";
+import { Bot, FileText, History, BarChart, Search, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,11 +11,16 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const menuItems = [
-  { title: "Dashboard", icon: Home, url: "/" },
-  { title: "File Upload", icon: Upload, url: "/upload" },
-  { title: "Chat Analysis", icon: MessageSquare, url: "/chat" },
-  { title: "Analytics", icon: BarChart, url: "/analytics" },
+const marketingTools = [
+  { title: "Dashboard", icon: BarChart, url: "/" },
+  { title: "Metadata Generator", icon: FileText, url: "/metadata" },
+  { title: "Keyword Research", icon: Search, url: "/keywords" },
+];
+
+const analysisTools = [
+  { title: "Chat Analysis", icon: Bot, url: "/chat" },
+  { title: "History", icon: History, url: "/history" },
+  { title: "Competitor Analysis", icon: Users, url: "/competitors" },
 ];
 
 export function AppSidebar() {
@@ -26,10 +31,34 @@ export function AppSidebar() {
           <SidebarGroupLabel>Marketing Tools</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {marketingTools.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3">
+                    <a 
+                      href={item.url} 
+                      className="flex items-center gap-3"
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Analysis</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {analysisTools.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a 
+                      href={item.url} 
+                      className="flex items-center gap-3"
+                    >
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </a>
