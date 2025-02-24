@@ -42,8 +42,10 @@ export function FileUpload() {
         const buffer = await file.arrayBuffer();
         const workbook = XLSX.read(buffer, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        // Convert Excel to CSV format
-        fileContent = XLSX.utils.sheet_to_csv(firstSheet);
+        // Convert Excel to structured data
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        // Convert to CSV format
+        fileContent = jsonData.map(row => row.join(',')).join('\n');
       }
 
       console.log('Processed file content length:', fileContent.length);
