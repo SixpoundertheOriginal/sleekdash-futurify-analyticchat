@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingDown, TrendingUp, Users, Download, DollarSign, Smartphone, Target } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AnalysisData {
@@ -119,34 +119,59 @@ export function AnalyticsDashboard() {
     }
   };
 
-  const updateDashboardData = (data: any) => {
+  const parseMetricsFromAnalysis = (analysisText: string) => {
     try {
-      const performanceMetrics = [
+      const impressionsMatch = analysisText.match(/Impressions:\*\* ([\d,]+) \(([-+]\d+%)\)/);
+      const pageViewsMatch = analysisText.match(/Product Page Views:\*\* ([\d,]+) \(([-+]\d+%)\)/);
+      const conversionMatch = analysisText.match(/Conversion Rate:\*\* ([\d.]+)% \(([-+]\d+%)\)/);
+
+      const impressions = impressionsMatch ? parseInt(impressionsMatch[1].replace(/,/g, '')) : 0;
+      const impressionsChange = impressionsMatch ? parseInt(impressionsMatch[2]) : 0;
+      const pageViews = pageViewsMatch ? parseInt(pageViewsMatch[1].replace(/,/g, '')) : 0;
+      const pageViewsChange = pageViewsMatch ? parseInt(pageViewsMatch[2]) : 0;
+      const conversionRate = conversionMatch ? parseFloat(conversionMatch[1]) : 0;
+      const conversionChange = conversionMatch ? parseInt(conversionMatch[2]) : 0;
+
+      return [
         {
-          metric: "Downloads",
-          value: "11.9K",
-          change: -19,
-          icon: Download
-        },
-        {
-          metric: "Total Proceeds",
-          value: "$9.89K",
-          change: -12,
-          icon: DollarSign
-        },
-        {
-          metric: "Active Users",
-          value: "2.37",
-          change: 0.6,
+          metric: "Impressions",
+          value: `${(impressions / 1000).toFixed(1)}K`,
+          change: impressionsChange,
           icon: Users
         },
         {
-          metric: "Crash Count",
-          value: "62",
-          change: -23,
+          metric: "Page Views",
+          value: `${(pageViews / 1000).toFixed(1)}K`,
+          change: pageViewsChange,
+          icon: Smartphone
+        },
+        {
+          metric: "Conversion Rate",
+          value: `${conversionRate}%`,
+          change: conversionChange,
           icon: Target
+        },
+        {
+          metric: "Revenue",
+          value: "Calculate from available data",
+          change: 0,
+          icon: DollarSign
         }
       ];
+    } catch (error) {
+      console.error('Error parsing metrics:', error);
+      return defaultData.performanceMetrics;
+    }
+  };
+
+  const updateDashboardData = (data: any) => {
+    try {
+      const analysisText = data.openai_analysis;
+      if (!analysisText) {
+        throw new Error('No analysis text found in the data');
+      }
+
+      const performanceMetrics = parseMetricsFromAnalysis(analysisText);
 
       const transformedData: AnalysisData = {
         retentionData: defaultData.retentionData,
@@ -159,8 +184,10 @@ export function AnalyticsDashboard() {
       
       toast({
         title: "Dashboard Updated",
-        description: "Analysis data has been refreshed"
+        description: "Analysis data has been refreshed from the latest report"
       });
+
+      console.log('Parsed performance metrics:', performanceMetrics);
     } catch (error) {
       console.error('Error parsing analysis data:', error);
       toast({
