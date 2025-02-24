@@ -40,10 +40,24 @@ export function FileUpload() {
       } else {
         // Handle Excel files
         const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
+        // Set proper options for reading binary Excel files
+        const workbook = XLSX.read(buffer, { 
+          type: 'array',
+          cellDates: true,
+          cellNF: false,
+          cellText: false
+        });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        // Convert Excel to CSV format
-        fileContent = XLSX.utils.sheet_to_csv(firstSheet);
+        // Convert to CSV with proper options
+        fileContent = XLSX.utils.sheet_to_csv(firstSheet, {
+          blankrows: false,
+          dateNF: 'YYYY-MM-DD'
+        });
+      }
+
+      // Validate the content before sending
+      if (!fileContent || fileContent.trim().length === 0) {
+        throw new Error("File appears to be empty");
       }
 
       console.log('Processed file content length:', fileContent.length);
