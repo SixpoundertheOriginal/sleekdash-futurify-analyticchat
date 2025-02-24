@@ -66,19 +66,32 @@ export function ChatInterface() {
         }
       );
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        console.error('Function error:', functionError);
+        throw new Error(functionError.message);
+      }
+
+      if (!functionData || !functionData.analysis) {
+        throw new Error('No response received from the assistant');
+      }
 
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: functionData.analysis || "I couldn't process that request. Please try again."
+        content: functionData.analysis
       }]);
 
     } catch (error) {
       console.error('Error processing message:', error);
+      // Add error message to chat
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'I apologize, but I encountered an error processing your message. Please try again.' 
+      }]);
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to process your message. Please try again."
+        description: error instanceof Error ? error.message : "Failed to process your message. Please try again."
       });
     } finally {
       setIsLoading(false);
