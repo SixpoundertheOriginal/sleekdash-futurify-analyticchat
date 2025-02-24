@@ -32,6 +32,12 @@ export function FileUpload() {
 
     setUploading(true);
     try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in to upload files");
+      }
+
       let fileContent;
       
       if (file.name.endsWith('.csv')) {
@@ -94,7 +100,8 @@ export function FileUpload() {
         prioritized_keywords: functionData.data,
         openai_analysis: functionData.analysis,
         app_performance: 'Medium',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        user_id: user.id  // Add the user's ID to the record
       };
 
       const { error: dbError } = await supabase
