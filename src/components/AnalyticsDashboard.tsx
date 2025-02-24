@@ -143,20 +143,8 @@ export function AnalyticsDashboard() {
       const day1Match = analysisText.match(/Day 1 Retention:\*\* ([\d.]+)%/);
       const day7Match = analysisText.match(/Day 7 Retention:\*\* ([\d.]+)%/);
       
-      if (!day1Match && !day7Match) {
-        throw new Error('No retention data found in analysis');
-      }
-
       const day1Rate = day1Match ? parseFloat(day1Match[1]) : 0;
       const day7Rate = day7Match ? parseFloat(day7Match[1]) : 0;
-
-      if (isNaN(day1Rate) || isNaN(day7Rate)) {
-        throw new Error('Invalid retention rate values');
-      }
-
-      if (day1Rate < 0 || day1Rate > 100 || day7Rate < 0 || day7Rate > 100) {
-        throw new Error('Retention rates must be between 0 and 100');
-      }
 
       return [
         { day: "Day 1", rate: day1Rate },
@@ -178,95 +166,50 @@ export function AnalyticsDashboard() {
   const parseDeviceDistribution = (analysisText: string) => {
     try {
       const deviceSection = analysisText.match(/Downloads by Device Type:[\s\S]*?(?=\n\n|\n###)/);
-      if (!deviceSection) {
-        throw new Error('Device distribution section not found');
-      }
+      if (!deviceSection) throw new Error('Device distribution section not found');
 
-      const devices = deviceSection[0].match(/(\w+):\s*([\d,]+)\s*\(([\d.]+)%\)/g);
-      if (!devices || devices.length === 0) {
-        throw new Error('No device data found in expected format');
-      }
+      const devices = [
+        { name: "iPhone", pattern: /iPhone:\s*([\d,]+)\s*\(([\d.]+)%\)/ },
+        { name: "iPad", pattern: /iPad:\s*([\d,]+)\s*\(([\d.]+)%\)/ },
+        { name: "Desktop", pattern: /Desktop:\s*([\d,]+)\s*\(([\d.]+)%\)/ },
+        { name: "iPod", pattern: /iPod:\s*([\d,]+)\s*\(([\d.]+)%\)/ }
+      ];
 
-      const distribution = devices.map(device => {
-        const matches = device.match(/(\w+):\s*([\d,]+)\s*\(([\d.]+)%\)/);
-        if (!matches) {
-          throw new Error(`Invalid device data format: ${device}`);
-        }
-
-        const [, name, , percentage] = matches;
-        const value = parseFloat(percentage);
-
-        if (isNaN(value)) {
-          throw new Error(`Invalid percentage value for device ${name}`);
-        }
-
-        return { name, value };
-      });
-
-      const totalPercentage = distribution.reduce((sum, item) => sum + item.value, 0);
-      if (Math.abs(totalPercentage - 100) > 1) {
-        throw new Error('Device distribution percentages do not sum to 100%');
-      }
+      const distribution = devices
+        .map(device => {
+          const match = deviceSection[0].match(device.pattern);
+          if (match) {
+            return {
+              name: device.name,
+              value: parseFloat(match[2])
+            };
+          }
+          return null;
+        })
+        .filter(item => item !== null) as { name: string; value: number }[];
 
       return distribution;
     } catch (error) {
       console.error('Error parsing device distribution:', error);
-      toast({
-        variant: "destructive",
-        title: "Device Distribution Error",
-        description: `Failed to parse device data: ${error.message}`
-      });
       return defaultData.deviceDistribution;
     }
   };
 
   const parseGeographicalData = (analysisText: string) => {
     try {
-      const geoSection = analysisText.match(/Downloads by Country:[\s\S]*?(?=\n\n|\n###)/);
-      if (!geoSection) {
-        throw new Error('Geographical data section not found');
-      }
+      const countryMatches = [...analysisText.matchAll(/(\w+(?:\s+\w+)*?):\s*([\d,]+)(?=\n|$)/g)];
+      
+      const geoData = countryMatches
+        .map(match => ({
+          country: match[1].trim(),
+          downloads: parseInt(match[2].replace(/,/g, ''))
+        }))
+        .filter(item => !isNaN(item.downloads))
+        .slice(0, 5);
 
-      const countries = geoSection[0].match(/([A-Za-z\s]+):\s*([\d,]+)/g);
-      if (!countries || countries.length === 0) {
-        throw new Error('No country data found in expected format');
-      }
-
-      const geoData = countries.map(country => {
-        const matches = country.match(/([A-Za-z\s]+):\s*([\d,]+)/);
-        if (!matches) {
-          throw new Error(`Invalid country data format: ${country}`);
-        }
-
-        const [, name, downloads] = matches;
-        const downloadCount = parseInt(downloads.replace(/,/g, ''));
-
-        if (isNaN(downloadCount)) {
-          throw new Error(`Invalid download count for country ${name}`);
-        }
-
-        if (downloadCount < 0) {
-          throw new Error(`Negative download count for country ${name}`);
-        }
-
-        return {
-          country: name.trim(),
-          downloads: downloadCount
-        };
-      });
-
-      if (geoData.length === 0) {
-        throw new Error('No valid geographical data found');
-      }
-
-      return geoData.slice(0, 5);
+      return geoData.length > 0 ? geoData : defaultData.geographicalData;
     } catch (error) {
       console.error('Error parsing geographical data:', error);
-      toast({
-        variant: "destructive",
-        title: "Geographical Data Error",
-        description: `Failed to parse country data: ${error.message}`
-      });
       return defaultData.geographicalData;
     }
   };
@@ -274,39 +217,32 @@ export function AnalyticsDashboard() {
   const parseMetricsFromAnalysis = (analysisText: string) => {
     try {
       const metrics = {
-        impressions: analysisText.match(/Impressions:\*\* ([\d,]+) \(([-+]\d+)%\)/),
-        pageViews: analysisText.match(/Product Page Views:\*\* ([\d,]+) \(([-+]\d+)%\)/),
-        proceeds: analysisText.match(/Total Proceeds:\*\* \$([\d,]+) \(([-+]\d+)%\)/),
-        crashes: analysisText.match(/Crash Count:\*\* ([\d,]+) \(([-+]\d+)%\)/)
+        downloads: analysisText.match(/Total Downloads:\*\* ([\d,]+)\s*\(.*?([-+]?\d+)%\)/),
+        proceeds: analysisText.match(/Total Proceeds:\*\* \$([^\s]+)\s*\(.*?([-+]?\d+)%\)/),
+        activeUsers: analysisText.match(/Sessions per Active Device:\*\* ([\d.]+)\s*\(.*?([-+]?\d+\.?\d*)%\)/),
+        crashes: analysisText.match(/Crash Count:\*\* ([\d,]+)\s*\(.*?([-+]?\d+)%\)/)
       };
 
-      if (!Object.values(metrics).some(match => match !== null)) {
-        throw new Error('No valid metrics found in analysis');
-      }
-
       const parseMetricValue = (match: RegExpMatchArray | null, prefix: string = ''): { value: string; change: number } => {
-        if (!match) {
-          throw new Error('Metric data not found');
-        }
+        if (!match) throw new Error('Metric data not found');
+        
+        const rawValue = match[1].replace(/,/g, '');
+        const value = parseFloat(rawValue);
+        const change = parseFloat(match[2]);
 
-        const rawValue = parseInt(match[1].replace(/,/g, ''));
-        const change = parseInt(match[2]);
-
-        if (isNaN(rawValue) || isNaN(change)) {
-          throw new Error('Invalid metric values');
-        }
+        if (isNaN(value) || isNaN(change)) throw new Error('Invalid metric values');
 
         return {
-          value: prefix + (rawValue >= 1000 ? `${(rawValue / 1000).toFixed(1)}K` : rawValue.toString()),
+          value: prefix + (value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toString()),
           change
         };
       };
 
       return [
         {
-          metric: "Impressions",
-          ...parseMetricValue(metrics.impressions),
-          icon: Users
+          metric: "Downloads",
+          ...parseMetricValue(metrics.downloads),
+          icon: Download
         },
         {
           metric: "Total Proceeds",
@@ -314,9 +250,9 @@ export function AnalyticsDashboard() {
           icon: DollarSign
         },
         {
-          metric: "Page Views",
-          ...parseMetricValue(metrics.pageViews),
-          icon: Smartphone
+          metric: "Active Users",
+          ...parseMetricValue(metrics.activeUsers),
+          icon: Users
         },
         {
           metric: "Crash Count",
@@ -326,11 +262,6 @@ export function AnalyticsDashboard() {
       ];
     } catch (error) {
       console.error('Error parsing metrics:', error);
-      toast({
-        variant: "destructive",
-        title: "Metrics Error",
-        description: `Failed to parse metrics: ${error.message}`
-      });
       return defaultData.performanceMetrics;
     }
   };
@@ -338,9 +269,9 @@ export function AnalyticsDashboard() {
   const updateDashboardData = (data: any) => {
     try {
       const analysisText = data.openai_analysis;
-      validateAnalysisText(analysisText);
+      if (!analysisText) throw new Error('No analysis text provided');
 
-      const appNameMatch = analysisText.match(/Report: ([^"]+)"/);
+      const appNameMatch = analysisText.match(/# Monthly Performance Report: ([^\n]+)/);
       if (appNameMatch && appNameMatch[1]) {
         setAppName(appNameMatch[1].trim());
       }
@@ -370,9 +301,8 @@ export function AnalyticsDashboard() {
       toast({
         variant: "destructive",
         title: "Dashboard Update Failed",
-        description: error.message
+        description: error instanceof Error ? error.message : 'Failed to update dashboard'
       });
-      setAnalysisData(defaultData);
     }
   };
 
