@@ -6,6 +6,14 @@ import { TrendingDown, TrendingUp, Users, Download, DollarSign, Smartphone, Targ
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import {
+  validateAnalysisText,
+  parseMetricsFromAnalysis,
+  parseDeviceDistribution,
+  parseGeographicalData,
+  parseRetentionData,
+  extractAppName
+} from "@/utils/analytics";
 
 interface AnalysisData {
   retentionData: Array<{ day: string; rate: number }>;
@@ -127,115 +135,6 @@ export function AnalyticsDashboard() {
     }
   };
 
-  const validateAnalysisText = (analysisText: string): boolean => {
-    if (!analysisText) {
-      console.log('Analysis text is empty');
-      throw new Error('Analysis text is empty');
-    }
-    
-    console.log('Validating analysis text:', analysisText);
-    
-    if (
-      !analysisText.includes('Total Downloads:') &&
-      !analysisText.includes('Total Proceeds:')
-    ) {
-      console.log('Not a performance report - missing key metrics');
-      throw new Error('Not a performance report - missing key metrics');
-    }
-
-    return true;
-  };
-
-  const parseMetricsFromAnalysis = (analysisText: string) => {
-    try {
-      console.log('Parsing metrics from:', analysisText);
-      
-      const downloadsMatch = analysisText.match(/Total Downloads:\*\* ([\d,]+)/);
-      const proceedsMatch = analysisText.match(/Total Proceeds:\*\* \$([\d,]+)/);
-      const conversionMatch = analysisText.match(/Conversion Rate:\*\* ([\d.]+)%/);
-      const crashMatch = analysisText.match(/Crash Count:\*\* (\d+)/);
-
-      console.log('Extracted metrics:', {
-        downloads: downloadsMatch?.[1],
-        proceeds: proceedsMatch?.[1],
-        conversion: conversionMatch?.[1],
-        crashes: crashMatch?.[1]
-      });
-
-      if (!downloadsMatch) {
-        throw new Error('Failed to extract required metrics');
-      }
-
-      const downloads = parseInt(downloadsMatch[1].replace(/,/g, ''));
-      const proceedsValue = proceedsMatch ? parseInt(proceedsMatch[1].replace(/,/g, '')) : 4740;
-
-      return [
-        {
-          metric: "Downloads",
-          value: `${(downloads / 1000).toFixed(1)}K`,
-          change: -27,
-          icon: Download
-        },
-        {
-          metric: "Total Proceeds",
-          value: `$${(proceedsValue / 1000).toFixed(2)}K`,
-          change: -15,
-          icon: DollarSign
-        },
-        {
-          metric: "Active Users",
-          value: conversionMatch ? conversionMatch[1] : "2.84",
-          change: 6,
-          icon: Users
-        },
-        {
-          metric: "Crash Count",
-          value: crashMatch ? crashMatch[1] : "62",
-          change: -23,
-          icon: Target
-        }
-      ];
-    } catch (error) {
-      console.error('Error parsing metrics:', error);
-      throw error;
-    }
-  };
-
-  const parseDeviceDistribution = (analysisText: string) => {
-    try {
-      return defaultData.deviceDistribution;
-    } catch (error) {
-      console.error('Error parsing device distribution:', error);
-      return defaultData.deviceDistribution;
-    }
-  };
-
-  const parseGeographicalData = (analysisText: string) => {
-    try {
-      return defaultData.geographicalData;
-    } catch (error) {
-      console.error('Error parsing geographical data:', error);
-      return defaultData.geographicalData;
-    }
-  };
-
-  const parseRetentionData = (analysisText: string) => {
-    try {
-      const conversionMatch = analysisText.match(/Conversion Rate:\*\* ([\d.]+)%/);
-      const conversionRate = conversionMatch ? parseFloat(conversionMatch[1]) : 2.84;
-
-      return [
-        { day: "Day 1", rate: conversionRate },
-        { day: "Day 7", rate: conversionRate * 0.7 },
-        { day: "Day 14", rate: conversionRate * 0.5 },
-        { day: "Day 28", rate: conversionRate * 0.3 }
-      ];
-    } catch (error) {
-      console.error('Error parsing retention data:', error);
-      return defaultData.retentionData;
-    }
-  };
-
   const updateDashboardData = (data: any) => {
     try {
       const analysisText = data.openai_analysis;
@@ -247,11 +146,8 @@ export function AnalyticsDashboard() {
       console.log('Validating analysis text:', analysisText);
 
       validateAnalysisText(analysisText);
-
-      const appNameMatch = data.app_name || analysisText.match(/App Name:\s*([^\n]+)/);
-      if (appNameMatch) {
-        setAppName(typeof appNameMatch === 'string' ? appNameMatch : appNameMatch[1].trim());
-      }
+      
+      setAppName(extractAppName(data, analysisText));
 
       const transformedData: AnalysisData = {
         performanceMetrics: parseMetricsFromAnalysis(analysisText),
