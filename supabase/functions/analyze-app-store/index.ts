@@ -16,19 +16,19 @@ serve(async (req) => {
   }
 
   try {
-    // Validate OpenAI API Key
     if (!openAIApiKey) {
       console.error('OpenAI API key not found');
       return new Response(
         JSON.stringify({ error: 'OpenAI API key is not configured' }),
         { 
-          status: 200, // Changed to 200 to ensure the error message reaches the client
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
     const { appDescription } = await req.json();
+    console.log('Received app description:', appDescription); // Debug log
     
     if (!appDescription?.trim()) {
       return new Response(
@@ -40,60 +40,7 @@ serve(async (req) => {
       );
     }
 
-    // Create a thread
-    console.log('Creating thread...');
-    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1',
-      },
-      body: JSON.stringify({}),
-    });
-
-    if (!threadResponse.ok) {
-      console.error('Thread creation failed:', await threadResponse.text());
-      return new Response(
-        JSON.stringify({ error: 'Failed to initialize analysis' }),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    const thread = await threadResponse.json();
-    console.log('Thread created:', thread.id);
-
-    // Test message to verify API key and connection
-    const testMessage = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: 'Test connection' }],
-      }),
-    });
-
-    if (!testMessage.ok) {
-      console.error('API connection test failed:', await testMessage.text());
-      return new Response(
-        JSON.stringify({ error: 'Failed to connect to OpenAI API' }),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // If we get here, the API connection is working
-    console.log('API connection successful');
-
-    // Continue with the analysis using simple completion for now
+    console.log('Sending request to OpenAI...'); // Debug log
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -109,14 +56,24 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `Please analyze this app description: ${appDescription}`
+            content: `Please analyze this app description and provide insights about: 
+            1. Key target audience
+            2. Main value propositions
+            3. Important keywords
+            4. Suggestions for improvement
+            5. SEO optimization tips
+            
+            Description: ${appDescription}`
           }
         ],
       }),
     });
 
+    console.log('OpenAI response status:', response.status); // Debug log
+
     if (!response.ok) {
-      console.error('Analysis failed:', await response.text());
+      const errorText = await response.text();
+      console.error('OpenAI API error:', errorText);
       return new Response(
         JSON.stringify({ error: 'Analysis failed. Please try again.' }),
         { 
@@ -127,7 +84,15 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log('OpenAI response data:', data); // Debug log
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      console.error('Invalid response format from OpenAI:', data);
+      throw new Error('Invalid response format from analysis service');
+    }
+
     const analysis = data.choices[0].message.content;
+    console.log('Analysis result:', analysis); // Debug log
 
     return new Response(
       JSON.stringify({ analysis }),
@@ -139,7 +104,9 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in analyze-app-store function:', error);
     return new Response(
-      JSON.stringify({ error: 'An unexpected error occurred. Please try again.' }),
+      JSON.stringify({ 
+        error: error.message || 'An unexpected error occurred during analysis'
+      }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
