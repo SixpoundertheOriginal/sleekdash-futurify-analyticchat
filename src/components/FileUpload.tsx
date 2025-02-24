@@ -43,7 +43,7 @@ export function FileUpload() {
         const workbook = XLSX.read(buffer, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         // Convert Excel to structured data
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as (string | number)[][];
         // Convert to CSV format
         fileContent = jsonData.map(row => row.join(',')).join('\n');
       }
