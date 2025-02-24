@@ -7,20 +7,34 @@ export const validateAnalysisText = (analysisText: string): boolean => {
   
   console.log('Validating analysis text:', analysisText);
   
-  // Check for at least two key metrics to confirm it's a performance report
-  const keyMetrics = [
-    'Total Downloads:',
-    'Total Proceeds:',
-    'Conversion Rate:',
-    'Crash Count:'
+  // Highly flexible validation to account for different AI output formats
+  // Check for indicators that this is a performance report using multiple patterns
+  const performanceIndicators = [
+    // Downloads indicators
+    /total downloads:?\s*[\d,.k]+/i,
+    /downloads:?\s*[\d,.k]+/i,
+    /\b[\d,.k]+ downloads\b/i,
+    
+    // Revenue/proceeds indicators
+    /total proceeds:?\s*\$?[\d,.k]+/i,
+    /proceeds:?\s*\$?[\d,.k]+/i,
+    /revenue:?\s*\$?[\d,.k]+/i,
+    
+    // Report type indicators
+    /performance (report|analysis)/i,
+    /monthly (report|analysis)/i,
+    /key metrics/i,
+    /user acquisition/i,
+    /financial performance/i
   ];
   
-  const matchingMetrics = keyMetrics.filter(metric => 
-    analysisText.includes(metric)
-  );
+  // Check if at least 2 performance indicators are found to confirm it's a performance report
+  const matchCount = performanceIndicators.filter(pattern => 
+    pattern.test(analysisText)
+  ).length;
   
-  if (matchingMetrics.length < 2) {
-    console.log('Not a performance report - insufficient key metrics');
+  if (matchCount < 2) {
+    console.log('Not a performance report - insufficient performance indicators found');
     throw new Error('Not a performance report - missing key metrics');
   }
 

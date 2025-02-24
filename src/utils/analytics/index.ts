@@ -8,5 +8,5 @@ export const extractAppName = (data: any, analysisText: string): string => {
   const appNameMatch = data.app_name || analysisText.match(/App Name:\s*([^\n]+)/);
   return appNameMatch 
     ? (typeof appNameMatch === 'string' ? appNameMatch : appNameMatch[1].trim())
-    : "Read-Along Books For Kids";
+    : "Books, Stories & Math for Kids";
 };
