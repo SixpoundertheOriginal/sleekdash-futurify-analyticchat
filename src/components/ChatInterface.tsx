@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,36 @@ export function ChatInterface() {
   }]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Set up Supabase realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('chat_interface')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'keyword_analyses',
+        },
+        (payload) => {
+          console.log('Received new analysis:', payload);
+          // Add the analysis to chat when new analysis is created
+          if (payload.new && payload.new.openai_analysis) {
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: payload.new.openai_analysis
+            }]);
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on component unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []); // Empty dependency array means this effect runs once on mount
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,28 +84,6 @@ export function ChatInterface() {
       setIsLoading(false);
     }
   };
-
-  // Subscribe to Supabase realtime updates for keyword_analyses
-  supabase
-    .channel('chat_interface')
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'keyword_analyses',
-      },
-      (payload) => {
-        // Add the analysis to chat when new analysis is created
-        if (payload.new && payload.new.openai_analysis) {
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: payload.new.openai_analysis
-          }]);
-        }
-      }
-    )
-    .subscribe();
 
   return (
     <div className="flex h-[700px] flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg">
