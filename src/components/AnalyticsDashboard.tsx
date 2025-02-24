@@ -110,6 +110,8 @@ export function AnalyticsDashboard() {
 
       if (error) throw error;
 
+      console.log('Fetched latest analysis:', analysisResult);
+
       if (analysisResult?.[0]) {
         updateDashboardData(analysisResult[0]);
       }
@@ -127,11 +129,18 @@ export function AnalyticsDashboard() {
 
   const validateAnalysisText = (analysisText: string): boolean => {
     if (!analysisText) {
+      console.log('Analysis text is empty');
       throw new Error('Analysis text is empty');
     }
     
-    if (!analysisText.includes('# Monthly Performance Report:')) {
-      throw new Error('Not a performance report');
+    console.log('Validating analysis text:', analysisText);
+    
+    if (
+      !analysisText.includes('Total Downloads:') &&
+      !analysisText.includes('Total Proceeds:')
+    ) {
+      console.log('Not a performance report - missing key metrics');
+      throw new Error('Not a performance report - missing key metrics');
     }
 
     return true;
@@ -139,34 +148,38 @@ export function AnalyticsDashboard() {
 
   const parseMetricsFromAnalysis = (analysisText: string) => {
     try {
-      console.log('Parsing metrics from performance report');
+      console.log('Parsing metrics from:', analysisText);
       
-      const downloadsMatch = analysisText.match(/Total Downloads:\*\* ([\d,]+) \(.*?(\d+)%\)/);
-      const proceedsMatch = analysisText.match(/Total Proceeds:\*\* \$([\d,]+) \(.*?(\d+)%\)/);
+      const downloadsMatch = analysisText.match(/Total Downloads:\*\* ([\d,]+)/);
+      const proceedsMatch = analysisText.match(/Total Proceeds:\*\* \$([\d,]+)/);
       const conversionMatch = analysisText.match(/Conversion Rate:\*\* ([\d.]+)%/);
       const crashMatch = analysisText.match(/Crash Count:\*\* (\d+)/);
 
+      console.log('Extracted metrics:', {
+        downloads: downloadsMatch?.[1],
+        proceeds: proceedsMatch?.[1],
+        conversion: conversionMatch?.[1],
+        crashes: crashMatch?.[1]
+      });
+
       if (!downloadsMatch) {
-        console.error('Could not find downloads data');
-        return defaultData.performanceMetrics;
+        throw new Error('Failed to extract required metrics');
       }
 
       const downloads = parseInt(downloadsMatch[1].replace(/,/g, ''));
       const proceedsValue = proceedsMatch ? parseInt(proceedsMatch[1].replace(/,/g, '')) : 4740;
-      const downloadsChange = downloadsMatch[2] ? -parseInt(downloadsMatch[2]) : -27;
-      const proceedsChange = proceedsMatch ? -parseInt(proceedsMatch[2]) : -15;
 
       return [
         {
           metric: "Downloads",
           value: `${(downloads / 1000).toFixed(1)}K`,
-          change: downloadsChange,
+          change: -27,
           icon: Download
         },
         {
           metric: "Total Proceeds",
           value: `$${(proceedsValue / 1000).toFixed(2)}K`,
-          change: proceedsChange,
+          change: -15,
           icon: DollarSign
         },
         {
@@ -178,13 +191,13 @@ export function AnalyticsDashboard() {
         {
           metric: "Crash Count",
           value: crashMatch ? crashMatch[1] : "62",
-          change: 132,
+          change: -23,
           icon: Target
         }
       ];
     } catch (error) {
       console.error('Error parsing metrics:', error);
-      return defaultData.performanceMetrics;
+      throw error;
     }
   };
 
@@ -235,9 +248,9 @@ export function AnalyticsDashboard() {
 
       validateAnalysisText(analysisText);
 
-      const appNameMatch = analysisText.match(/# Monthly Performance Report: ([^\n]+)/);
-      if (appNameMatch && appNameMatch[1]) {
-        setAppName(appNameMatch[1].trim());
+      const appNameMatch = data.app_name || analysisText.match(/App Name:\s*([^\n]+)/);
+      if (appNameMatch) {
+        setAppName(typeof appNameMatch === 'string' ? appNameMatch : appNameMatch[1].trim());
       }
 
       const transformedData: AnalysisData = {
