@@ -113,6 +113,30 @@ const Index = () => {
 
             <AnalyticsDashboard />
 
+            <div className="grid gap-6 grid-cols-12">
+              <div className="col-span-12 lg:col-span-8 xl:col-span-9">
+                <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                  Analytics Chat
+                  <span className="text-sm font-normal text-white/60">AI-Powered Insights</span>
+                </h2>
+                <ChatInterface />
+              </div>
+              
+              <div className="col-span-12 lg:col-span-4 xl:col-span-3">
+                <h2 className="text-xl font-semibold text-white/80 mb-4">Upload Files</h2>
+                <Card className="bg-white/5 border-white/10">
+                  <div className="p-4">
+                    <FileUpload />
+                    <div className="mt-4 flex gap-2 justify-end">
+                      <Button variant="outline" size="sm" className="text-white bg-white/5 border-white/10">
+                        Download Template
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+
             <Card className="p-6 bg-white/5 border-white/10">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -207,30 +231,6 @@ const Index = () => {
                 )}
               </div>
             </Card>
-
-            <div className="grid gap-6 grid-cols-12">
-              <div className="col-span-12 lg:col-span-8 xl:col-span-9">
-                <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                  Analytics Chat
-                  <span className="text-sm font-normal text-white/60">AI-Powered Insights</span>
-                </h2>
-                <ChatInterface />
-              </div>
-              
-              <div className="col-span-12 lg:col-span-4 xl:col-span-3">
-                <h2 className="text-xl font-semibold text-white/80 mb-4">Upload Files</h2>
-                <Card className="bg-white/5 border-white/10">
-                  <div className="p-4">
-                    <FileUpload />
-                    <div className="mt-4 flex gap-2 justify-end">
-                      <Button variant="outline" size="sm" className="text-white bg-white/5 border-white/10">
-                        Download Template
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </div>
           </div>
         </main>
       </div>
