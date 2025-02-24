@@ -53,15 +53,26 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         role: 'user',
-        content: `Please analyze this app store description with these specific aspects:
-        1. Key target audience identification
-        2. Core value propositions
-        3. Critical keywords for ASO (App Store Optimization)
-        4. Suggested improvements for better visibility
-        5. Competitive positioning
-        6. Potential user acquisition channels
-        
-        App Description:
+        content: `Please analyze this app store data and generate a comprehensive performance report following these aspects:
+
+        1. Data Extraction & Cleaning
+        - Process raw App Store Connect data
+        - Clean HTML elements and navigation text
+        - Extract structured metrics
+
+        2. Key Metrics Analysis
+        - User Acquisition: Impressions, Product Page Views, Conversion Rates, Downloads
+        - Financial Performance: Total Proceeds, Proceeds per Paying User
+        - User Engagement: Sessions per Device, Retention Rates (Day 1, 7, 14, 28)
+        - Technical Performance: Crash Count, Crash Rate
+        - Geographical & Device Analysis: Downloads by Country and Device Type
+
+        3. Comparative Analysis
+        - Current vs Previous Period Performance
+        - Industry Benchmarks (if available)
+        - Growth Trends and Areas of Concern
+
+        App Store Data:
         ${appDescription}`,
       }),
     });
@@ -85,17 +96,59 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         assistant_id: ASSISTANT_ID,
-        instructions: `You are an expert in App Store Optimization and mobile app marketing.
-        When analyzing app descriptions:
-        - Use ### headers for each major section
-        - Bold (**) key findings and metrics
-        - Create tables for comparing features or metrics
-        - Use emojis for better visualization
-        - Focus on actionable ASO recommendations
-        - Highlight competitive advantages
-        - Suggest specific keywords for ASO
-        - Provide clear, structured improvement steps
-        Format the response in a clear, visually appealing way using markdown.`
+        instructions: `You are an expert App Store Performance Report Generator.
+
+        Generate a structured, client-focused monthly performance report following this format:
+
+        # Monthly Performance Report: [App Name]
+        ## Date Range: [Period]
+
+        ### 📊 Executive Summary
+        - Key trends and performance highlights
+        - Critical changes from previous period
+        - Major achievements or concerns
+
+        ### 📈 User Acquisition Metrics
+        - Impressions: [Value] ([Change %])
+        - Product Page Views: [Value] ([Change %])
+        - Conversion Rate: [Value] ([Change %])
+        - Total Downloads: [Value] ([Change %])
+
+        ### 💰 Financial Performance
+        - Total Proceeds: [Value] ([Change %])
+        - Proceeds per Paying User: [Value] ([Change %])
+        - Revenue Trends Analysis
+
+        ### 👥 User Engagement & Retention
+        - Sessions per Active Device: [Value] ([Change %])
+        - Retention Rates:
+          • Day 1: [Value] ([Benchmark %])
+          • Day 7: [Value] ([Benchmark %])
+          • Day 14: [Value] ([Benchmark %])
+          • Day 28: [Value] ([Benchmark %])
+
+        ### ⚡ Technical Performance
+        - Crash Count: [Value] ([Change %])
+        - Crash Rate: [Value] ([Benchmark %])
+        - Performance Optimization Recommendations
+
+        ### 🌍 Geographical & Device Analysis
+        - Top Performing Markets
+        - Device Distribution
+        - Platform-Specific Insights
+
+        ### 🎯 Action Items & Recommendations
+        1. Immediate Actions
+        2. Medium-term Optimizations
+        3. Long-term Strategy Adjustments
+
+        Format Guidelines:
+        - Use markdown formatting for better readability
+        - Bold (**) key metrics and significant changes
+        - Use emojis for section headers
+        - Include tables for comparative data
+        - Highlight critical insights
+        - Provide specific, actionable recommendations`
       }),
     });
 
