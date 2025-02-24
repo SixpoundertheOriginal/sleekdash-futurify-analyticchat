@@ -3,36 +3,67 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { ChartBar, TrendingUp, PieChart as PieChartIcon } from "lucide-react";
+import { TrendingDown, TrendingUp, Users, Download, DollarSign, Smartphone, Target } from "lucide-react";
 
-// Sample data - replace with real data from your analytics
-const performanceData = [
-  { month: "Jan", impressions: 1200, conversions: 180, revenue: 5400 },
-  { month: "Feb", impressions: 1350, conversions: 210, revenue: 6300 },
-  { month: "Mar", impressions: 1500, conversions: 250, revenue: 7500 },
-  { month: "Apr", impressions: 1800, conversions: 300, revenue: 9000 },
-  { month: "May", impressions: 2100, conversions: 350, revenue: 10500 },
-  { month: "Jun", impressions: 2400, conversions: 400, revenue: 12000 },
+// Real data from the report
+const retentionData = [
+  { day: "Day 1", rate: 5 },
+  { day: "Day 7", rate: 10 },
+  { day: "Day 14", rate: 15 },
+  { day: "Day 28", rate: 20 },
 ];
 
-const categoryData = [
-  { name: "Games", value: 35 },
-  { name: "Social", value: 25 },
-  { name: "Productivity", value: 20 },
-  { name: "Education", value: 15 },
-  { name: "Other", value: 5 },
+const deviceDistribution = [
+  { name: "iPad", value: 59.4 },
+  { name: "iPhone", value: 39.5 },
+  { name: "Other", value: 1.1 },
 ];
 
-const COLORS = ['#9b87f5', '#D6BCFA', '#7F9CF5', '#B794F4', '#9F7AEA'];
+const geographicalData = [
+  { country: "United States", downloads: 6825 },
+  { country: "United Kingdom", downloads: 691 },
+  { country: "Canada", downloads: 506 },
+];
+
+const performanceMetrics = [
+  {
+    metric: "Downloads",
+    value: "11.9K",
+    change: -19,
+    icon: Download
+  },
+  {
+    metric: "Total Proceeds",
+    value: "$9.89K",
+    change: -12,
+    icon: DollarSign
+  },
+  {
+    metric: "Active Users",
+    value: "2.37",
+    change: 0.6,
+    icon: Users
+  },
+  {
+    metric: "Crash Count",
+    value: "62",
+    change: -23,
+    icon: Target
+  }
+];
+
+const COLORS = ['#9b87f5', '#D6BCFA', '#7F9CF5'];
 
 export function AnalyticsDashboard() {
-  const [timeRange, setTimeRange] = useState("6months");
+  const [timeRange, setTimeRange] = useState("30days");
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold text-white">Analytics Dashboard</h2>
+        <div>
+          <h2 className="text-2xl font-semibold text-white">Read-Along Books For Kids</h2>
+          <p className="text-white/60">Performance Analytics Dashboard</p>
+        </div>
         <Select defaultValue={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
             <SelectValue placeholder="Select time range" />
@@ -40,23 +71,47 @@ export function AnalyticsDashboard() {
           <SelectContent>
             <SelectItem value="7days">Last 7 days</SelectItem>
             <SelectItem value="30days">Last 30 days</SelectItem>
-            <SelectItem value="6months">Last 6 months</SelectItem>
-            <SelectItem value="1year">Last year</SelectItem>
+            <SelectItem value="90days">Last 90 days</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      {/* Key Metrics */}
+      <div className="grid gap-6 md:grid-cols-4">
+        {performanceMetrics.map((metric, index) => (
+          <Card key={index} className="p-6 bg-white/5 border-white/10">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-white/60">{metric.metric}</p>
+                <h3 className="text-2xl font-semibold text-white mt-1">{metric.value}</h3>
+              </div>
+              <div className={`flex items-center gap-1 ${
+                metric.change > 0 ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {metric.change > 0 ? (
+                  <TrendingUp className="h-4 w-4" />
+                ) : (
+                  <TrendingDown className="h-4 w-4" />
+                )}
+                <span className="text-sm">{Math.abs(metric.change)}%</span>
+              </div>
+            </div>
+            <div className="mt-4">
+              <metric.icon className="h-8 w-8 text-primary/40" />
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Retention Chart */}
         <Card className="p-6 bg-white/5 border-white/10">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-white">Performance Trends</h3>
-          </div>
-          <div className="h-[300px] text-xs">
+          <h3 className="font-semibold text-white mb-4">User Retention</h3>
+          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={performanceData}>
+              <LineChart data={retentionData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="month" stroke="rgba(255,255,255,0.5)" />
+                <XAxis dataKey="day" stroke="rgba(255,255,255,0.5)" />
                 <YAxis stroke="rgba(255,255,255,0.5)" />
                 <Tooltip 
                   contentStyle={{ 
@@ -68,35 +123,26 @@ export function AnalyticsDashboard() {
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="impressions" 
+                  dataKey="rate" 
                   stroke="#9b87f5" 
                   strokeWidth={2}
                   dot={{ fill: "#9b87f5" }} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="conversions" 
-                  stroke="#D6BCFA" 
-                  strokeWidth={2}
-                  dot={{ fill: "#D6BCFA" }} 
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
+        {/* Geographical Distribution */}
         <Card className="p-6 bg-white/5 border-white/10">
-          <div className="flex items-center gap-2 mb-4">
-            <ChartBar className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-white">Revenue Analysis</h3>
-          </div>
-          <div className="h-[300px] text-xs">
+          <h3 className="font-semibold text-white mb-4">Downloads by Country</h3>
+          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={performanceData}>
+              <BarChart data={geographicalData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="month" stroke="rgba(255,255,255,0.5)" />
-                <YAxis stroke="rgba(255,255,255,0.5)" />
-                <Tooltip 
+                <XAxis type="number" stroke="rgba(255,255,255,0.5)" />
+                <YAxis dataKey="country" type="category" stroke="rgba(255,255,255,0.5)" width={100} />
+                <Tooltip
                   contentStyle={{ 
                     backgroundColor: 'rgba(0,0,0,0.8)', 
                     border: '1px solid rgba(255,255,255,0.1)',
@@ -104,22 +150,20 @@ export function AnalyticsDashboard() {
                     color: 'white' 
                   }}
                 />
-                <Bar dataKey="revenue" fill="#9b87f5" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="downloads" fill="#9b87f5" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
+        {/* Device Distribution */}
         <Card className="p-6 bg-white/5 border-white/10">
-          <div className="flex items-center gap-2 mb-4">
-            <PieChartIcon className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-white">Category Distribution</h3>
-          </div>
+          <h3 className="font-semibold text-white mb-4">Device Distribution</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={categoryData}
+                  data={deviceDistribution}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -128,7 +172,7 @@ export function AnalyticsDashboard() {
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
-                  {categoryData.map((entry, index) => (
+                  {deviceDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -142,6 +186,31 @@ export function AnalyticsDashboard() {
                 />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+        </Card>
+
+        {/* Technical Performance */}
+        <Card className="p-6 bg-white/5 border-white/10">
+          <h3 className="font-semibold text-white mb-4">Technical Performance</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-white/60">Crash Count</span>
+                <span className="text-green-400">-23%</span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full">
+                <div className="h-full w-[77%] bg-primary rounded-full" />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-white/60">Sessions per Active Device</span>
+                <span className="text-green-400">+0.6%</span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full">
+                <div className="h-full w-[60%] bg-primary rounded-full" />
+              </div>
+            </div>
           </div>
         </Card>
       </div>
