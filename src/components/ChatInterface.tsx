@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Send, Bot, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -117,7 +118,9 @@ export function ChatInterface() {
                     `}>
                       {cells.map((cell, cellIndex) => (
                         <td key={cellIndex} className="px-4 py-2 whitespace-pre-wrap break-words">
-                          <ReactMarkdown className="prose prose-invert">{cell}</ReactMarkdown>
+                          <div className="prose prose-invert">
+                            <ReactMarkdown>{cell}</ReactMarkdown>
+                          </div>
                         </td>
                       ))}
                     </tr>
@@ -141,11 +144,9 @@ export function ChatInterface() {
       .replace(/growth/gi, '📊 growth');
 
     return (
-      <ReactMarkdown 
-        className="prose prose-invert max-w-none prose-headings:text-primary prose-headings:font-semibold prose-h3:mt-4 prose-h3:mb-2"
-      >
-        {enhancedContent}
-      </ReactMarkdown>
+      <div className="prose prose-invert max-w-none prose-headings:text-primary prose-headings:font-semibold prose-h3:mt-4 prose-h3:mb-2">
+        <ReactMarkdown>{enhancedContent}</ReactMarkdown>
+      </div>
     );
   };
 
