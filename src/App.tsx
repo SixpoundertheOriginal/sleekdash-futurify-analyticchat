@@ -11,8 +11,8 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Protected Route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+// Move ProtectedRoute inside a separate component that's rendered within AuthProvider
+const ProtectedRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   
   if (isLoading) {
@@ -28,6 +28,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/auth" element={<Auth />} />
+    <Route
+      path="/"
+      element={
+        <ProtectedRouteWrapper>
+          <Index />
+        </ProtectedRouteWrapper>
+      }
+    />
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
@@ -35,18 +50,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </TooltipProvider>
       </AuthProvider>
     </BrowserRouter>
