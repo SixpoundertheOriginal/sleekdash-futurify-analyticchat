@@ -1,12 +1,9 @@
-
 import { useState, useEffect } from "react";
-import { MessageSquare, Send, Bot, User, Sparkles } from "lucide-react";
+import { Send, Bot, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import ReactMarkdown from 'react-markdown';
-
-<lov-add-dependency>react-markdown@latest</lov-add-dependency>
 
 interface Message {
   role: 'user' | 'assistant';
