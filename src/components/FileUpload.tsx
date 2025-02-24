@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import * as XLSX from 'xlsx';
 
 export function FileUpload() {
   const [dragActive, setDragActive] = useState(false);
@@ -31,11 +32,23 @@ export function FileUpload() {
 
     setUploading(true);
     try {
-      // Read file content
-      const fileContent = await file.text();
-      console.log('File content length:', fileContent.length);
-      console.log('First 100 characters:', fileContent.substring(0, 100));
+      let fileContent;
       
+      if (file.name.endsWith('.csv')) {
+        // Handle CSV files as text
+        fileContent = await file.text();
+      } else {
+        // Handle Excel files
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        // Convert Excel to CSV format
+        fileContent = XLSX.utils.sheet_to_csv(firstSheet);
+      }
+
+      console.log('Processed file content length:', fileContent.length);
+      console.log('First few rows:', fileContent.split('\n').slice(0, 3));
+
       // Send the file content to the edge function
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'process-keywords',
