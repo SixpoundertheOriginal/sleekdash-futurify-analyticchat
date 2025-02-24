@@ -55,7 +55,11 @@ const Index = () => {
       setAnalysisResult(null);
 
       const { data, error } = await supabase.functions.invoke('analyze-app-store', {
-        body: { appDescription: appDescription.trim() }
+        body: { 
+          appDescription: appDescription.trim(),
+          threadId: 'thread_MDHOcZGZREoIRW3ibVB8pSKc',
+          assistantId: 'asst_TfGVD0dcL2vsnPCihybxorC7'
+        }
       });
 
       if (error) {
