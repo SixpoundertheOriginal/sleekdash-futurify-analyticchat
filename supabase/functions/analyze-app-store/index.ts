@@ -17,6 +17,7 @@ serve(async (req) => {
 
   try {
     const { appDescription } = await req.json();
+    console.log('Received app description:', appDescription);
 
     // Create a thread
     const threadResponse = await fetch('https://api.openai.com/v1/threads', {
@@ -30,6 +31,7 @@ serve(async (req) => {
     });
 
     const thread = await threadResponse.json();
+    console.log('Created thread:', thread.id);
     
     // Add message to thread
     await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
@@ -41,7 +43,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         role: 'user',
-        content: `Please analyze this app description and provide detailed feedback: ${appDescription}`,
+        content: `Please analyze this app store data: ${appDescription}`,
       }),
     });
 
@@ -59,6 +61,7 @@ serve(async (req) => {
     });
 
     const run = await runResponse.json();
+    console.log('Started run:', run.id);
 
     // Poll for completion
     let runStatus = await checkRunStatus(thread.id, run.id);
@@ -66,6 +69,7 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await checkRunStatus(thread.id, run.id);
     }
+    console.log('Run completed with status:', runStatus.status);
 
     // Get messages
     const messagesResponse = await fetch(
@@ -79,20 +83,15 @@ serve(async (req) => {
     );
 
     const messages = await messagesResponse.json();
+    console.log('Received messages:', messages);
+
+    if (!messages.data || messages.data.length === 0) {
+      throw new Error('No response received from assistant');
+    }
+
     const assistantMessage = messages.data[0].content[0].text.value;
 
-    // Parse the assistant's response
-    const analysis = {
-      keywordSuggestions: [],
-      marketAnalysis: '',
-      competitiveAdvantage: '',
-      localizationTips: [],
-      readabilityScore: 0,
-      sentimentScore: 0,
-      ...JSON.parse(assistantMessage),
-    };
-
-    return new Response(JSON.stringify(analysis), {
+    return new Response(JSON.stringify({ analysis: assistantMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const appCategories = [
   "Games",
@@ -44,8 +45,9 @@ const mockTrendData = [
 
 const Index = () => {
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [appDescription, setAppDescription] = useState("");
+  const { toast } = useToast();
 
   const handleAnalysis = async () => {
     try {
@@ -54,10 +56,29 @@ const Index = () => {
         body: { appDescription }
       });
 
-      if (error) throw error;
-      setAnalysisResult(data);
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Analysis Error",
+          description: error.message
+        });
+        throw error;
+      }
+
+      if (data?.analysis) {
+        setAnalysisResult(data.analysis);
+        toast({
+          title: "Analysis Complete",
+          description: "Your app store data has been analyzed successfully."
+        });
+      }
     } catch (error) {
       console.error('Analysis error:', error);
+      toast({
+        variant: "destructive",
+        title: "Analysis Failed",
+        description: "There was an error analyzing your app store data."
+      });
     } finally {
       setAnalyzing(false);
     }
@@ -274,7 +295,7 @@ const Index = () => {
                     value={appDescription}
                     onChange={(e) => setAppDescription(e.target.value)}
                     className="bg-white/5 border-white/10 text-white min-h-[120px]"
-                    placeholder="Paste your app description here for AI analysis..."
+                    placeholder="Paste your app store data here for AI analysis..."
                   />
                 </div>
 
@@ -294,74 +315,12 @@ const Index = () => {
                 </Button>
 
                 {analysisResult && (
-                  <div className="mt-6 space-y-6">
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <Card className="p-4 bg-white/5 border-white/10">
-                        <h3 className="text-white font-semibold mb-3">Keyword Suggestions</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {analysisResult.keywordSuggestions.map((keyword: string) => (
-                            <span
-                              key={keyword}
-                              className="px-2 py-1 text-sm rounded-md bg-primary/20 text-primary border border-primary/20"
-                            >
-                              {keyword}
-                            </span>
-                          ))}
-                        </div>
-                      </Card>
-
-                      <Card className="p-4 bg-white/5 border-white/10">
-                        <h3 className="text-white font-semibold mb-3">Market Analysis</h3>
-                        <p className="text-white/80 text-sm">{analysisResult.marketAnalysis}</p>
-                      </Card>
+                  <Card className="p-4 mt-4 bg-white/5 border-white/10">
+                    <h3 className="text-white font-semibold mb-3">Analysis Results</h3>
+                    <div className="prose prose-invert max-w-none">
+                      <div className="text-white/90 whitespace-pre-wrap">{analysisResult}</div>
                     </div>
-
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <Card className="p-4 bg-white/5 border-white/10">
-                        <h3 className="text-white font-semibold mb-3">Competitive Advantage</h3>
-                        <p className="text-white/80 text-sm">{analysisResult.competitiveAdvantage}</p>
-                      </Card>
-
-                      <Card className="p-4 bg-white/5 border-white/10">
-                        <h3 className="text-white font-semibold mb-3">Scores</h3>
-                        <div className="space-y-4">
-                          <div>
-                            <div className="flex justify-between text-sm text-white/80 mb-2">
-                              <span>Readability Score</span>
-                              <span>{analysisResult.readabilityScore}%</span>
-                            </div>
-                            <div className="h-2 bg-white/10 rounded-full">
-                              <div 
-                                className="h-full bg-primary rounded-full"
-                                style={{ width: `${analysisResult.readabilityScore}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex justify-between text-sm text-white/80 mb-2">
-                              <span>Sentiment Score</span>
-                              <span>{analysisResult.sentimentScore}%</span>
-                            </div>
-                            <div className="h-2 bg-white/10 rounded-full">
-                              <div 
-                                className="h-full bg-primary rounded-full"
-                                style={{ width: `${analysisResult.sentimentScore}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    </div>
-
-                    <Card className="p-4 bg-white/5 border-white/10">
-                      <h3 className="text-white font-semibold mb-3">Localization Tips</h3>
-                      <ul className="list-disc list-inside space-y-2">
-                        {analysisResult.localizationTips.map((tip: string, index: number) => (
-                          <li key={index} className="text-white/80 text-sm">{tip}</li>
-                        ))}
-                      </ul>
-                    </Card>
-                  </div>
+                  </Card>
                 )}
               </div>
             </Card>
