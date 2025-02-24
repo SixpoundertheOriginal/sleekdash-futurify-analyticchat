@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingDown, TrendingUp, Users, Download, DollarSign, Smartphone, Target } from "lucide-react";
+import { TrendingDown, TrendingUp, Users, Download, DollarSign, Smartphone, Target, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 interface AnalysisData {
   retentionData: Array<{ day: string; rate: number }>;
@@ -68,6 +69,8 @@ const COLORS = ['#9b87f5', '#D6BCFA', '#7F9CF5'];
 export function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState("30days");
   const [analysisData, setAnalysisData] = useState<AnalysisData>(defaultData);
+  const [appName, setAppName] = useState("Read-Along Books For Kids");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -98,6 +101,7 @@ export function AnalyticsDashboard() {
 
   const fetchLatestAnalysis = async () => {
     try {
+      setIsRefreshing(true);
       const { data: analysisResult, error } = await supabase
         .from('keyword_analyses')
         .select('*')
@@ -116,6 +120,8 @@ export function AnalyticsDashboard() {
         title: "Error",
         description: "Failed to load analysis data"
       });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -334,6 +340,11 @@ export function AnalyticsDashboard() {
       const analysisText = data.openai_analysis;
       validateAnalysisText(analysisText);
 
+      const appNameMatch = analysisText.match(/Report: ([^"]+)"/);
+      if (appNameMatch && appNameMatch[1]) {
+        setAppName(appNameMatch[1].trim());
+      }
+
       const performanceMetrics = parseMetricsFromAnalysis(analysisText);
       const retentionData = parseRetentionData(analysisText);
       const deviceDistribution = parseDeviceDistribution(analysisText);
@@ -350,7 +361,7 @@ export function AnalyticsDashboard() {
       
       toast({
         title: "Dashboard Updated",
-        description: "Analysis data has been refreshed from the latest report"
+        description: "Analysis data has been refreshed"
       });
 
       console.log('Successfully parsed dashboard data:', transformedData);
@@ -369,19 +380,30 @@ export function AnalyticsDashboard() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-semibold text-white">Read-Along Books For Kids</h2>
+          <h2 className="text-2xl font-semibold text-white">{appName}</h2>
           <p className="text-white/60">Performance Analytics Dashboard</p>
         </div>
-        <Select defaultValue={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
-            <SelectValue placeholder="Select time range" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7days">Last 7 days</SelectItem>
-            <SelectItem value="30days">Last 30 days</SelectItem>
-            <SelectItem value="90days">Last 90 days</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={fetchLatestAnalysis}
+            disabled={isRefreshing}
+            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+          >
+            <RefreshCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <Select defaultValue={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
+              <SelectValue placeholder="Select time range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7days">Last 7 days</SelectItem>
+              <SelectItem value="30days">Last 30 days</SelectItem>
+              <SelectItem value="90days">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Key Metrics */}
