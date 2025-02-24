@@ -1,8 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { MessageSquare, Send, Bot, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import ReactMarkdown from 'react-markdown';
+
+<lov-add-dependency>react-markdown@latest</lov-add-dependency>
 
 interface Message {
   role: 'user' | 'assistant';
@@ -18,75 +22,6 @@ export function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string>('thread_HBqkU1GtWrBXoJwfyLZrswcb');
   const { toast } = useToast();
-
-  const formatContent = (content: string) => {
-    const formatBoldText = (text: string) => {
-      return text.split(/(\*\*.*?\*\*)/).map((part, index) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={index} className="font-bold">{part.slice(2, -2)}</strong>;
-        }
-        return part;
-      });
-    };
-
-    const formatHeaders = (text: string) => {
-      const lines = text.split('\n');
-      return lines.map((line, index) => {
-        if (line.startsWith('### ')) {
-          return (
-            <h3 key={index} className="text-lg font-semibold text-primary mt-4 mb-2">
-              {line.substring(4)}
-            </h3>
-          );
-        }
-        return line;
-      }).join('\n');
-    };
-
-    const enhancedContent = content
-      .replace(/increase/gi, '📈 increase')
-      .replace(/decrease/gi, '📉 decrease')
-      .replace(/improved/gi, '✨ improved')
-      .replace(/KPI/gi, '🎯 KPI')
-      .replace(/revenue/gi, '💰 revenue')
-      .replace(/users/gi, '👥 users')
-      .replace(/growth/gi, '📊 growth');
-
-    const processedContent = formatHeaders(enhancedContent);
-
-    if (content.includes('|')) {
-      const lines = content.split('\n');
-      return (
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto border-collapse">
-            <tbody>
-              {lines.map((line, index) => {
-                if (line.trim()) {
-                  const cells = line.split('|').map(cell => cell.trim()).filter(Boolean);
-                  return (
-                    <tr key={index} className={`
-                      ${index === 0 ? "bg-primary/20 font-semibold" : "border-t border-white/10"}
-                      ${line.toLowerCase().includes('increase') ? 'bg-green-500/10' : ''}
-                      ${line.toLowerCase().includes('decrease') ? 'bg-red-500/10' : ''}
-                      hover:bg-white/5 transition-colors
-                    `}>
-                      {cells.map((cell, cellIndex) => (
-                        <td key={cellIndex} className="px-4 py-2 whitespace-pre-wrap break-words">
-                          {formatBoldText(cell)}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                }
-                return null;
-              })}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-    return <div className="whitespace-pre-wrap">{formatBoldText(processedContent)}</div>;
-  };
 
   useEffect(() => {
     const channel = supabase
@@ -166,6 +101,57 @@ export function ChatInterface() {
     }
   };
 
+  const renderMessageContent = (content: string) => {
+    if (content.includes('|')) {
+      const lines = content.split('\n');
+      return (
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto border-collapse">
+            <tbody>
+              {lines.map((line, index) => {
+                if (line.trim()) {
+                  const cells = line.split('|').map(cell => cell.trim()).filter(Boolean);
+                  return (
+                    <tr key={index} className={`
+                      ${index === 0 ? "bg-primary/20 font-semibold" : "border-t border-white/10"}
+                      ${line.toLowerCase().includes('increase') ? 'bg-green-500/10' : ''}
+                      ${line.toLowerCase().includes('decrease') ? 'bg-red-500/10' : ''}
+                      hover:bg-white/5 transition-colors
+                    `}>
+                      {cells.map((cell, cellIndex) => (
+                        <td key={cellIndex} className="px-4 py-2 whitespace-pre-wrap break-words">
+                          <ReactMarkdown className="prose prose-invert">{cell}</ReactMarkdown>
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                }
+                return null;
+              })}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    
+    const enhancedContent = content
+      .replace(/increase/gi, '📈 increase')
+      .replace(/decrease/gi, '📉 decrease')
+      .replace(/improved/gi, '✨ improved')
+      .replace(/KPI/gi, '🎯 KPI')
+      .replace(/revenue/gi, '💰 revenue')
+      .replace(/users/gi, '👥 users')
+      .replace(/growth/gi, '📊 growth');
+
+    return (
+      <ReactMarkdown 
+        className="prose prose-invert max-w-none prose-headings:text-primary prose-headings:font-semibold prose-h3:mt-4 prose-h3:mb-2"
+      >
+        {enhancedContent}
+      </ReactMarkdown>
+    );
+  };
+
   return (
     <div className="flex h-[700px] flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg">
       <div className="flex items-center gap-2 border-b border-white/10 p-4 bg-primary/10">
@@ -192,7 +178,7 @@ export function ChatInterface() {
                 ? 'bg-white/10 text-white/90' 
                 : 'bg-accent/10 text-accent'
             }`}>
-              {formatContent(msg.content)}
+              {renderMessageContent(msg.content)}
             </div>
           </div>
         ))}
