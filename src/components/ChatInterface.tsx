@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MessageSquare, Send, Bot, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ export function ChatInterface() {
     content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
   }]);
   const [isLoading, setIsLoading] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const formatContent = (content: string) => {
@@ -102,7 +104,10 @@ export function ChatInterface() {
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'chat-message',
         {
-          body: { message: userMessage }
+          body: { 
+            message: userMessage,
+            threadId: threadId 
+          }
         }
       );
 
@@ -113,6 +118,11 @@ export function ChatInterface() {
 
       if (!functionData || !functionData.analysis) {
         throw new Error('No response received from the assistant');
+      }
+
+      // Store the threadId for future messages
+      if (functionData.threadId) {
+        setThreadId(functionData.threadId);
       }
 
       setMessages(prev => [...prev, { 
