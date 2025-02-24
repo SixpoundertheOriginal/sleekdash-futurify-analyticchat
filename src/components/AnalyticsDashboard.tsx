@@ -1,61 +1,142 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingDown, TrendingUp, Users, Download, DollarSign, Smartphone, Target } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-// Real data from the report
-const retentionData = [
-  { day: "Day 1", rate: 5 },
-  { day: "Day 7", rate: 10 },
-  { day: "Day 14", rate: 15 },
-  { day: "Day 28", rate: 20 },
-];
+interface AnalysisData {
+  retentionData: Array<{ day: string; rate: number }>;
+  deviceDistribution: Array<{ name: string; value: number }>;
+  geographicalData: Array<{ country: string; downloads: number }>;
+  performanceMetrics: Array<{
+    metric: string;
+    value: string;
+    change: number;
+    icon: any;
+  }>;
+}
 
-const deviceDistribution = [
-  { name: "iPad", value: 59.4 },
-  { name: "iPhone", value: 39.5 },
-  { name: "Other", value: 1.1 },
-];
-
-const geographicalData = [
-  { country: "United States", downloads: 6825 },
-  { country: "United Kingdom", downloads: 691 },
-  { country: "Canada", downloads: 506 },
-];
-
-const performanceMetrics = [
-  {
-    metric: "Downloads",
-    value: "11.9K",
-    change: -19,
-    icon: Download
-  },
-  {
-    metric: "Total Proceeds",
-    value: "$9.89K",
-    change: -12,
-    icon: DollarSign
-  },
-  {
-    metric: "Active Users",
-    value: "2.37",
-    change: 0.6,
-    icon: Users
-  },
-  {
-    metric: "Crash Count",
-    value: "62",
-    change: -23,
-    icon: Target
-  }
-];
+const defaultData: AnalysisData = {
+  retentionData: [
+    { day: "Day 1", rate: 5 },
+    { day: "Day 7", rate: 10 },
+    { day: "Day 14", rate: 15 },
+    { day: "Day 28", rate: 20 },
+  ],
+  deviceDistribution: [
+    { name: "iPad", value: 59.4 },
+    { name: "iPhone", value: 39.5 },
+    { name: "Other", value: 1.1 },
+  ],
+  geographicalData: [
+    { country: "United States", downloads: 6825 },
+    { country: "United Kingdom", downloads: 691 },
+    { country: "Canada", downloads: 506 },
+  ],
+  performanceMetrics: [
+    {
+      metric: "Downloads",
+      value: "11.9K",
+      change: -19,
+      icon: Download
+    },
+    {
+      metric: "Total Proceeds",
+      value: "$9.89K",
+      change: -12,
+      icon: DollarSign
+    },
+    {
+      metric: "Active Users",
+      value: "2.37",
+      change: 0.6,
+      icon: Users
+    },
+    {
+      metric: "Crash Count",
+      value: "62",
+      change: -23,
+      icon: Target
+    }
+  ]
+};
 
 const COLORS = ['#9b87f5', '#D6BCFA', '#7F9CF5'];
 
 export function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState("30days");
+  const [analysisData, setAnalysisData] = useState<AnalysisData>(defaultData);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('analysis-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'analysis_results'
+        },
+        (payload) => {
+          console.log('New analysis data received:', payload);
+          if (payload.new) {
+            updateDashboardData(payload.new);
+          }
+        }
+      )
+      .subscribe();
+
+    // Load initial data
+    fetchLatestAnalysis();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [timeRange]);
+
+  const fetchLatestAnalysis = async () => {
+    try {
+      const { data: analysisResult, error } = await supabase
+        .from('analysis_results')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (analysisResult?.[0]) {
+        updateDashboardData(analysisResult[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching analysis:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load analysis data"
+      });
+    }
+  };
+
+  const updateDashboardData = (data: any) => {
+    // Transform the data if needed and update the state
+    const transformedData: AnalysisData = {
+      retentionData: data.retention_data || defaultData.retentionData,
+      deviceDistribution: data.device_distribution || defaultData.deviceDistribution,
+      geographicalData: data.geographical_data || defaultData.geographicalData,
+      performanceMetrics: data.performance_metrics || defaultData.performanceMetrics,
+    };
+    
+    setAnalysisData(transformedData);
+    
+    toast({
+      title: "Dashboard Updated",
+      description: "Analysis data has been refreshed"
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -78,7 +159,7 @@ export function AnalyticsDashboard() {
 
       {/* Key Metrics */}
       <div className="grid gap-6 md:grid-cols-4">
-        {performanceMetrics.map((metric, index) => (
+        {analysisData.performanceMetrics.map((metric, index) => (
           <Card key={index} className="p-6 bg-white/5 border-white/10">
             <div className="flex justify-between items-start">
               <div>
@@ -109,7 +190,7 @@ export function AnalyticsDashboard() {
           <h3 className="font-semibold text-white mb-4">User Retention</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={retentionData}>
+              <LineChart data={analysisData.retentionData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="day" stroke="rgba(255,255,255,0.5)" />
                 <YAxis stroke="rgba(255,255,255,0.5)" />
@@ -138,7 +219,7 @@ export function AnalyticsDashboard() {
           <h3 className="font-semibold text-white mb-4">Downloads by Country</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={geographicalData} layout="vertical">
+              <BarChart data={analysisData.geographicalData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis type="number" stroke="rgba(255,255,255,0.5)" />
                 <YAxis dataKey="country" type="category" stroke="rgba(255,255,255,0.5)" width={100} />
@@ -163,7 +244,7 @@ export function AnalyticsDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={deviceDistribution}
+                  data={analysisData.deviceDistribution}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -172,7 +253,7 @@ export function AnalyticsDashboard() {
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
-                  {deviceDistribution.map((entry, index) => (
+                  {analysisData.deviceDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
