@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const ASSISTANT_ID = 'asst_abc123'; // Replace with your actual Assistant ID
+const ASSISTANT_ID = 'asst_TfGVD0dcL2vsnPCihybxorC7'; // App Store Analysis Assistant ID
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
