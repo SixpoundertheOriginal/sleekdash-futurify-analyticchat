@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Send, Bot, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,8 @@ export function ChatInterface() {
     content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
   }]);
   const [isLoading, setIsLoading] = useState(false);
-  const [threadId, setThreadId] = useState<string>('thread_HBqkU1GtWrBXoJwfyLZrswcb');
+  const [threadId, setThreadId] = useState<string>('thread_Uq2BhFwMt2hjBxKhPV0qKs58');
+  const assistantId = 'asst_EYm70EgIE2okxc8onNc1DVTj';
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,7 +63,8 @@ export function ChatInterface() {
         {
           body: { 
             message: userMessage,
-            threadId: threadId 
+            threadId: threadId,
+            assistantId: assistantId
           }
         }
       );
