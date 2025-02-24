@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      analysis_results: {
+        Row: {
+          created_at: string
+          device_distribution: Json | null
+          geographical_data: Json | null
+          id: string
+          performance_metrics: Json | null
+          retention_data: Json | null
+          time_range: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_distribution?: Json | null
+          geographical_data?: Json | null
+          id?: string
+          performance_metrics?: Json | null
+          retention_data?: Json | null
+          time_range?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_distribution?: Json | null
+          geographical_data?: Json | null
+          id?: string
+          performance_metrics?: Json | null
+          retention_data?: Json | null
+          time_range?: string | null
+        }
+        Relationships: []
+      }
       keyword_analyses: {
         Row: {
           app_performance: string | null

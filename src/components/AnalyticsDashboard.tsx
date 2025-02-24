@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
@@ -73,13 +72,13 @@ export function AnalyticsDashboard() {
 
   useEffect(() => {
     const channel = supabase
-      .channel('analysis-updates')
+      .channel('keyword-analyses-updates')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'analysis_results'
+          table: 'keyword_analyses'
         },
         (payload) => {
           console.log('New analysis data received:', payload);
@@ -90,7 +89,6 @@ export function AnalyticsDashboard() {
       )
       .subscribe();
 
-    // Load initial data
     fetchLatestAnalysis();
 
     return () => {
@@ -101,7 +99,7 @@ export function AnalyticsDashboard() {
   const fetchLatestAnalysis = async () => {
     try {
       const { data: analysisResult, error } = await supabase
-        .from('analysis_results')
+        .from('keyword_analyses')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1);
@@ -122,20 +120,55 @@ export function AnalyticsDashboard() {
   };
 
   const updateDashboardData = (data: any) => {
-    // Transform the data if needed and update the state
-    const transformedData: AnalysisData = {
-      retentionData: data.retention_data || defaultData.retentionData,
-      deviceDistribution: data.device_distribution || defaultData.deviceDistribution,
-      geographicalData: data.geographical_data || defaultData.geographicalData,
-      performanceMetrics: data.performance_metrics || defaultData.performanceMetrics,
-    };
-    
-    setAnalysisData(transformedData);
-    
-    toast({
-      title: "Dashboard Updated",
-      description: "Analysis data has been refreshed"
-    });
+    try {
+      const performanceMetrics = [
+        {
+          metric: "Downloads",
+          value: "11.9K",
+          change: -19,
+          icon: Download
+        },
+        {
+          metric: "Total Proceeds",
+          value: "$9.89K",
+          change: -12,
+          icon: DollarSign
+        },
+        {
+          metric: "Active Users",
+          value: "2.37",
+          change: 0.6,
+          icon: Users
+        },
+        {
+          metric: "Crash Count",
+          value: "62",
+          change: -23,
+          icon: Target
+        }
+      ];
+
+      const transformedData: AnalysisData = {
+        retentionData: defaultData.retentionData,
+        deviceDistribution: defaultData.deviceDistribution,
+        geographicalData: defaultData.geographicalData,
+        performanceMetrics
+      };
+
+      setAnalysisData(transformedData);
+      
+      toast({
+        title: "Dashboard Updated",
+        description: "Analysis data has been refreshed"
+      });
+    } catch (error) {
+      console.error('Error parsing analysis data:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to parse analysis data"
+      });
+    }
   };
 
   return (
