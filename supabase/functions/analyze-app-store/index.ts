@@ -19,27 +19,14 @@ serve(async (req) => {
 
   try {
     if (!openAIApiKey) {
-      console.error('OpenAI API key not found');
-      return new Response(
-        JSON.stringify({ error: 'OpenAI API key is not configured' }),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('OpenAI API key is not configured');
     }
 
     const { appDescription } = await req.json();
     console.log('Received app description:', appDescription);
     
     if (!appDescription?.trim()) {
-      return new Response(
-        JSON.stringify({ error: 'App description is required' }),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('App description is required');
     }
 
     // Add message to existing thread
@@ -80,10 +67,8 @@ serve(async (req) => {
     if (!messageResponse.ok) {
       const error = await messageResponse.text();
       console.error('Message creation error:', error);
-      throw new Error('Failed to submit app description for analysis');
+      throw new Error(`Failed to submit app description: ${error}`);
     }
-
-    console.log('Message added successfully');
 
     // Run the assistant
     console.log('Starting analysis with assistant:', ASSISTANT_ID);
@@ -140,31 +125,23 @@ serve(async (req) => {
         ### 🎯 Action Items & Recommendations
         1. Immediate Actions
         2. Medium-term Optimizations
-        3. Long-term Strategy Adjustments
-
-        Format Guidelines:
-        - Use markdown formatting for better readability
-        - Bold (**) key metrics and significant changes
-        - Use emojis for section headers
-        - Include tables for comparative data
-        - Highlight critical insights
-        - Provide specific, actionable recommendations`
+        3. Long-term Strategy Adjustments`
       }),
     });
 
     if (!runResponse.ok) {
       const error = await runResponse.text();
       console.error('Run creation error:', error);
-      throw new Error('Failed to start analysis');
+      throw new Error(`Failed to start analysis: ${error}`);
     }
 
     const run = await runResponse.json();
     console.log('Started run:', run.id);
 
-    // Poll for completion
+    // Poll for completion with increased timeout
     let runStatus;
     let attempts = 0;
-    const maxAttempts = 30; // Maximum 30 seconds wait
+    const maxAttempts = 60; // Increased to 60 seconds wait
 
     do {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -190,12 +167,11 @@ serve(async (req) => {
     } while ((runStatus.status === 'in_progress' || runStatus.status === 'queued') && attempts < maxAttempts);
 
     if (attempts >= maxAttempts) {
-      throw new Error('Analysis timed out');
+      throw new Error('Analysis timed out after 60 seconds');
     }
 
     if (runStatus.status !== 'completed') {
-      console.error('Run failed with status:', runStatus.status);
-      throw new Error('Analysis failed to complete');
+      throw new Error(`Analysis failed with status: ${runStatus.status}`);
     }
 
     // Get messages
@@ -211,37 +187,35 @@ serve(async (req) => {
     );
 
     if (!messagesResponse.ok) {
-      const error = await messagesResponse.text();
-      console.error('Messages retrieval error:', error);
       throw new Error('Failed to retrieve analysis results');
     }
 
     const messages = await messagesResponse.json();
-    console.log('Received messages:', messages);
-
-    if (!messages.data || messages.data.length === 0) {
-      throw new Error('No response received from assistant');
-    }
+    console.log('Got messages response:', messages);
 
     // Get the latest assistant message
-    const assistantMessage = messages.data
-      .find(msg => msg.role === 'assistant')?.content[0]?.text?.value;
+    const assistantMessage = messages.data?.find(msg => msg.role === 'assistant')?.content?.[0]?.text?.value;
 
     if (!assistantMessage) {
-      throw new Error('No valid response found in assistant messages');
+      throw new Error('No valid analysis results found in the response');
     }
 
     return new Response(
-      JSON.stringify({ analysis: assistantMessage }),
+      JSON.stringify({ 
+        success: true,
+        analysis: assistantMessage 
+      }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
+
   } catch (error) {
     console.error('Error in analyze-app-store function:', error);
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: error.message || 'An unexpected error occurred during analysis'
       }),
       { 

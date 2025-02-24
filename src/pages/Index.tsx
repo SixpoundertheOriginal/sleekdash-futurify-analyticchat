@@ -68,30 +68,33 @@ const Index = () => {
       });
 
       if (error) {
-        toast({
-          variant: "destructive",
-          title: "Analysis Error",
-          description: error.message || "Failed to analyze app store data."
-        });
-        return;
+        throw error;
       }
 
-      if (data?.analysis) {
-        setAnalysisResult(data.analysis);
-        setAppDescription("");
-        toast({
-          title: "Analysis Complete",
-          description: "Your app store data has been analyzed successfully."
-        });
-      } else {
-        throw new Error("No analysis results received");
+      if (!data) {
+        throw new Error('No response received from the analysis function');
       }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Analysis failed');
+      }
+
+      if (!data.analysis) {
+        throw new Error('No analysis results found in the response');
+      }
+
+      setAnalysisResult(data.analysis);
+      setAppDescription("");
+      toast({
+        title: "Analysis Complete",
+        description: "Your app store data has been analyzed successfully."
+      });
     } catch (error) {
       console.error('Analysis error:', error);
       toast({
         variant: "destructive",
-        title: "Analysis Failed",
-        description: "There was an error analyzing your app store data."
+        title: "Analysis Error",
+        description: error instanceof Error ? error.message : "Failed to analyze app store data."
       });
     } finally {
       setAnalyzing(false);
