@@ -36,7 +36,7 @@ serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1',
+        'OpenAI-Beta': 'assistants=v2',  // Updated to v2
       },
       body: JSON.stringify({
         role: 'user',
@@ -77,7 +77,7 @@ serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1',
+        'OpenAI-Beta': 'assistants=v2',  // Updated to v2
       },
       body: JSON.stringify({
         assistant_id: ASSISTANT_ID,
@@ -141,7 +141,7 @@ serve(async (req) => {
     // Poll for completion with increased timeout
     let runStatus;
     let attempts = 0;
-    const maxAttempts = 60; // Increased to 60 seconds wait
+    const maxAttempts = 60; // 60 seconds wait
 
     do {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -151,7 +151,7 @@ serve(async (req) => {
         {
           headers: {
             'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v1',
+            'OpenAI-Beta': 'assistants=v2',  // Updated to v2
           },
         }
       );
@@ -181,7 +181,7 @@ serve(async (req) => {
       {
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
-          'OpenAI-Beta': 'assistants=v1',
+          'OpenAI-Beta': 'assistants=v2',  // Updated to v2
         },
       }
     );
