@@ -55,6 +55,28 @@ export function ChatInterface() {
     }
   };
 
+  // Subscribe to Supabase realtime updates for keyword_analyses
+  supabase
+    .channel('chat_interface')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'keyword_analyses',
+      },
+      (payload) => {
+        // Add the analysis to chat when new analysis is created
+        if (payload.new && payload.new.openai_analysis) {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: payload.new.openai_analysis
+          }]);
+        }
+      }
+    )
+    .subscribe();
+
   return (
     <div className="flex h-[700px] flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg">
       <div className="flex items-center gap-2 border-b border-white/10 p-4 bg-white/5">
