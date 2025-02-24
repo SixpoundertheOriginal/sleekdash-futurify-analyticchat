@@ -33,6 +33,8 @@ export function FileUpload() {
     try {
       // Read file content
       const fileContent = await file.text();
+      console.log('File content length:', fileContent.length);
+      console.log('First 100 characters:', fileContent.substring(0, 100));
       
       // Send the file content to the edge function
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
@@ -42,7 +44,16 @@ export function FileUpload() {
         }
       );
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        console.error('Function error:', functionError);
+        throw functionError;
+      }
+
+      if (!functionData) {
+        throw new Error('No data returned from analysis');
+      }
+
+      console.log('Function response:', functionData);
 
       toast({
         title: "Analysis complete",
@@ -63,14 +74,17 @@ export function FileUpload() {
         .from('keyword_analyses')
         .insert([analysisData]);
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw dbError;
+      }
 
     } catch (error) {
       console.error('Error processing file:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to process the file. Please try again."
+        description: error.message || "Failed to process the file. Please try again."
       });
     } finally {
       setUploading(false);
