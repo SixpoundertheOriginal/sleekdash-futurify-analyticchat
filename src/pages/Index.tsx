@@ -45,7 +45,7 @@ const Index = () => {
       toast({
         variant: "destructive",
         title: "Validation Error",
-        description: "Please enter an app description to analyze."
+        description: "Please paste your app store data to analyze."
       });
       return;
     }
@@ -167,13 +167,13 @@ const Index = () => {
               
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="analysis-input" className="text-white">Enter Your App Description</Label>
+                  <Label htmlFor="analysis-input" className="text-white">Paste Your Data</Label>
                   <Textarea 
                     id="analysis-input"
                     value={appDescription}
                     onChange={(e) => setAppDescription(e.target.value)}
                     className="bg-white/5 border-white/10 text-white min-h-[120px]"
-                    placeholder="Paste your app store data here for AI analysis..."
+                    placeholder="Paste your app store data here to analyze performance metrics, user behavior, and market trends..."
                     disabled={analyzing}
                   />
                 </div>
@@ -186,16 +186,16 @@ const Index = () => {
                   {analyzing ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing...
+                      Your data is being analyzed...
                     </>
                   ) : (
-                    'Analyze Description'
+                    'Analyze Your Data'
                   )}
                 </Button>
 
                 {analysisResult && (
                   <Card className="p-4 mt-4 bg-white/5 border-white/10">
-                    <h3 className="text-white font-semibold mb-3">Analysis Results</h3>
+                    <h3 className="text-white font-semibold mb-3">Analysis Report</h3>
                     <div className="prose prose-invert max-w-none">
                       <div className="text-white/90 whitespace-pre-wrap">{analysisResult}</div>
                     </div>
