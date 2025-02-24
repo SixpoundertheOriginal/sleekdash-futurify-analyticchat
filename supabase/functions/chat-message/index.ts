@@ -19,13 +19,31 @@ serve(async (req) => {
   try {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
-      throw new Error('OpenAI API key not found');
+      return new Response(
+        JSON.stringify({ 
+          error: 'OpenAI API key not found',
+          analysis: 'I apologize, but I am not properly configured. Please contact support.' 
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     // Parse the request body and validate message
     const { message } = await req.json();
     if (!message || typeof message !== 'string') {
-      throw new Error('Invalid or missing message');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid or missing message',
+          analysis: 'I apologize, but I could not understand your message. Please try again.' 
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
     console.log('Processing message:', message);
 
@@ -47,7 +65,16 @@ serve(async (req) => {
     if (!messageResponse.ok) {
       const errorText = await messageResponse.text();
       console.error('Message addition failed:', errorText);
-      throw new Error(`Failed to add message: ${errorText}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to process message',
+          analysis: 'I encountered an error while processing your message. Please try again.' 
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     // Create a run to process the message
@@ -67,7 +94,16 @@ serve(async (req) => {
     if (!runResponse.ok) {
       const errorText = await runResponse.text();
       console.error('Run creation failed:', errorText);
-      throw new Error(`Failed to create run: ${errorText}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to process message',
+          analysis: 'I encountered an error while processing your message. Please try again.' 
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const runData = await runResponse.json();
@@ -91,7 +127,16 @@ serve(async (req) => {
       if (!statusResponse.ok) {
         const errorText = await statusResponse.text();
         console.error('Status check failed:', errorText);
-        throw new Error(`Failed to check run status: ${errorText}`);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to check run status',
+            analysis: 'I encountered an error while processing your message. Please try again.' 
+          }),
+          { 
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
       }
 
       const statusData = await statusResponse.json();
@@ -99,7 +144,16 @@ serve(async (req) => {
       console.log('Current run status:', runStatus);
 
       if (runStatus === 'failed' || runStatus === 'cancelled' || runStatus === 'expired') {
-        throw new Error(`Run failed with status: ${runStatus}`);
+        return new Response(
+          JSON.stringify({ 
+            error: `Run failed with status: ${runStatus}`,
+            analysis: 'I encountered an error while processing your message. Please try again.' 
+          }),
+          { 
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
       }
 
       if (runStatus !== 'completed') {
@@ -109,7 +163,16 @@ serve(async (req) => {
     }
 
     if (runStatus !== 'completed') {
-      throw new Error('Run timed out');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Run timed out',
+          analysis: 'I apologize, but the request took too long to process. Please try again.' 
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     // Get the latest message from the thread
@@ -124,7 +187,16 @@ serve(async (req) => {
     if (!messagesResponse.ok) {
       const errorText = await messagesResponse.text();
       console.error('Message fetch failed:', errorText);
-      throw new Error(`Failed to get messages: ${errorText}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to get messages',
+          analysis: 'I encountered an error while retrieving the response. Please try again.' 
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const messagesData = await messagesResponse.json();
@@ -132,7 +204,16 @@ serve(async (req) => {
       .filter((msg: any) => msg.role === 'assistant')[0];
 
     if (!latestAssistantMessage) {
-      throw new Error('No assistant response found');
+      return new Response(
+        JSON.stringify({ 
+          error: 'No assistant response found',
+          analysis: 'I apologize, but I could not generate a response. Please try again.' 
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const assistantResponse = latestAssistantMessage.content[0].text.value;
@@ -150,10 +231,11 @@ serve(async (req) => {
     console.error('Error in chat-message function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'An unexpected error occurred'
+        error: error.message || 'An unexpected error occurred',
+        analysis: 'I apologize, but I encountered an unexpected error. Please try again.' 
       }),
       { 
-        status: 400, // Changed from 500 to 400 for client errors
+        status: 200, // Always return 200 even for errors
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     );
