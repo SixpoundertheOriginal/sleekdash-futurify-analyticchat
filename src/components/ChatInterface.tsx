@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,36 @@ export function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Set up Supabase realtime subscription
+  const formatContent = (content: string) => {
+    if (content.includes('|')) {
+      const lines = content.split('\n');
+      return (
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto border-collapse">
+            <tbody>
+              {lines.map((line, index) => {
+                if (line.trim()) {
+                  const cells = line.split('|').map(cell => cell.trim()).filter(Boolean);
+                  return (
+                    <tr key={index} className={index === 0 ? "bg-primary/10 font-semibold" : "border-t border-white/10"}>
+                      {cells.map((cell, cellIndex) => (
+                        <td key={cellIndex} className="px-4 py-2 whitespace-pre-wrap break-words">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                }
+                return null;
+              })}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    return <div className="whitespace-pre-wrap">{content}</div>;
+  };
+
   useEffect(() => {
     const channel = supabase
       .channel('chat_interface')
@@ -32,7 +60,6 @@ export function ChatInterface() {
         },
         (payload) => {
           console.log('Received new analysis:', payload);
-          // Add the analysis to chat when new analysis is created
           if (payload.new && payload.new.openai_analysis) {
             setMessages(prev => [...prev, {
               role: 'assistant',
@@ -43,11 +70,10 @@ export function ChatInterface() {
       )
       .subscribe();
 
-    // Cleanup subscription on component unmount
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []); // Empty dependency array means this effect runs once on mount
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +108,6 @@ export function ChatInterface() {
 
     } catch (error) {
       console.error('Error processing message:', error);
-      // Add error message to chat
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: 'I apologize, but I encountered an error processing your message. Please try again.' 
@@ -112,7 +137,7 @@ export function ChatInterface() {
               <MessageSquare className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 rounded-lg bg-white/10 p-4 text-white/90">
-              {msg.content}
+              {formatContent(msg.content)}
             </div>
           </div>
         ))}
