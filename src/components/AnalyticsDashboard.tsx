@@ -119,19 +119,52 @@ export function AnalyticsDashboard() {
     }
   };
 
+  const validateAnalysisText = (analysisText: string): boolean => {
+    if (!analysisText) {
+      throw new Error('Analysis text is empty');
+    }
+    if (typeof analysisText !== 'string') {
+      throw new Error('Analysis text must be a string');
+    }
+    if (analysisText.length < 100) {
+      throw new Error('Analysis text appears to be incomplete');
+    }
+    return true;
+  };
+
   const parseRetentionData = (analysisText: string) => {
     try {
       const day1Match = analysisText.match(/Day 1 Retention:\*\* ([\d.]+)%/);
       const day7Match = analysisText.match(/Day 7 Retention:\*\* ([\d.]+)%/);
       
+      if (!day1Match && !day7Match) {
+        throw new Error('No retention data found in analysis');
+      }
+
+      const day1Rate = day1Match ? parseFloat(day1Match[1]) : 0;
+      const day7Rate = day7Match ? parseFloat(day7Match[1]) : 0;
+
+      if (isNaN(day1Rate) || isNaN(day7Rate)) {
+        throw new Error('Invalid retention rate values');
+      }
+
+      if (day1Rate < 0 || day1Rate > 100 || day7Rate < 0 || day7Rate > 100) {
+        throw new Error('Retention rates must be between 0 and 100');
+      }
+
       return [
-        { day: "Day 1", rate: day1Match ? parseFloat(day1Match[1]) : 0 },
-        { day: "Day 7", rate: day7Match ? parseFloat(day7Match[1]) : 0 },
+        { day: "Day 1", rate: day1Rate },
+        { day: "Day 7", rate: day7Rate },
         { day: "Day 14", rate: 15 },
         { day: "Day 28", rate: 20 }
       ];
     } catch (error) {
       console.error('Error parsing retention data:', error);
+      toast({
+        variant: "destructive",
+        title: "Retention Data Error",
+        description: `Failed to parse retention data: ${error.message}`
+      });
       return defaultData.retentionData;
     }
   };
@@ -139,20 +172,44 @@ export function AnalyticsDashboard() {
   const parseDeviceDistribution = (analysisText: string) => {
     try {
       const deviceSection = analysisText.match(/Downloads by Device Type:[\s\S]*?(?=\n\n|\n###)/);
-      if (!deviceSection) return defaultData.deviceDistribution;
+      if (!deviceSection) {
+        throw new Error('Device distribution section not found');
+      }
 
       const devices = deviceSection[0].match(/(\w+):\s*([\d,]+)\s*\(([\d.]+)%\)/g);
-      if (!devices) return defaultData.deviceDistribution;
+      if (!devices || devices.length === 0) {
+        throw new Error('No device data found in expected format');
+      }
 
-      return devices.map(device => {
-        const [name, count, percentage] = device.match(/(\w+):\s*([\d,]+)\s*\(([\d.]+)%\)/).slice(1);
-        return {
-          name,
-          value: parseFloat(percentage)
-        };
+      const distribution = devices.map(device => {
+        const matches = device.match(/(\w+):\s*([\d,]+)\s*\(([\d.]+)%\)/);
+        if (!matches) {
+          throw new Error(`Invalid device data format: ${device}`);
+        }
+
+        const [, name, , percentage] = matches;
+        const value = parseFloat(percentage);
+
+        if (isNaN(value)) {
+          throw new Error(`Invalid percentage value for device ${name}`);
+        }
+
+        return { name, value };
       });
+
+      const totalPercentage = distribution.reduce((sum, item) => sum + item.value, 0);
+      if (Math.abs(totalPercentage - 100) > 1) {
+        throw new Error('Device distribution percentages do not sum to 100%');
+      }
+
+      return distribution;
     } catch (error) {
       console.error('Error parsing device distribution:', error);
+      toast({
+        variant: "destructive",
+        title: "Device Distribution Error",
+        description: `Failed to parse device data: ${error.message}`
+      });
       return defaultData.deviceDistribution;
     }
   };
@@ -160,59 +217,114 @@ export function AnalyticsDashboard() {
   const parseGeographicalData = (analysisText: string) => {
     try {
       const geoSection = analysisText.match(/Downloads by Country:[\s\S]*?(?=\n\n|\n###)/);
-      if (!geoSection) return defaultData.geographicalData;
+      if (!geoSection) {
+        throw new Error('Geographical data section not found');
+      }
 
       const countries = geoSection[0].match(/([A-Za-z\s]+):\s*([\d,]+)/g);
-      if (!countries) return defaultData.geographicalData;
+      if (!countries || countries.length === 0) {
+        throw new Error('No country data found in expected format');
+      }
 
-      return countries.map(country => {
-        const [name, downloads] = country.match(/([A-Za-z\s]+):\s*([\d,]+)/).slice(1);
+      const geoData = countries.map(country => {
+        const matches = country.match(/([A-Za-z\s]+):\s*([\d,]+)/);
+        if (!matches) {
+          throw new Error(`Invalid country data format: ${country}`);
+        }
+
+        const [, name, downloads] = matches;
+        const downloadCount = parseInt(downloads.replace(/,/g, ''));
+
+        if (isNaN(downloadCount)) {
+          throw new Error(`Invalid download count for country ${name}`);
+        }
+
+        if (downloadCount < 0) {
+          throw new Error(`Negative download count for country ${name}`);
+        }
+
         return {
           country: name.trim(),
-          downloads: parseInt(downloads.replace(/,/g, ''))
+          downloads: downloadCount
         };
-      }).slice(0, 5);
+      });
+
+      if (geoData.length === 0) {
+        throw new Error('No valid geographical data found');
+      }
+
+      return geoData.slice(0, 5);
     } catch (error) {
       console.error('Error parsing geographical data:', error);
+      toast({
+        variant: "destructive",
+        title: "Geographical Data Error",
+        description: `Failed to parse country data: ${error.message}`
+      });
       return defaultData.geographicalData;
     }
   };
 
   const parseMetricsFromAnalysis = (analysisText: string) => {
     try {
-      const impressionsMatch = analysisText.match(/Impressions:\*\* ([\d,]+) \(([+-]\d+)%\)/);
-      const pageViewsMatch = analysisText.match(/Product Page Views:\*\* ([\d,]+) \(([+-]\d+)%\)/);
-      const proceedsMatch = analysisText.match(/Total Proceeds:\*\* \$([\d,]+) \(([+-]\d+)%\)/);
-      const crashMatch = analysisText.match(/Crash Count:\*\* ([\d,]+) \(([+-]\d+)%\)/);
+      const metrics = {
+        impressions: analysisText.match(/Impressions:\*\* ([\d,]+) \(([-+]\d+)%\)/),
+        pageViews: analysisText.match(/Product Page Views:\*\* ([\d,]+) \(([-+]\d+)%\)/),
+        proceeds: analysisText.match(/Total Proceeds:\*\* \$([\d,]+) \(([-+]\d+)%\)/),
+        crashes: analysisText.match(/Crash Count:\*\* ([\d,]+) \(([-+]\d+)%\)/)
+      };
+
+      if (!Object.values(metrics).some(match => match !== null)) {
+        throw new Error('No valid metrics found in analysis');
+      }
+
+      const parseMetricValue = (match: RegExpMatchArray | null, prefix: string = ''): { value: string; change: number } => {
+        if (!match) {
+          throw new Error('Metric data not found');
+        }
+
+        const rawValue = parseInt(match[1].replace(/,/g, ''));
+        const change = parseInt(match[2]);
+
+        if (isNaN(rawValue) || isNaN(change)) {
+          throw new Error('Invalid metric values');
+        }
+
+        return {
+          value: prefix + (rawValue >= 1000 ? `${(rawValue / 1000).toFixed(1)}K` : rawValue.toString()),
+          change
+        };
+      };
 
       return [
         {
           metric: "Impressions",
-          value: impressionsMatch ? `${(parseInt(impressionsMatch[1].replace(/,/g, '')) / 1000).toFixed(1)}K` : "0K",
-          change: impressionsMatch ? parseInt(impressionsMatch[2]) : 0,
+          ...parseMetricValue(metrics.impressions),
           icon: Users
         },
         {
           metric: "Total Proceeds",
-          value: proceedsMatch ? `$${(parseInt(proceedsMatch[1].replace(/,/g, '')) / 1000).toFixed(1)}K` : "$0K",
-          change: proceedsMatch ? parseInt(proceedsMatch[2]) : 0,
+          ...parseMetricValue(metrics.proceeds, '$'),
           icon: DollarSign
         },
         {
           metric: "Page Views",
-          value: pageViewsMatch ? `${(parseInt(pageViewsMatch[1].replace(/,/g, '')) / 1000).toFixed(1)}K` : "0K",
-          change: pageViewsMatch ? parseInt(pageViewsMatch[2]) : 0,
+          ...parseMetricValue(metrics.pageViews),
           icon: Smartphone
         },
         {
           metric: "Crash Count",
-          value: crashMatch ? crashMatch[1] : "0",
-          change: crashMatch ? parseInt(crashMatch[2]) : 0,
+          ...parseMetricValue(metrics.crashes),
           icon: Target
         }
       ];
     } catch (error) {
       console.error('Error parsing metrics:', error);
+      toast({
+        variant: "destructive",
+        title: "Metrics Error",
+        description: `Failed to parse metrics: ${error.message}`
+      });
       return defaultData.performanceMetrics;
     }
   };
@@ -220,9 +332,7 @@ export function AnalyticsDashboard() {
   const updateDashboardData = (data: any) => {
     try {
       const analysisText = data.openai_analysis;
-      if (!analysisText) {
-        throw new Error('No analysis text found in the data');
-      }
+      validateAnalysisText(analysisText);
 
       const performanceMetrics = parseMetricsFromAnalysis(analysisText);
       const retentionData = parseRetentionData(analysisText);
@@ -243,14 +353,15 @@ export function AnalyticsDashboard() {
         description: "Analysis data has been refreshed from the latest report"
       });
 
-      console.log('Parsed dashboard data:', transformedData);
+      console.log('Successfully parsed dashboard data:', transformedData);
     } catch (error) {
-      console.error('Error parsing analysis data:', error);
+      console.error('Error updating dashboard:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to parse analysis data"
+        title: "Dashboard Update Failed",
+        description: error.message
       });
+      setAnalysisData(defaultData);
     }
   };
 
