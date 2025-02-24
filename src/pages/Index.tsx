@@ -1,4 +1,3 @@
-
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FileUpload } from "@/components/FileUpload";
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, HelpCircle, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 
 const appCategories = [
   "Games",
@@ -29,6 +29,15 @@ const appCategories = [
   "Sports",
   "Travel",
   "Utilities",
+];
+
+const mockTrendData = [
+  { month: "Jan", value: 65 },
+  { month: "Feb", value: 72 },
+  { month: "Mar", value: 85 },
+  { month: "Apr", value: 78 },
+  { month: "May", value: 90 },
+  { month: "Jun", value: 95 },
 ];
 
 const Index = () => {
@@ -163,6 +172,75 @@ const Index = () => {
                 </div>
               </div>
             </Card>
+
+            {/* Keyword Trends Analysis */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className="p-6 bg-white/5 border-white/10">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-white">Keyword Trends</h2>
+                  <Select defaultValue="6months">
+                    <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1month">Last Month</SelectItem>
+                      <SelectItem value="3months">Last 3 Months</SelectItem>
+                      <SelectItem value="6months">Last 6 Months</SelectItem>
+                      <SelectItem value="1year">Last Year</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="h-[300px] text-white/80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={mockTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                      <XAxis dataKey="month" stroke="rgba(255,255,255,0.5)" />
+                      <YAxis stroke="rgba(255,255,255,0.5)" />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#9b87f5"
+                        strokeWidth={2}
+                        dot={{ fill: "#9b87f5" }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              <Card className="p-6 bg-white/5 border-white/10">
+                <h2 className="text-lg font-semibold text-white mb-4">Competitor Analysis</h2>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-white/80">Competitor A</span>
+                      <span className="text-sm text-white/60">92%</span>
+                    </div>
+                    <div className="h-2 bg-white/10 rounded-full">
+                      <div className="h-full w-[92%] bg-primary rounded-full" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-white/80">Competitor B</span>
+                      <span className="text-sm text-white/60">78%</span>
+                    </div>
+                    <div className="h-2 bg-white/10 rounded-full">
+                      <div className="h-full w-[78%] bg-primary rounded-full" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-white/80">Your App</span>
+                      <span className="text-sm text-white/60">75%</span>
+                    </div>
+                    <div className="h-2 bg-white/10 rounded-full">
+                      <div className="h-full w-[75%] bg-primary rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
 
             <div className="grid gap-6 grid-cols-12">
               {/* Chat Interface */}
