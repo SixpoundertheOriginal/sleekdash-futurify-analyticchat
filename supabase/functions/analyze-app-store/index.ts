@@ -53,7 +53,16 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         role: 'user',
-        content: appDescription,
+        content: `Please analyze this app store description with these specific aspects:
+        1. Key target audience identification
+        2. Core value propositions
+        3. Critical keywords for ASO (App Store Optimization)
+        4. Suggested improvements for better visibility
+        5. Competitive positioning
+        6. Potential user acquisition channels
+        
+        App Description:
+        ${appDescription}`,
       }),
     });
 
@@ -76,6 +85,17 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         assistant_id: ASSISTANT_ID,
+        instructions: `You are an expert in App Store Optimization and mobile app marketing.
+        When analyzing app descriptions:
+        - Use ### headers for each major section
+        - Bold (**) key findings and metrics
+        - Create tables for comparing features or metrics
+        - Use emojis for better visualization
+        - Focus on actionable ASO recommendations
+        - Highlight competitive advantages
+        - Suggest specific keywords for ASO
+        - Provide clear, structured improvement steps
+        Format the response in a clear, visually appealing way using markdown.`
       }),
     });
 
