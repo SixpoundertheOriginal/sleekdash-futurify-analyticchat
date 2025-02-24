@@ -113,6 +113,51 @@ const Index = () => {
 
             <AnalyticsDashboard />
 
+            <Card className="p-6 bg-white/5 border-white/10">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-white">AI-Powered App Store Analysis</h2>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="analysis-input" className="text-white">Paste Your Data</Label>
+                  <Textarea 
+                    id="analysis-input"
+                    value={appDescription}
+                    onChange={(e) => setAppDescription(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white min-h-[120px]"
+                    placeholder="Paste your app store data here to analyze performance metrics, user behavior, and market trends..."
+                    disabled={analyzing}
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleAnalysis}
+                  disabled={analyzing || !appDescription.trim()}
+                  className="w-full md:w-auto"
+                >
+                  {analyzing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Your data is being analyzed...
+                    </>
+                  ) : (
+                    'Analyze Your Data'
+                  )}
+                </Button>
+
+                {analysisResult && (
+                  <Card className="p-4 mt-4 bg-white/5 border-white/10">
+                    <h3 className="text-white font-semibold mb-3">Analysis Report</h3>
+                    <div className="prose prose-invert max-w-none">
+                      <div className="text-white/90 whitespace-pre-wrap">{analysisResult}</div>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </Card>
+
             <div className="grid gap-6 grid-cols-12">
               <div className="col-span-12 lg:col-span-8 xl:col-span-9">
                 <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
@@ -184,51 +229,6 @@ const Index = () => {
                     </Card>
                   </div>
                 </div>
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-white/5 border-white/10">
-              <div className="flex items-center gap-2 mb-4">
-                <BarChart className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold text-white">AI-Powered App Store Analysis</h2>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="analysis-input" className="text-white">Paste Your Data</Label>
-                  <Textarea 
-                    id="analysis-input"
-                    value={appDescription}
-                    onChange={(e) => setAppDescription(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white min-h-[120px]"
-                    placeholder="Paste your app store data here to analyze performance metrics, user behavior, and market trends..."
-                    disabled={analyzing}
-                  />
-                </div>
-
-                <Button 
-                  onClick={handleAnalysis}
-                  disabled={analyzing || !appDescription.trim()}
-                  className="w-full md:w-auto"
-                >
-                  {analyzing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Your data is being analyzed...
-                    </>
-                  ) : (
-                    'Analyze Your Data'
-                  )}
-                </Button>
-
-                {analysisResult && (
-                  <Card className="p-4 mt-4 bg-white/5 border-white/10">
-                    <h3 className="text-white font-semibold mb-3">Analysis Report</h3>
-                    <div className="prose prose-invert max-w-none">
-                      <div className="text-white/90 whitespace-pre-wrap">{analysisResult}</div>
-                    </div>
-                  </Card>
-                )}
               </div>
             </Card>
           </div>
