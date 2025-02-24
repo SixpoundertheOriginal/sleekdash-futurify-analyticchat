@@ -3,9 +3,9 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { FileUpload } from "@/components/FileUpload";
 import { ChatInterface } from "@/components/ChatInterface";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import { KeywordAnalytics } from "@/components/KeywordAnalytics";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileText, HelpCircle, BarChart, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -193,55 +193,7 @@ const Index = () => {
                 </div>
               </div>
 
-              <Card className="p-6 bg-white/5 border-white/10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <BarChart className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold text-white">Metadata Preview</h3>
-                  </div>
-                  <Button variant="outline" size="sm" className="text-white bg-white/5 border-white/10">
-                    Generate Metadata
-                  </Button>
-                </div>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-white">Keywords</Label>
-                      <Card className="p-4 bg-white/5 border-white/10">
-                        <div className="flex flex-wrap gap-2">
-                          {["productivity", "organization", "tasks", "projects"].map((keyword) => (
-                            <span
-                              key={keyword}
-                              className="px-2 py-1 text-sm rounded-md bg-primary/20 text-primary border border-primary/20"
-                            >
-                              {keyword}
-                            </span>
-                          ))}
-                        </div>
-                      </Card>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white">Keyword Impact Score</Label>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 flex-1 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full w-3/4 bg-primary rounded-full" />
-                        </div>
-                        <span className="text-sm text-white/60">75%</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-white">Suggested Improvements</Label>
-                      <Card className="p-4 space-y-3 bg-white/5 border-white/10 text-white/80">
-                        <p className="text-sm">• Add more specific keywords related to your app's core features</p>
-                        <p className="text-sm">• Include localized keywords for major markets</p>
-                        <p className="text-sm">• Consider adding trending keywords in your category</p>
-                      </Card>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+              <KeywordAnalytics />
             </div>
           </div>
         </main>
