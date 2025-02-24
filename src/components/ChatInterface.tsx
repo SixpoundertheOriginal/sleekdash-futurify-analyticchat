@@ -29,6 +29,20 @@ export function ChatInterface() {
       });
     };
 
+    const formatHeaders = (text: string) => {
+      const lines = text.split('\n');
+      return lines.map((line, index) => {
+        if (line.startsWith('### ')) {
+          return (
+            <h3 key={index} className="text-lg font-semibold text-primary mt-4 mb-2">
+              {line.substring(4)}
+            </h3>
+          );
+        }
+        return line;
+      }).join('\n');
+    };
+
     const enhancedContent = content
       .replace(/increase/gi, '📈 increase')
       .replace(/decrease/gi, '📉 decrease')
@@ -37,6 +51,8 @@ export function ChatInterface() {
       .replace(/revenue/gi, '💰 revenue')
       .replace(/users/gi, '👥 users')
       .replace(/growth/gi, '📊 growth');
+
+    const processedContent = formatHeaders(enhancedContent);
 
     if (content.includes('|')) {
       const lines = content.split('\n');
@@ -69,7 +85,7 @@ export function ChatInterface() {
         </div>
       );
     }
-    return <div className="whitespace-pre-wrap">{formatBoldText(enhancedContent)}</div>;
+    return <div className="whitespace-pre-wrap">{formatBoldText(processedContent)}</div>;
   };
 
   useEffect(() => {
