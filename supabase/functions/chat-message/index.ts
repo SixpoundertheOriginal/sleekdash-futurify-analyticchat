@@ -1,9 +1,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const assistantId = 'asst_EYm70EgIE2okxc8onNc1DVTj';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,139 +9,156 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const { message, threadId } = await req.json();
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    // Get the latest keyword analysis data for context
+    const { data: keywordData, error: dbError } = await supabase
+      .from('keyword_analyses')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (dbError) {
+      throw new Error(`Database error: ${dbError.message}`);
+    }
+
+    const systemPrompt = `
+# ASO Keyword Analysis - AppTweak Data Processing
+
+## Context:
+You have received a keywords dataset from AppTweak for an app that requires ASO keyword optimization. Your task is to analyze the data and generate keyword recommendations based on ranking feasibility, competitive positioning, ASA synergy, user intent, and indexation efficiency.
+
+## Input Data (Keywords Table)
+The dataset includes the following columns:
+
+- Keyword – The search term.
+- Volume – Search volume index (not absolute search count).
+- Max Reach – Estimated real user searches.
+- Results – Number of competing apps ranking for the keyword.
+- Difficulty – Competition level for ranking.
+- Chance – Probability of ranking for this keyword.
+- KEI – Keyword Efficiency Index (higher = better balance of traffic & competition).
+- Relevancy – AppTweak's relevance score for the app.
+- Rank – The app's current ranking for the keyword.
+- Growth – Ranking movement over time.
+
+## Objectives:
+1. Identify High-Potential Keywords
+   - Prioritize keywords with high ranking probability based on Max Reach, Chance Score, and KEI.
+   - Exclude high-volume, high-difficulty keywords unless the app has strong ranking power.
+   - Recommend low-difficulty, high-relevancy keywords for apps with low ASO equity.
+
+2. Segment Keywords by Ranking Feasibility
+   - Immediate Targets: Keywords the app can rank for now (High Chance, Mid Difficulty).
+   - Growth Opportunities: Keywords with ranking potential if optimized properly (High KEI, Moderate Rank).
+   - Long-Term Bets: High-traffic keywords that require significant equity building.
+
+3. Analyze Competitive Landscape
+   - Compare keyword competition levels with the app's current rank and ranking growth trends.
+   - Identify niche keywords where competition is low, but ranking potential is high.
+
+4. Leverage ASA Insights (If Available)
+   - Identify keywords with strong ASA performance but weak organic ranking.
+   - Recommend ASA-supported keywords for metadata reinforcement.
+
+5. Ensure Metadata Optimization Efficiency
+   - Structure keyword placement for maximum indexation (Title, Subtitle, Keyword Field).
+   - Ensure long-tail and short-tail balance for broader coverage.
+
+## Expected Output Format
+Generate a structured keyword strategy report with keyword segments and recommended metadata placements.
+
+# Immediate Target Keywords (Can Rank Now)
+List keywords with their metrics and recommended placements.
+Present in a table format using | separators.
+
+# Growth Opportunity Keywords (Needs Optimization)
+List keywords with their metrics and suggested strategies.
+Present in a table format using | separators.
+
+# Long-Term Strategic Keywords (High Volume, High Competition)
+List keywords with their metrics and feasibility assessment.
+Present in a table format using | separators.
+
+## Final Instructions
+- Prioritize high-ranking feasibility keywords over high-volume terms.
+- Balance short-tail and long-tail keywords for maximum indexation.
+- Use ASA insights to strengthen organic ranking potential.
+- Provide structured metadata recommendations based on data-driven keyword selection.`;
+
+    // Fetch OpenAI API key from environment variables
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not found');
     }
 
-    const { message, threadId } = await req.json();
-
-    // Create a new thread if threadId is not provided
-    let currentThreadId = threadId;
-    if (!currentThreadId) {
-      const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2'
-        }
-      });
-
-      if (!threadResponse.ok) {
-        throw new Error('Failed to create thread');
-      }
-
-      const threadData = await threadResponse.json();
-      currentThreadId = threadData.id;
-    }
-
-    // Add the message to the thread
-    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
       },
       body: JSON.stringify({
-        role: 'user',
-        content: message
-      })
-    });
-
-    if (!messageResponse.ok) {
-      throw new Error('Failed to add message');
-    }
-
-    // Run the assistant
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
-      body: JSON.stringify({
-        assistant_id: assistantId
-      })
-    });
-
-    if (!runResponse.ok) {
-      throw new Error('Failed to run assistant');
-    }
-
-    const runData = await runResponse.json();
-    let runStatus = runData.status;
-
-    // Poll for completion
-    while (runStatus === 'queued' || runStatus === 'in_progress') {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const statusResponse = await fetch(
-        `https://api.openai.com/v1/threads/${currentThreadId}/runs/${runData.id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v2'
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: message
           }
+        ],
+      }),
+    });
+
+    if (!openAIResponse.ok) {
+      const errorData = await openAIResponse.text();
+      console.error('OpenAI API error:', errorData);
+      throw new Error('Failed to get response from OpenAI');
+    }
+
+    const aiData = await openAIResponse.json();
+    const analysis = aiData.choices[0].message.content;
+
+    // Store the analysis in the database
+    const { error: insertError } = await supabase
+      .from('keyword_analyses')
+      .insert([
+        {
+          openai_analysis: analysis,
+          thread_id: threadId,
         }
-      );
+      ]);
 
-      if (!statusResponse.ok) {
-        throw new Error('Failed to check run status');
-      }
-
-      const statusData = await statusResponse.json();
-      runStatus = statusData.status;
+    if (insertError) {
+      throw new Error(`Error storing analysis: ${insertError.message}`);
     }
-
-    if (runStatus !== 'completed') {
-      throw new Error(`Run failed with status: ${runStatus}`);
-    }
-
-    // Get the latest messages
-    const messagesResponse = await fetch(
-      `https://api.openai.com/v1/threads/${currentThreadId}/messages`,
-      {
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'OpenAI-Beta': 'assistants=v2'
-        }
-      }
-    );
-
-    if (!messagesResponse.ok) {
-      throw new Error('Failed to retrieve messages');
-    }
-
-    const messagesData = await messagesResponse.json();
-    const latestMessage = messagesData.data[0];
 
     return new Response(
-      JSON.stringify({
-        analysis: latestMessage.content[0].text.value,
-        threadId: currentThreadId
-      }),
+      JSON.stringify({ analysis }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in chat-message function:', error);
+    console.error('Error:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        analysis: 'I apologize, but I encountered an unexpected error. Please try again.' 
-      }),
+      JSON.stringify({ error: error.message }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
   }
 });
