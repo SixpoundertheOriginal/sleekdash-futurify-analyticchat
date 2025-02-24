@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, Bot, User, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,12 +13,21 @@ export function ChatInterface() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([{
     role: 'assistant',
-    content: 'Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
+    content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
   }]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const formatContent = (content: string) => {
+    const enhancedContent = content
+      .replace(/increase/gi, '📈 increase')
+      .replace(/decrease/gi, '📉 decrease')
+      .replace(/improved/gi, '✨ improved')
+      .replace(/KPI/gi, '🎯 KPI')
+      .replace(/revenue/gi, '💰 revenue')
+      .replace(/users/gi, '👥 users')
+      .replace(/growth/gi, '📊 growth');
+
     if (content.includes('|')) {
       const lines = content.split('\n');
       return (
@@ -29,7 +38,12 @@ export function ChatInterface() {
                 if (line.trim()) {
                   const cells = line.split('|').map(cell => cell.trim()).filter(Boolean);
                   return (
-                    <tr key={index} className={index === 0 ? "bg-primary/10 font-semibold" : "border-t border-white/10"}>
+                    <tr key={index} className={`
+                      ${index === 0 ? "bg-primary/20 font-semibold" : "border-t border-white/10"}
+                      ${line.toLowerCase().includes('increase') ? 'bg-green-500/10' : ''}
+                      ${line.toLowerCase().includes('decrease') ? 'bg-red-500/10' : ''}
+                      hover:bg-white/5 transition-colors
+                    `}>
                       {cells.map((cell, cellIndex) => (
                         <td key={cellIndex} className="px-4 py-2 whitespace-pre-wrap break-words">
                           {cell}
@@ -45,7 +59,7 @@ export function ChatInterface() {
         </div>
       );
     }
-    return <div className="whitespace-pre-wrap">{content}</div>;
+    return <div className="whitespace-pre-wrap">{enhancedContent}</div>;
   };
 
   useEffect(() => {
@@ -110,7 +124,7 @@ export function ChatInterface() {
       console.error('Error processing message:', error);
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: 'I apologize, but I encountered an error processing your message. Please try again.' 
+        content: '❌ I apologize, but I encountered an error processing your message. Please try again.' 
       }]);
       
       toast({
@@ -125,18 +139,30 @@ export function ChatInterface() {
 
   return (
     <div className="flex h-[700px] flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg">
-      <div className="flex items-center gap-2 border-b border-white/10 p-4 bg-white/5">
-        <MessageSquare className="h-5 w-5 text-primary" />
+      <div className="flex items-center gap-2 border-b border-white/10 p-4 bg-primary/10">
+        <Sparkles className="h-5 w-5 text-primary animate-pulse" />
         <h2 className="font-semibold text-white">AI Analysis Assistant</h2>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => (
-          <div key={index} className="flex items-start gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <MessageSquare className="h-4 w-4 text-primary" />
+          <div key={index} className="flex items-start gap-3 animate-fade-up">
+            <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
+              msg.role === 'assistant' 
+                ? 'bg-primary/20' 
+                : 'bg-accent/20'
+            }`}>
+              {msg.role === 'assistant' ? (
+                <Bot className="h-4 w-4 text-primary" />
+              ) : (
+                <User className="h-4 w-4 text-accent" />
+              )}
             </div>
-            <div className="flex-1 rounded-lg bg-white/10 p-4 text-white/90">
+            <div className={`flex-1 rounded-lg p-4 ${
+              msg.role === 'assistant' 
+                ? 'bg-white/10 text-white/90' 
+                : 'bg-accent/10 text-accent'
+            }`}>
               {formatContent(msg.content)}
             </div>
           </div>
@@ -149,7 +175,7 @@ export function ChatInterface() {
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder={isLoading ? "Processing..." : "Ask about your data..."}
+            placeholder={isLoading ? "✨ Processing..." : "Ask about your data..."}
             disabled={isLoading}
             className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           />
