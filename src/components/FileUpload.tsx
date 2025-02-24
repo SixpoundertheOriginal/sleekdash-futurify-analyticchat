@@ -31,13 +31,14 @@ export function FileUpload() {
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
+      // Read file content
+      const fileContent = await file.text();
+      
+      // Send the file content to the edge function
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'process-keywords',
         {
-          body: formData,
+          body: { fileContent }
         }
       );
 

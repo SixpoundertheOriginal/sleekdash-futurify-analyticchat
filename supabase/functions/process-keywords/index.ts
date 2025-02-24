@@ -9,58 +9,23 @@ const corsHeaders = {
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Handle chat messages
-    if (req.headers.get("content-type")?.includes("application/json")) {
-      const { message } = await req.json();
-      
-      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an ASO expert analyzing keyword data. Provide insights on keyword trends, ranking opportunities, and optimization recommendations.'
-            },
-            {
-              role: 'user',
-              content: message
-            }
-          ],
-        }),
-      });
+    const body = await req.json();
+    const fileContent = body.fileContent;
 
-      const aiResponse = await openaiResponse.json();
+    if (!fileContent) {
       return new Response(
-        JSON.stringify({ analysis: aiResponse.choices[0].message.content }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Handle file upload
-    const formData = await req.formData();
-    const file = formData.get('file');
-
-    if (!file) {
-      return new Response(
-        JSON.stringify({ error: 'No file uploaded' }),
+        JSON.stringify({ error: 'No file content provided' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    // Read file as text
-    const fileContent = await file.text();
-    
-    // Basic validation for Excel-like structure (comma-separated or tab-separated)
+    // Split the content into lines and process
     const lines = fileContent.split('\n');
     const headers = lines[0].split(/[,\t]/);
     
@@ -81,13 +46,15 @@ serve(async (req) => {
     }
 
     // Convert file content to structured data
-    const data = lines.slice(1).map(line => {
-      const values = line.split(/[,\t]/);
-      return expectedColumns.reduce((obj, col, index) => {
-        obj[col] = values[index]?.trim() || '';
-        return obj;
-      }, {});
-    }).filter(row => Object.values(row).some(val => val !== ''));
+    const data = lines.slice(1)
+      .filter(line => line.trim())
+      .map(line => {
+        const values = line.split(/[,\t]/);
+        return expectedColumns.reduce((obj, col, index) => {
+          obj[col] = values[index]?.trim() || '';
+          return obj;
+        }, {});
+      });
 
     // Process with OpenAI
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -97,7 +64,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
