@@ -50,27 +50,41 @@ const Index = () => {
   const { toast } = useToast();
 
   const handleAnalysis = async () => {
+    if (!appDescription.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please enter an app description to analyze."
+      });
+      return;
+    }
+
     try {
       setAnalyzing(true);
+      setAnalysisResult(null);
+
       const { data, error } = await supabase.functions.invoke('analyze-app-store', {
-        body: { appDescription }
+        body: { appDescription: appDescription.trim() }
       });
 
       if (error) {
         toast({
           variant: "destructive",
           title: "Analysis Error",
-          description: error.message
+          description: error.message || "Failed to analyze app store data."
         });
-        throw error;
+        return;
       }
 
       if (data?.analysis) {
         setAnalysisResult(data.analysis);
+        setAppDescription("");
         toast({
           title: "Analysis Complete",
           description: "Your app store data has been analyzed successfully."
         });
+      } else {
+        throw new Error("No analysis results received");
       }
     } catch (error) {
       console.error('Analysis error:', error);
@@ -296,12 +310,13 @@ const Index = () => {
                     onChange={(e) => setAppDescription(e.target.value)}
                     className="bg-white/5 border-white/10 text-white min-h-[120px]"
                     placeholder="Paste your app store data here for AI analysis..."
+                    disabled={analyzing}
                   />
                 </div>
 
                 <Button 
                   onClick={handleAnalysis}
-                  disabled={analyzing || !appDescription}
+                  disabled={analyzing || !appDescription.trim()}
                   className="w-full md:w-auto"
                 >
                   {analyzing ? (
