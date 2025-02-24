@@ -20,11 +20,11 @@ export function FileUpload() {
   };
 
   const processFile = async (file: File) => {
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
       toast({
         variant: "destructive",
         title: "Invalid file type",
-        description: "Please upload an Excel file (.xlsx or .xls)"
+        description: "Please upload an Excel or CSV file (.xlsx, .xls, .csv)"
       });
       return;
     }
@@ -48,16 +48,19 @@ export function FileUpload() {
         description: "Your keywords have been processed successfully."
       });
 
-      // Store the analysis results
+      // Create a new analysis record
+      const analysisData = {
+        file_name: file.name,
+        file_path: file.name,
+        prioritized_keywords: functionData.data,
+        openai_analysis: functionData.analysis,
+        app_performance: 'Medium',
+        created_at: new Date().toISOString()
+      };
+
       const { error: dbError } = await supabase
         .from('keyword_analyses')
-        .insert({
-          file_name: file.name,
-          file_path: file.name,
-          prioritized_keywords: functionData.data,
-          openai_analysis: functionData.analysis,
-          app_performance: 'Medium'
-        });
+        .insert([analysisData]);
 
       if (dbError) throw dbError;
 
@@ -110,19 +113,19 @@ export function FileUpload() {
         <p className="text-sm text-white/80">
           {uploading ? "Processing..." : (
             <>
-              Drag and drop your Excel file here, or{" "}
+              Drag and drop your Excel or CSV file here, or{" "}
               <span className="text-primary cursor-pointer">browse</span>
             </>
           )}
         </p>
         <p className="text-xs text-white/60">
-          Supported formats: .xlsx, .xls
+          Supported formats: .xlsx, .xls, .csv
         </p>
       </div>
       <input
         type="file"
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        accept=".xlsx,.xls"
+        accept=".xlsx,.xls,.csv"
         disabled={uploading}
         onChange={handleFileChange}
       />

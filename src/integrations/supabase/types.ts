@@ -9,7 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      keyword_analyses: {
+        Row: {
+          app_performance: string | null
+          created_at: string | null
+          file_name: string
+          file_path: string
+          id: string
+          openai_analysis: string | null
+          prioritized_keywords: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          app_performance?: string | null
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          openai_analysis?: string | null
+          prioritized_keywords?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          app_performance?: string | null
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          openai_analysis?: string | null
+          prioritized_keywords?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
