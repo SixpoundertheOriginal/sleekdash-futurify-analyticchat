@@ -60,7 +60,7 @@ export function ChatInterface() {
 
     try {
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
-        'process-keywords',
+        'chat-message',
         {
           body: { message: userMessage }
         }
