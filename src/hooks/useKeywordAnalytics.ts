@@ -7,6 +7,10 @@ import { useToast } from '@/components/ui/use-toast';
 
 // Type definitions for raw data and analysis
 interface RawKeywordAnalysis {
+  id: string;
+  created_at: string;
+  file_name: string;
+  file_path: string;
   prioritized_keywords: Array<{
     keyword: string;
     volume?: number;
@@ -16,9 +20,9 @@ interface RawKeywordAnalysis {
     chance?: number;
     growth?: number;
   }>;
-  openai_analysis: string;
-  created_at: string;
-  user_id: string;
+  openai_analysis: string | null;
+  app_performance: string | null;
+  user_id: string | null;
 }
 
 // Process raw data into the format needed for visualizations
@@ -58,7 +62,13 @@ export function useKeywordAnalytics() {
       throw error;
     }
 
-    return data as RawKeywordAnalysis;
+    // Type assertion after validating the structure
+    const processedData = data as RawKeywordAnalysis;
+    if (!Array.isArray(processedData.prioritized_keywords)) {
+      throw new Error('Invalid data structure: prioritized_keywords is not an array');
+    }
+
+    return processedData;
   }, []);
 
   // Set up real-time subscription
@@ -96,12 +106,14 @@ export function useKeywordAnalytics() {
     queryKey: ['keywordAnalysis'],
     queryFn: fetchKeywordData,
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    onError: (err: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Error fetching keyword data",
-        description: err.message || "Please try refreshing the page."
-      });
+    meta: {
+      onError: (err: Error) => {
+        toast({
+          variant: "destructive",
+          title: "Error fetching keyword data",
+          description: err.message || "Please try refreshing the page."
+        });
+      }
     }
   });
 
