@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { KeywordMetric, ProcessedKeywordData } from '@/components/keywords/types';
 import { useToast } from '@/components/ui/use-toast';
@@ -25,8 +25,9 @@ export function useKeywordAnalytics() {
   };
 
   // Fetch initial data
-  const fetchKeywordData = async () => {
+  const fetchKeywordData = useCallback(async () => {
     try {
+      setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -57,7 +58,7 @@ export function useKeywordAnalytics() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -88,7 +89,7 @@ export function useKeywordAnalytics() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchKeywordData, toast]);
 
   // Calculate additional metrics for visualizations
   const processedData: ProcessedKeywordData[] = keywordData.map(item => ({
@@ -106,6 +107,7 @@ export function useKeywordAnalytics() {
     topOpportunity: sortedByOpportunity[0],
     keywordCount: keywordData.length,
     avgVolume,
-    avgDifficulty
+    avgDifficulty,
+    refreshData: fetchKeywordData
   };
 }

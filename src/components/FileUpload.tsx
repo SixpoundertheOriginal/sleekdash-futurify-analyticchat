@@ -101,7 +101,7 @@ export function FileUpload() {
         openai_analysis: functionData.analysis,
         app_performance: 'Medium',
         created_at: new Date().toISOString(),
-        user_id: user.id  // Add the user's ID to the record
+        user_id: user.id
       };
 
       const { error: dbError } = await supabase
