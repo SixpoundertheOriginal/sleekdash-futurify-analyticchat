@@ -7,12 +7,17 @@ import { Button } from "@/components/ui/button";
 import { BarChart, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { parseMetricsFromAnalysis } from "@/utils/analytics/metrics";
+import { parseDeviceDistribution, parseGeographicalData } from "@/utils/analytics/distribution";
+import { parseRetentionData } from "@/utils/analytics/retention";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function AppStoreAnalysis() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [appDescription, setAppDescription] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleAnalysis = async () => {
     if (!appDescription.trim()) {
@@ -51,6 +56,26 @@ export function AppStoreAnalysis() {
       if (!data.analysis) {
         throw new Error('No analysis results found in the response');
       }
+
+      // Store analysis results in the database
+      const analysisData = {
+        performance_metrics: parseMetricsFromAnalysis(data.analysis),
+        device_distribution: parseDeviceDistribution(data.analysis),
+        geographical_data: parseGeographicalData(data.analysis),
+        retention_data: parseRetentionData(data.analysis),
+        time_range: 'Last 30 days'
+      };
+
+      const { error: insertError } = await supabase
+        .from('analysis_results')
+        .insert([analysisData]);
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Invalidate queries to trigger a refresh
+      queryClient.invalidateQueries({ queryKey: ['analysisResults'] });
 
       setAnalysisResult(data.analysis);
       setAppDescription("");
