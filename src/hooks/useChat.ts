@@ -1,78 +1,63 @@
 
-import { useState } from "react";
-import { Message } from "@/types/chat";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { Message } from '@/types/chat';
 
-export const useChat = () => {
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([{
-    role: 'assistant',
-    content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
-  }]);
+export function useChat() {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [threadId] = useState<string>('thread_Uq2BhFwMt2hjBxKhPV0qKs58');
-  const assistantId = 'asst_EYm70EgIE2okxc8onNc1DVTj';
+  const [threadId, setThreadId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim() || isLoading) return;
-
-    const userMessage = message.trim();
-    setMessage("");
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setIsLoading(true);
-
+  const sendMessage = useCallback(async (userMessage: string) => {
     try {
-      const { data: functionData, error: functionError } = await supabase.functions.invoke(
-        'chat-message',
-        {
-          body: { 
-            message: userMessage,
-            threadId: threadId,
-            assistantId: assistantId
-          }
+      setIsLoading(true);
+
+      // Add user message to chat
+      const userMessageObj: Message = {
+        role: 'user',
+        content: userMessage
+      };
+      setMessages(prev => [...prev, userMessageObj]);
+
+      // Call chat function
+      const { data, error } = await supabase.functions.invoke('chat-message', {
+        body: { 
+          message: userMessage,
+          threadId: threadId
         }
-      );
+      });
 
-      if (functionError) {
-        console.error('Function error:', functionError);
-        throw new Error(functionError.message);
+      if (error) throw error;
+
+      // Update thread ID if it's a new conversation
+      if (data.threadId) {
+        setThreadId(data.threadId);
       }
 
-      if (!functionData || !functionData.analysis) {
-        throw new Error('No response received from the assistant');
-      }
-
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: functionData.analysis
-      }]);
+      // Add assistant response to chat
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: data.message
+      };
+      setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
-      console.error('Error processing message:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: '❌ I apologize, but I encountered an error processing your message. Please try again.' 
-      }]);
-      
+      console.error('Error sending message:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process your message. Please try again."
+        description: error instanceof Error ? error.message : "Failed to send message"
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [threadId, toast]);
 
   return {
-    message,
-    setMessage,
     messages,
-    setMessages,
     isLoading,
-    handleSubmit
+    sendMessage,
   };
-};
+}
