@@ -7,6 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const ASSISTANT_ID = "asst_EYm70EgIE2okxc8onNc1DVTj";
+const THREAD_ID = "thread_oiE2rnK04vabHTAGUc9zRMCN";
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -14,57 +17,84 @@ serve(async (req) => {
   }
 
   try {
-    const { message, threadId } = await req.json();
+    const { message } = await req.json();
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not found');
     }
 
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Add the message to the thread
+    await fetch(`https://api.openai.com/v1/threads/${THREAD_ID}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v1'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a keyword analysis expert assistant. Help users understand their keyword data, provide insights about keyword metrics like volume, difficulty, KEI (Keyword Effectiveness Index), relevancy, and opportunity scores. 
-
-Key responsibilities:
-- Analyze keyword metrics and trends
-- Suggest optimization strategies
-- Explain SEO concepts clearly
-- Help prioritize keywords based on opportunity scores
-- Provide actionable recommendations
-
-Keep responses clear, concise, and focused on keyword analysis.`
-          },
-          { role: 'user', content: message }
-        ],
-      }),
+        role: 'user',
+        content: message
+      })
     });
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error?.message || 'Failed to get AI response');
-    }
+    // Create a run
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${THREAD_ID}/runs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v1'
+      },
+      body: JSON.stringify({
+        assistant_id: ASSISTANT_ID
+      })
+    });
 
-    // Send back the AI response
-    return new Response(
-      JSON.stringify({
-        message: data.choices[0].message.content,
-        threadId: threadId || crypto.randomUUID()
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    const runData = await runResponse.json();
+    const runId = runData.id;
+
+    // Poll for the run completion
+    let runStatus;
+    do {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between polls
+      
+      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${THREAD_ID}/runs/${runId}`, {
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'OpenAI-Beta': 'assistants=v1'
+        }
+      });
+      
+      const statusData = await statusResponse.json();
+      runStatus = statusData.status;
+      
+    } while (runStatus === 'queued' || runStatus === 'in_progress');
+
+    if (runStatus === 'completed') {
+      // Get the latest messages
+      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${THREAD_ID}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'OpenAI-Beta': 'assistants=v1'
+        }
+      });
+
+      const messagesData = await messagesResponse.json();
+      const latestMessage = messagesData.data[0]; // Get the most recent message
+
+      return new Response(
+        JSON.stringify({
+          message: latestMessage.content[0].text.value,
+          threadId: THREAD_ID
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    } else {
+      throw new Error(`Run failed with status: ${runStatus}`);
+    }
 
   } catch (error) {
     console.error('Error in chat-message function:', error);
