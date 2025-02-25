@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { MetricCards } from "./keywords/MetricCards";
 import { OpportunityMatrix } from "./keywords/OpportunityMatrix";
 import { CompetitiveLandscape } from "./keywords/CompetitiveLandscape";
@@ -12,11 +14,13 @@ export function KeywordAnalytics() {
   const [activeTab, setActiveTab] = useState('opportunity');
   const {
     isLoading,
+    error,
     keywordData,
     topOpportunity,
     keywordCount,
     avgVolume,
-    avgDifficulty
+    avgDifficulty,
+    refreshData
   } = useKeywordAnalytics();
 
   const getColor = (score: number) => {
@@ -24,6 +28,17 @@ export function KeywordAnalytics() {
     if (score > 30) return "#fb923c";
     return "#f87171";
   };
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Failed to load keyword analytics: {error.message}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -33,8 +48,29 @@ export function KeywordAnalytics() {
     );
   }
 
+  if (!keywordData.length) {
+    return (
+      <Alert>
+        <AlertDescription>
+          No keyword data available. Try uploading a file to get started.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-up">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-white">Keyword Analytics</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refreshData()}
+        >
+          Refresh Data
+        </Button>
+      </div>
+
       <MetricCards 
         topOpportunity={topOpportunity}
         keywordCount={keywordCount}

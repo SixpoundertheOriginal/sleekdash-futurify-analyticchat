@@ -12,3 +12,16 @@ export interface KeywordMetric {
 export interface ProcessedKeywordData extends KeywordMetric {
   opportunityScore: number;
 }
+
+export interface AnalysisError {
+  message: string;
+  code?: string;
+  details?: string;
+}
+
+export interface KeywordAnalysis {
+  data: ProcessedKeywordData[];
+  error: AnalysisError | null;
+  isLoading: boolean;
+  timestamp?: string;
+}
