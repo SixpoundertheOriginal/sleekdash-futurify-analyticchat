@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Message } from '@/types/chat';
@@ -9,6 +9,65 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Fetch the latest analysis when the component mounts
+  useEffect(() => {
+    const fetchLatestAnalysis = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('keyword_analyses')
+          .select('openai_analysis')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) throw error;
+
+        if (data?.openai_analysis) {
+          setMessages([
+            {
+              role: 'assistant',
+              content: "I've analyzed your keyword data. Here's what I found:\n\n" + data.openai_analysis
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching analysis:', error);
+      }
+    };
+
+    fetchLatestAnalysis();
+
+    // Subscribe to changes in the keyword_analyses table
+    const channel = supabase
+      .channel('keyword_analyses_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'keyword_analyses'
+        },
+        (payload) => {
+          if (payload.new?.openai_analysis) {
+            setMessages([
+              {
+                role: 'assistant',
+                content: "I've analyzed your new keyword data. Here's what I found:\n\n" + payload.new.openai_analysis
+              }
+            ]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const sendMessage = useCallback(async (userMessage: string) => {
     try {
