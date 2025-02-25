@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -59,16 +58,16 @@ export function AppStoreAnalysis() {
 
       // Store analysis results in the database
       const analysisData = {
-        performance_metrics: parseMetricsFromAnalysis(data.analysis),
-        device_distribution: parseDeviceDistribution(data.analysis),
-        geographical_data: parseGeographicalData(data.analysis),
-        retention_data: parseRetentionData(data.analysis),
+        performance_metrics: JSON.stringify(parseMetricsFromAnalysis(data.analysis)),
+        device_distribution: JSON.stringify(parseDeviceDistribution(data.analysis)),
+        geographical_data: JSON.stringify(parseGeographicalData(data.analysis)),
+        retention_data: JSON.stringify(parseRetentionData(data.analysis)),
         time_range: 'Last 30 days'
       };
 
       const { error: insertError } = await supabase
         .from('analysis_results')
-        .insert([analysisData]);
+        .insert(analysisData);
 
       if (insertError) {
         throw insertError;

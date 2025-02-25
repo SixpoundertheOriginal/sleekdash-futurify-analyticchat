@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,12 +20,19 @@ export function AnalyticsDashboard() {
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Parse JSON strings back to objects
+      return data ? {
+        ...data,
+        performance_metrics: JSON.parse(data.performance_metrics as string || '[]'),
+        device_distribution: JSON.parse(data.device_distribution as string || '[]'),
+        geographical_data: JSON.parse(data.geographical_data as string || '[]'),
+        retention_data: JSON.parse(data.retention_data as string || '[]'),
+      } : null;
     }
   });
 
   useEffect(() => {
-    // Subscribe to real-time updates for analysis_results
     const channel = supabase
       .channel('analysis_results_changes')
       .on(
@@ -49,7 +57,7 @@ export function AnalyticsDashboard() {
   if (!analysisResults) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Add loading states or placeholders here if needed */}
+        {/* Add loading states here if needed */}
       </div>
     );
   }
