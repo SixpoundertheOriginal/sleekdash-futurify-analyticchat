@@ -1,14 +1,11 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const assistantId = 'asst_TfGVD0dcL2vsnPCihybxorC7';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -18,129 +15,65 @@ serve(async (req) => {
 
   try {
     const { message, threadId } = await req.json();
-    console.log('Processing message:', message, 'for thread:', threadId);
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-    if (!message) {
-      throw new Error('Message is required');
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not found');
     }
 
-    // Create a thread if no threadId provided
-    let currentThreadId = threadId;
-    if (!currentThreadId) {
-      const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v1'
-        }
-      });
-
-      if (!threadResponse.ok) {
-        throw new Error('Failed to create thread');
-      }
-
-      const threadData = await threadResponse.json();
-      currentThreadId = threadData.id;
-      console.log('Created new thread:', currentThreadId);
-    }
-
-    // Add message to thread
-    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+    // Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1'
       },
       body: JSON.stringify({
-        role: 'user',
-        content: message
-      })
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a keyword analysis expert assistant. Help users understand their keyword data, provide insights about keyword metrics like volume, difficulty, KEI (Keyword Effectiveness Index), relevancy, and opportunity scores. 
+
+Key responsibilities:
+- Analyze keyword metrics and trends
+- Suggest optimization strategies
+- Explain SEO concepts clearly
+- Help prioritize keywords based on opportunity scores
+- Provide actionable recommendations
+
+Keep responses clear, concise, and focused on keyword analysis.`
+          },
+          { role: 'user', content: message }
+        ],
+      }),
     });
 
-    if (!messageResponse.ok) {
-      throw new Error('Failed to add message to thread');
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Failed to get AI response');
     }
 
-    // Run the assistant
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1'
-      },
-      body: JSON.stringify({
-        assistant_id: assistantId
-      })
-    });
-
-    if (!runResponse.ok) {
-      throw new Error('Failed to run assistant');
-    }
-
-    const runData = await runResponse.json();
-    let runStatus = runData.status;
-
-    // Poll for completion
-    while (runStatus === 'queued' || runStatus === 'in_progress') {
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const statusResponse = await fetch(
-        `https://api.openai.com/v1/threads/${currentThreadId}/runs/${runData.id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v1'
-          }
-        }
-      );
-
-      if (!statusResponse.ok) {
-        throw new Error('Failed to check run status');
-      }
-
-      const statusData = await statusResponse.json();
-      runStatus = statusData.status;
-      console.log('Run status:', runStatus);
-    }
-
-    if (runStatus !== 'completed') {
-      throw new Error(`Run failed with status: ${runStatus}`);
-    }
-
-    // Get messages
-    const messagesResponse = await fetch(
-      `https://api.openai.com/v1/threads/${currentThreadId}/messages`,
-      {
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'OpenAI-Beta': 'assistants=v1'
-        }
-      }
-    );
-
-    if (!messagesResponse.ok) {
-      throw new Error('Failed to retrieve messages');
-    }
-
-    const messagesData = await messagesResponse.json();
-    const lastMessage = messagesData.data[0];
-
+    // Send back the AI response
     return new Response(
       JSON.stringify({
-        threadId: currentThreadId,
-        message: lastMessage.content[0].text.value
+        message: data.choices[0].message.content,
+        threadId: threadId || crypto.randomUUID()
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in chat-message function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
   }
 });
