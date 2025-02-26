@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCcw } from "lucide-react";
@@ -8,6 +9,9 @@ import { KeyMetricsGrid } from "./analytics/KeyMetricsGrid";
 import { ConversionFunnel } from "./analytics/ConversionFunnel";
 import { GeographicalDistribution } from "./analytics/GeographicalDistribution";
 import { RetentionChart } from "./analytics/RetentionChart";
+import { TrendAnalysis } from "./analytics/TrendAnalysis";
+import { PredictiveMetrics } from "./analytics/PredictiveMetrics";
+import { ComparativeAnalysis } from "./analytics/ComparativeAnalysis";
 
 export function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState("30days");
@@ -84,11 +88,22 @@ export function AnalyticsDashboard() {
 
       <KeyMetricsGrid data={data} />
 
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-white">Predictive Analytics</h2>
+        <PredictiveMetrics data={data} />
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2">
         <ConversionFunnel data={data} />
         <GeographicalDistribution data={data} />
-        <RetentionChart data={data} />
       </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <TrendAnalysis data={data} />
+        <ComparativeAnalysis data={data} />
+      </div>
+
+      <RetentionChart data={data} />
     </div>
   );
 }
