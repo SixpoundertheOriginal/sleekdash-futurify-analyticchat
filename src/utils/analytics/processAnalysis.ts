@@ -282,32 +282,84 @@ export const processAnalysisText = (text: string): ProcessedAnalytics => {
       }
     }
 
-    // Extract geographical data
-    const marketsSection = text.match(/Top Markets by Downloads:(.*?)(?=\n\n)/s);
-    if (marketsSection) {
-      const marketLines = marketsSection[1].match(/[^:\n]+([\d.]+)%\s*\((\d+)\)/g) || [];
-      result.geographical.markets = marketLines.map(line => {
-        const [country, percentage, downloads] = line.match(/([^:]+):\s*([\d.]+)%\s*\((\d+)\)/)?.slice(1) || [];
-        return {
-          country: country.trim(),
-          percentage: parseFloat(percentage),
-          downloads: parseInt(downloads),
-        };
-      });
-    }
+    // Extract geographical data with safer parsing
+    try {
+      console.log('Processing geographical data...');
+      const marketsSection = text.match(/Top Markets by Downloads:(.*?)(?=\n\n)/s);
+      
+      if (marketsSection && marketsSection[1]) {
+        console.log('Found markets section:', marketsSection[1].trim());
+        const marketLines = marketsSection[1].match(/[^:\n]+([\d.]+)%\s*\((\d+)\)/g) || [];
+        
+        result.geographical.markets = marketLines.map(line => {
+          try {
+            const match = line.match(/([^:]+):\s*([\d.]+)%\s*\((\d+)\)/);
+            if (!match) {
+              console.warn('Invalid market line format:', line);
+              return {
+                country: 'Unknown',
+                percentage: 0,
+                downloads: 0
+              };
+            }
+            
+            return {
+              country: match[1]?.trim() || 'Unknown',
+              percentage: match[2] ? parseFloat(match[2]) : 0,
+              downloads: match[3] ? parseInt(match[3], 10) : 0
+            };
+          } catch (err) {
+            console.warn('Error processing market line:', { line, error: err });
+            return {
+              country: 'Unknown',
+              percentage: 0,
+              downloads: 0
+            };
+          }
+        });
+      } else {
+        console.warn('No markets section found in analysis text');
+      }
 
-    // Extract device distribution
-    const devicesSection = text.match(/Device Distribution:(.*?)(?=\n\n)/s);
-    if (devicesSection) {
-      const deviceLines = devicesSection[1].match(/[^:\n]+([\d.]+)%\s*\((\d+)\)/g) || [];
-      result.geographical.devices = deviceLines.map(line => {
-        const [type, percentage, count] = line.match(/([^:]+):\s*([\d.]+)%\s*\((\d+)\)/)?.slice(1) || [];
-        return {
-          type: type.trim(),
-          percentage: parseFloat(percentage),
-          count: parseInt(count),
-        };
-      });
+      // Extract device distribution with safer parsing
+      const devicesSection = text.match(/Device Distribution:(.*?)(?=\n\n)/s);
+      
+      if (devicesSection && devicesSection[1]) {
+        console.log('Found devices section:', devicesSection[1].trim());
+        const deviceLines = devicesSection[1].match(/[^:\n]+([\d.]+)%\s*\((\d+)\)/g) || [];
+        
+        result.geographical.devices = deviceLines.map(line => {
+          try {
+            const match = line.match(/([^:]+):\s*([\d.]+)%\s*\((\d+)\)/);
+            if (!match) {
+              console.warn('Invalid device line format:', line);
+              return {
+                type: 'Unknown',
+                percentage: 0,
+                count: 0
+              };
+            }
+            
+            return {
+              type: match[1]?.trim() || 'Unknown',
+              percentage: match[2] ? parseFloat(match[2]) : 0,
+              count: match[3] ? parseInt(match[3], 10) : 0
+            };
+          } catch (err) {
+            console.warn('Error processing device line:', { line, error: err });
+            return {
+              type: 'Unknown',
+              percentage: 0,
+              count: 0
+            };
+          }
+        });
+      } else {
+        console.warn('No devices section found in analysis text');
+      }
+    } catch (err) {
+      console.error('Error processing geographical data:', err);
+      // Keep the default empty arrays for markets and devices
     }
 
     console.log('Analysis processing complete. Final result:', result);
