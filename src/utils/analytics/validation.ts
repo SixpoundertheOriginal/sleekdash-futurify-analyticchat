@@ -7,25 +7,20 @@ export const validateAnalysisText = (analysisText: string): boolean => {
   
   console.log('Validating analysis text:', analysisText);
   
-  // Check if this is a keyword analysis
-  const keywordIndicators = [
-    /keyword (analysis|data|metrics|trends)/i,
-    /seo (analysis|insights)/i,
-    /search volume/i,
-    /keyword difficulty/i,
-    /ranking opportunities/i,
-    /relevancy scores?/i,
-    /optimization recommendations?/i
-  ];
-
-  // Check if this is a performance report
+  // Highly flexible validation to account for different AI output formats
+  // Check for indicators that this is a performance report using multiple patterns
   const performanceIndicators = [
+    // Downloads indicators
     /total downloads:?\s*[\d,.k]+/i,
     /downloads:?\s*[\d,.k]+/i,
     /\b[\d,.k]+ downloads\b/i,
+    
+    // Revenue/proceeds indicators
     /total proceeds:?\s*\$?[\d,.k]+/i,
     /proceeds:?\s*\$?[\d,.k]+/i,
     /revenue:?\s*\$?[\d,.k]+/i,
+    
+    // Report type indicators
     /performance (report|analysis)/i,
     /monthly (report|analysis)/i,
     /key metrics/i,
@@ -33,26 +28,15 @@ export const validateAnalysisText = (analysisText: string): boolean => {
     /financial performance/i
   ];
   
-  // Count matches for each type of analysis
-  const keywordMatchCount = keywordIndicators.filter(pattern => 
+  // Check if at least 2 performance indicators are found to confirm it's a performance report
+  const matchCount = performanceIndicators.filter(pattern => 
     pattern.test(analysisText)
   ).length;
-
-  const performanceMatchCount = performanceIndicators.filter(pattern => 
-    pattern.test(analysisText)
-  ).length;
-
-  // Validate based on the type of analysis
-  if (keywordMatchCount >= 2) {
-    console.log('Valid keyword analysis found');
-    return true;
-  }
   
-  if (performanceMatchCount >= 2) {
-    console.log('Valid performance report found');
-    return true;
+  if (matchCount < 2) {
+    console.log('Not a performance report - insufficient performance indicators found');
+    throw new Error('Not a performance report - missing key metrics');
   }
 
-  console.log('Invalid analysis - insufficient indicators found');
-  throw new Error('Not a valid analysis report - missing required indicators');
+  return true;
 };

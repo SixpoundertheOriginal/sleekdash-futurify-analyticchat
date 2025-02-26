@@ -1,122 +1,78 @@
 
-import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-import { Message } from '@/types/chat';
+import { useState } from "react";
+import { Message } from "@/types/chat";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
-export function useChat() {
-  const [messages, setMessages] = useState<Message[]>([]);
+export const useChat = () => {
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([{
+    role: 'assistant',
+    content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
+  }]);
   const [isLoading, setIsLoading] = useState(false);
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const [threadId] = useState<string>('thread_Uq2BhFwMt2hjBxKhPV0qKs58');
+  const assistantId = 'asst_EYm70EgIE2okxc8onNc1DVTj';
   const { toast } = useToast();
 
-  // Fetch the latest analysis when the component mounts
-  useEffect(() => {
-    const fetchLatestAnalysis = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim() || isLoading) return;
 
-        const { data, error } = await supabase
-          .from('keyword_analyses')
-          .select('openai_analysis')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+    const userMessage = message.trim();
+    setMessage("");
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setIsLoading(true);
 
-        if (error) throw error;
-
-        if (data?.openai_analysis) {
-          setMessages([
-            {
-              role: 'assistant',
-              content: "I've analyzed your keyword data. Here's what I found:\n\n" + data.openai_analysis
-            }
-          ]);
-        }
-      } catch (error) {
-        console.error('Error fetching analysis:', error);
-      }
-    };
-
-    fetchLatestAnalysis();
-
-    // Subscribe to changes in the keyword_analyses table
-    const channel = supabase
-      .channel('keyword_analyses_changes')
-      .on(
-        'postgres_changes',
+    try {
+      const { data: functionData, error: functionError } = await supabase.functions.invoke(
+        'chat-message',
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'keyword_analyses'
-        },
-        (payload) => {
-          if (payload.new?.openai_analysis) {
-            setMessages([
-              {
-                role: 'assistant',
-                content: "I've analyzed your new keyword data. Here's what I found:\n\n" + payload.new.openai_analysis
-              }
-            ]);
+          body: { 
+            message: userMessage,
+            threadId: threadId,
+            assistantId: assistantId
           }
         }
-      )
-      .subscribe();
+      );
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const sendMessage = useCallback(async (userMessage: string) => {
-    try {
-      setIsLoading(true);
-
-      // Add user message to chat
-      const userMessageObj: Message = {
-        role: 'user',
-        content: userMessage
-      };
-      setMessages(prev => [...prev, userMessageObj]);
-
-      // Call chat function
-      const { data, error } = await supabase.functions.invoke('chat-message', {
-        body: { 
-          message: userMessage,
-          threadId: threadId
-        }
-      });
-
-      if (error) throw error;
-
-      // Update thread ID if it's a new conversation
-      if (data.threadId) {
-        setThreadId(data.threadId);
+      if (functionError) {
+        console.error('Function error:', functionError);
+        throw new Error(functionError.message);
       }
 
-      // Add assistant response to chat
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: data.message
-      };
-      setMessages(prev => [...prev, assistantMessage]);
+      if (!functionData || !functionData.analysis) {
+        throw new Error('No response received from the assistant');
+      }
+
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: functionData.analysis
+      }]);
 
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error processing message:', error);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: '❌ I apologize, but I encountered an error processing your message. Please try again.' 
+      }]);
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send message"
+        description: error instanceof Error ? error.message : "Failed to process your message. Please try again."
       });
     } finally {
       setIsLoading(false);
     }
-  }, [threadId, toast]);
+  };
 
   return {
+    message,
+    setMessage,
     messages,
+    setMessages,
     isLoading,
-    sendMessage,
+    handleSubmit
   };
-}
+};

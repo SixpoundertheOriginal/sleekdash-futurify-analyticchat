@@ -9,12 +9,7 @@ interface ChatInputProps {
   onSubmit: (e: React.FormEvent) => void;
 }
 
-export function ChatInput({ 
-  message, 
-  isLoading, 
-  onMessageChange, 
-  onSubmit 
-}: ChatInputProps) {
+export function ChatInput({ message, isLoading, onMessageChange, onSubmit }: ChatInputProps) {
   return (
     <form onSubmit={onSubmit} className="border-t border-white/10 p-4 bg-white/5">
       <div className="flex gap-2">
