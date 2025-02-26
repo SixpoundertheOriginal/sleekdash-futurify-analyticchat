@@ -3,8 +3,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const ASSISTANT_ID = 'asst_TfGVD0dcL2vsnPCihybxorC7';
-const THREAD_ID = 'thread_aQs9lArOFgRIHwSyKPrXOxeC';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,55 +10,102 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const { appDescription, threadId, assistantId } = await req.json();
+    
     if (!openAIApiKey) {
       throw new Error('OpenAI API key is not configured');
     }
 
-    const { appDescription } = await req.json();
-    console.log('Received app description:', appDescription);
-    
     if (!appDescription?.trim()) {
       throw new Error('App description is required');
     }
 
-    // Add message to existing thread
-    console.log('Adding message to thread:', THREAD_ID);
-    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${THREAD_ID}/messages`, {
+    // Add message to thread
+    console.log('Adding message to thread:', threadId);
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',  // Updated to v2
+        'OpenAI-Beta': 'assistants=v2',
       },
       body: JSON.stringify({
         role: 'user',
-        content: `Please analyze this app store data and generate a comprehensive performance report following these aspects:
+        content: `Please analyze this app store data and generate a comprehensive performance report following this exact structure:
 
-        1. Data Extraction & Cleaning
-        - Process raw App Store Connect data
-        - Clean HTML elements and navigation text
-        - Extract structured metrics
+Monthly Performance Report: [App Name]
+Date Range: [Date Range]
 
-        2. Key Metrics Analysis
-        - User Acquisition: Impressions, Product Page Views, Conversion Rates, Downloads
-        - Financial Performance: Total Proceeds, Proceeds per Paying User
-        - User Engagement: Sessions per Device, Retention Rates (Day 1, 7, 14, 28)
-        - Technical Performance: Crash Count, Crash Rate
-        - Geographical & Device Analysis: Downloads by Country and Device Type
+Executive Summary
+- Summarize key trends and performance highlights
+- Focus on growth areas and major concerns
 
-        3. Comparative Analysis
-        - Current vs Previous Period Performance
-        - Industry Benchmarks (if available)
-        - Growth Trends and Areas of Concern
+User Acquisition Metrics
+- Impressions: [Value] ([Change %])
+- Product Page Views: [Value] ([Change %])
+- Conversion Rate: [Value] ([Change %])
+- Total Downloads: [Value] ([Change %])
 
-        App Store Data:
-        ${appDescription}`,
+Conversion Funnel Analysis
+- Impressions to Product Page Views Conversion Rate: [Calculated Value]%
+- Product Page Views to Downloads Conversion Rate: [Calculated Value]%
+
+Financial Performance
+- Proceeds: $[Value] ([Change %])
+- Proceeds per Paying User: $[Value] ([Change %])
+- Average Revenue Per Download (ARPD): $[Calculated Value]
+- Download to Proceed Conversion Rate: [Calculated Value]%
+
+User Engagement & Retention
+- Sessions per Active Device: [Value] ([Change %])
+- Retention Rates:
+  • Day 1: [Value]% (Benchmark Comparison)
+  • Day 7: [Value]% (Benchmark Comparison)
+  • Day 14: [Value]% (Benchmark Comparison)
+  • Day 21: [Value]% (Benchmark Comparison)
+  • Day 28: [Value]% (Benchmark Comparison)
+
+Technical Performance
+- Crash Count: [Value] ([Change %])
+- Crash Rate: [Calculated Value]% with percentile comparison
+- Include specific actions needed for technical improvements
+
+Geographical & Device Performance
+- Downloads by Country:
+  List top countries with percentage and value of total downloads
+- Market Penetration Analysis:
+  Market Share in Key Regions: [Calculated Value]% for top regions
+- Downloads by Device Type:
+  Detail device type contributions with optimization recommendations
+
+Conclusion & Next Steps
+1. Key Takeaways:
+   - Major insights
+   - Growth opportunities
+   - Areas of improvement
+
+2. Action Items:
+   - Specific, actionable recommendations
+   - Retention strategy improvements
+   - Product page optimization suggestions
+
+3. Strategic Considerations:
+   - Long-term growth opportunities
+   - Market expansion possibilities
+   - Product development recommendations
+
+Deep Insights (Derived KPIs)
+- Funnel Conversion Analysis
+- Revenue Maximization Opportunities
+- Long-term Retention Strategies
+
+App Store Data for Analysis:
+${appDescription}`
       }),
     });
 
@@ -71,61 +116,26 @@ serve(async (req) => {
     }
 
     // Run the assistant
-    console.log('Starting analysis with assistant:', ASSISTANT_ID);
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${THREAD_ID}/runs`, {
+    console.log('Starting analysis with assistant:', assistantId);
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',  // Updated to v2
+        'OpenAI-Beta': 'assistants=v2',
       },
       body: JSON.stringify({
-        assistant_id: ASSISTANT_ID,
-        instructions: `You are an expert App Store Performance Report Generator.
+        assistant_id: assistantId,
+        instructions: `You are an expert App Store Analytics Specialist. Generate a detailed performance report following the exact structure provided in the user's message. Always include:
 
-        Generate a structured, client-focused monthly performance report following this format:
+1. Actual numbers and percentages where data is available
+2. Clear comparisons with previous periods
+3. Actionable insights based on the data
+4. Strategic recommendations for improvement
+5. Calculated KPIs and derived metrics
+6. Benchmark comparisons where relevant
 
-        # Monthly Performance Report: [App Name]
-        ## Date Range: [Period]
-
-        ### 📊 Executive Summary
-        - Key trends and performance highlights
-        - Critical changes from previous period
-        - Major achievements or concerns
-
-        ### 📈 User Acquisition Metrics
-        - Impressions: [Value] ([Change %])
-        - Product Page Views: [Value] ([Change %])
-        - Conversion Rate: [Value] ([Change %])
-        - Total Downloads: [Value] ([Change %])
-
-        ### 💰 Financial Performance
-        - Total Proceeds: [Value] ([Change %])
-        - Proceeds per Paying User: [Value] ([Change %])
-        - Revenue Trends Analysis
-
-        ### 👥 User Engagement & Retention
-        - Sessions per Active Device: [Value] ([Change %])
-        - Retention Rates:
-          • Day 1: [Value] ([Benchmark %])
-          • Day 7: [Value] ([Benchmark %])
-          • Day 14: [Value] ([Benchmark %])
-          • Day 28: [Value] ([Benchmark %])
-
-        ### ⚡ Technical Performance
-        - Crash Count: [Value] ([Change %])
-        - Crash Rate: [Value] ([Benchmark %])
-        - Performance Optimization Recommendations
-
-        ### 🌍 Geographical & Device Analysis
-        - Top Performing Markets
-        - Device Distribution
-        - Platform-Specific Insights
-
-        ### 🎯 Action Items & Recommendations
-        1. Immediate Actions
-        2. Medium-term Optimizations
-        3. Long-term Strategy Adjustments`
+Format the report clearly with proper spacing and sections for readability.`
       }),
     });
 
@@ -138,20 +148,20 @@ serve(async (req) => {
     const run = await runResponse.json();
     console.log('Started run:', run.id);
 
-    // Poll for completion with increased timeout
+    // Poll for completion
     let runStatus;
     let attempts = 0;
-    const maxAttempts = 60; // 60 seconds wait
+    const maxAttempts = 60;
 
     do {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const statusResponse = await fetch(
-        `https://api.openai.com/v1/threads/${THREAD_ID}/runs/${run.id}`,
+        `https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`,
         {
           headers: {
             'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v2',  // Updated to v2
+            'OpenAI-Beta': 'assistants=v2',
           },
         }
       );
@@ -177,11 +187,11 @@ serve(async (req) => {
     // Get messages
     console.log('Retrieving analysis results');
     const messagesResponse = await fetch(
-      `https://api.openai.com/v1/threads/${THREAD_ID}/messages`,
+      `https://api.openai.com/v1/threads/${threadId}/messages`,
       {
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
-          'OpenAI-Beta': 'assistants=v2',  // Updated to v2
+          'OpenAI-Beta': 'assistants=v2',
         },
       }
     );
@@ -193,7 +203,6 @@ serve(async (req) => {
     const messages = await messagesResponse.json();
     console.log('Got messages response:', messages);
 
-    // Get the latest assistant message
     const assistantMessage = messages.data?.find(msg => msg.role === 'assistant')?.content?.[0]?.text?.value;
 
     if (!assistantMessage) {
@@ -206,7 +215,6 @@ serve(async (req) => {
         analysis: assistantMessage 
       }),
       { 
-        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
