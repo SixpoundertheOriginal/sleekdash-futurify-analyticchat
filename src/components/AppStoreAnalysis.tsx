@@ -48,6 +48,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
       if (!data.success) throw new Error(data.error || 'Analysis failed');
       if (!data.analysis) throw new Error('No analysis results found in the response');
 
+      console.log('Analysis response:', data.analysis);
       setAnalysisResult(data.analysis);
       setAppDescription("");
       toast({
@@ -65,6 +66,8 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
       setAnalyzing(false);
     }
   };
+
+  console.log('Current processed data:', processedData);
 
   return (
     <div className="space-y-6">
