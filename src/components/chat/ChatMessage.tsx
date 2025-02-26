@@ -43,7 +43,13 @@ export function ChatMessage({ message }: ChatMessageProps) {
       );
     }
     
+    // Format the content to handle special markdown characters
     const enhancedContent = content
+      .replace(/\*\*(.*?)\*\*/g, '**$1**')  // Keep bold text
+      .replace(/^\s*#{4}\s+/gm, '#### ')    // Level 4 headings
+      .replace(/^\s*#{3}\s+/gm, '### ')     // Level 3 headings
+      .replace(/^\s*#{2}\s+/gm, '## ')      // Level 2 headings
+      .replace(/^\s*#{1}\s+/gm, '# ')       // Level 1 headings
       .replace(/increase/gi, '📈 increase')
       .replace(/decrease/gi, '📉 decrease')
       .replace(/improved/gi, '✨ improved')
@@ -53,8 +59,33 @@ export function ChatMessage({ message }: ChatMessageProps) {
       .replace(/growth/gi, '📊 growth');
 
     return (
-      <div className="prose prose-invert max-w-none prose-headings:text-primary prose-headings:font-semibold prose-h3:mt-4 prose-h3:mb-2">
-        <ReactMarkdown>{enhancedContent}</ReactMarkdown>
+      <div className="prose prose-invert max-w-none 
+        prose-headings:text-primary prose-headings:font-semibold 
+        prose-h1:text-2xl prose-h1:mt-6 prose-h1:mb-4
+        prose-h2:text-xl prose-h2:mt-5 prose-h2:mb-3
+        prose-h3:text-lg prose-h3:mt-4 prose-h3:mb-2
+        prose-h4:text-base prose-h4:mt-3 prose-h4:mb-2
+        prose-p:my-2
+        prose-ul:list-disc prose-ul:pl-6
+        prose-li:my-1"
+      >
+        <ReactMarkdown
+          components={{
+            h1: ({ children }) => <h1 className="text-2xl font-bold">{children}</h1>,
+            h2: ({ children }) => <h2 className="text-xl font-semibold">{children}</h2>,
+            h3: ({ children }) => <h3 className="text-lg font-medium">{children}</h3>,
+            h4: ({ children }) => <h4 className="text-base font-medium">{children}</h4>,
+            li: ({ children }) => (
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>{children}</span>
+              </li>
+            ),
+            p: ({ children }) => <p className="text-white/90">{children}</p>,
+          }}
+        >
+          {enhancedContent}
+        </ReactMarkdown>
       </div>
     );
   };
