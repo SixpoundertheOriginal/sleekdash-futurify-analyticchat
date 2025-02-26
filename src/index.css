@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,11 +14,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 262 83% 58%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217 33% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -32,23 +33,16 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 222 47% 9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 33% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 20%;
+    --sidebar-ring: 262 83% 58%;
   }
 
   .dark {
@@ -79,14 +73,6 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -97,5 +83,108 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image: 
+      radial-gradient(circle at top right, rgba(124, 58, 237, 0.03), transparent 40%),
+      radial-gradient(circle at center left, rgba(16, 185, 129, 0.03), transparent 50%);
+    background-size: 100% 100%;
+    background-attachment: fixed;
+  }
+
+  /* Glassmorphism cards */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md backdrop-saturate-150 border border-white/10 shadow-xl;
+  }
+  
+  /* Glowing elements */
+  .glow {
+    box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+  }
+  
+  .glow-text {
+    text-shadow: 0 0 8px rgba(124, 58, 237, 0.7);
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-400;
+  }
+  
+  /* Animated borders */
+  .animated-border {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .animated-border::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.8), transparent);
+    animation: border-glow 3s infinite;
+  }
+  
+  @keyframes border-glow {
+    0% {
+      left: -100%;
+    }
+    100% {
+      left: 100%;
+    }
+  }
+  
+  /* Futuristic button styles */
+  .btn-future {
+    @apply relative overflow-hidden bg-gradient-to-br from-violet-600 to-indigo-700 hover:from-violet-500 hover:to-indigo-600 text-white font-medium py-2 px-4 rounded-md transition-all duration-300;
+  }
+  
+  .btn-future::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: all 0.3s ease;
+  }
+  
+  .btn-future:hover::before {
+    transform: translateX(100%);
+  }
+  
+  /* Sleek card design */
+  .sleek-card {
+    @apply relative bg-gradient-to-br from-secondary/80 to-background/90 backdrop-blur-lg rounded-lg border border-white/10 p-4 shadow-lg transition-all duration-300;
+  }
+  
+  .sleek-card:hover {
+    @apply shadow-primary/20 border-primary/20 shadow-lg;
+    transform: translateY(-2px);
+  }
+  
+  /* Minimalistic inputs */
+  .input-minimal {
+    @apply bg-background/50 backdrop-blur-md border-white/10 focus:border-primary/50 focus:ring focus:ring-primary/20 rounded-md py-2 px-4 text-white placeholder:text-white/30 transition-all duration-300;
+  }
+  
+  /* Thin scrollbars */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/20 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
   }
 }
