@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCcw } from "lucide-react";
@@ -20,10 +19,8 @@ export function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState("30days");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
-
-  const { data, error, isProcessing } = useAnalysisData(`
-    // ... paste the full analysis text here as a template
-  `);
+  
+  const { data, error, isProcessing } = useAnalysisData(null);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

@@ -18,7 +18,9 @@ export function useAnalysisData(analysisText: string | null) {
       setError(null);
 
       try {
+        console.log('Processing analysis text:', analysisText);
         const processed = processAnalysisText(analysisText);
+        console.log('Processed data:', processed);
         setProcessedData(processed);
       } catch (err) {
         console.error('Error processing analysis:', err);
