@@ -10,6 +10,7 @@ export function useAnalysisData(analysisText: string | null) {
   useEffect(() => {
     const processData = async () => {
       if (!analysisText) {
+        console.log('No analysis text provided, skipping processing');
         setProcessedData(null);
         return;
       }
@@ -18,13 +19,28 @@ export function useAnalysisData(analysisText: string | null) {
       setError(null);
 
       try {
-        console.log('Raw analysis text:', analysisText);
+        console.log('Starting analysis text processing:', {
+          textLength: analysisText.length,
+          preview: analysisText.substring(0, 200) + '...'
+        });
+
         const processed = processAnalysisText(analysisText);
-        console.log('Processed data:', processed);
+        
+        console.log('Processing complete. Result structure:', {
+          hasData: !!processed,
+          sections: processed ? Object.keys(processed) : [],
+          summary: processed?.summary,
+          acquisitionMetrics: processed?.acquisition
+        });
+
         setProcessedData(processed);
       } catch (err) {
-        console.error('Error processing analysis:', err);
-        setError(err instanceof Error ? err.message : 'Failed to process analysis data');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to process analysis data';
+        console.error('Error processing analysis:', {
+          error: err,
+          message: errorMessage
+        });
+        setError(errorMessage);
       } finally {
         setIsProcessing(false);
       }

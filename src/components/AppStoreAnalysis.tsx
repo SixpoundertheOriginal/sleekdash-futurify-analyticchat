@@ -34,6 +34,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
 
     try {
       setAnalyzing(true);
+      console.log('Submitting app description for analysis:', appDescription.trim());
 
       const { data, error } = await supabase.functions.invoke('analyze-app-store', {
         body: { 
@@ -43,7 +44,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         }
       });
 
-      console.log('Edge function response:', data);
+      console.log('Edge function raw response:', data);
 
       if (error) {
         console.error('Supabase function error:', error);
@@ -63,7 +64,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         throw new Error('No analysis results found in the response');
       }
 
-      console.log('Analysis response:', data.analysis);
+      console.log('Raw analysis text:', data.analysis);
       setAnalysisResult(data.analysis);
       setAppDescription("");
       toast({

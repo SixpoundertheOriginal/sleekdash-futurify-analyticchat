@@ -1,4 +1,3 @@
-
 import { formatValue } from "./metrics";
 
 export interface ProcessedAnalytics {
@@ -56,6 +55,11 @@ export interface ProcessedAnalytics {
 
 export const processAnalysisText = (text: string): ProcessedAnalytics => {
   try {
+    console.log('Starting text analysis with input:', {
+      length: text.length,
+      preview: text.substring(0, 100)
+    });
+
     // Initialize the result object
     const result: ProcessedAnalytics = {
       summary: { title: "", dateRange: "", executiveSummary: "" },
@@ -96,32 +100,62 @@ export const processAnalysisText = (text: string): ProcessedAnalytics => {
       },
     };
 
+    // Extract title and date range
+    console.log('Extracting title and date range...');
+    const titleMatch = text.match(/Monthly Performance Report: (.*?)(?:\n|$)/);
+    const dateRangeMatch = text.match(/Date Range: (.*?)(?:\n|$)/);
+    
+    if (titleMatch) {
+      result.summary.title = titleMatch[1].trim();
+      console.log('Found title:', result.summary.title);
+    } else {
+      console.warn('No title match found in text');
+    }
+    
+    if (dateRangeMatch) {
+      result.summary.dateRange = dateRangeMatch[1].trim();
+      console.log('Found date range:', result.summary.dateRange);
+    } else {
+      console.warn('No date range match found in text');
+    }
+
+    // Extract executive summary
+    console.log('Extracting executive summary...');
+    const summaryMatch = text.match(/Executive Summary\n(.*?)(?=\n\n)/s);
+    if (summaryMatch) {
+      result.summary.executiveSummary = summaryMatch[1].trim();
+      console.log('Found executive summary:', {
+        length: result.summary.executiveSummary.length,
+        preview: result.summary.executiveSummary.substring(0, 50) + '...'
+      });
+    } else {
+      console.warn('No executive summary match found');
+    }
+
     // Helper function to extract numbers and percentages
     const extractNumberAndChange = (text: string): { value: number; change: number } => {
       const numberMatch = text.match(/(\d+(?:,\d{3})*(?:\.\d+)?)/);
       const changeMatch = text.match(/\(([+-]\d+(?:\.\d+)?)\%\)/);
       
-      return {
+      const result = {
         value: numberMatch ? parseFloat(numberMatch[1].replace(/,/g, "")) : 0,
         change: changeMatch ? parseFloat(changeMatch[1]) : 0,
       };
+
+      console.log('Extracted number and change:', { input: text, result });
+      return result;
     };
 
-    // Extract title and date range
-    const titleMatch = text.match(/Monthly Performance Report: (.*?)(?:\n|$)/);
-    const dateRangeMatch = text.match(/Date Range: (.*?)(?:\n|$)/);
-    if (titleMatch) result.summary.title = titleMatch[1].trim();
-    if (dateRangeMatch) result.summary.dateRange = dateRangeMatch[1].trim();
-
-    // Extract executive summary
-    const summaryMatch = text.match(/Executive Summary\n(.*?)(?=\n\n)/s);
-    if (summaryMatch) result.summary.executiveSummary = summaryMatch[1].trim();
-
     // Extract acquisition metrics
+    console.log('Processing acquisition metrics...');
     const acquisitionMetrics = text.match(/User Acquisition Metrics(.*?)(?=###)/s);
     if (acquisitionMetrics) {
       const metrics = acquisitionMetrics[1];
-      
+      console.log('Found acquisition metrics section:', {
+        length: metrics.length,
+        preview: metrics.substring(0, 100)
+      });
+
       // Extract impressions
       const impressionsMatch = metrics.match(/Impressions:\s*([\d,]+)\s*\(([+-]\d+)%\)/);
       if (impressionsMatch) {
@@ -157,6 +191,8 @@ export const processAnalysisText = (text: string): ProcessedAnalytics => {
           change: parseInt(downloadsMatch[2])
         };
       }
+    } else {
+      console.warn('No acquisition metrics section found');
     }
 
     // Extract financial metrics
@@ -274,11 +310,11 @@ export const processAnalysisText = (text: string): ProcessedAnalytics => {
       });
     }
 
-    console.log('Processed Analysis Data:', result);
+    console.log('Analysis processing complete. Final result:', result);
     return result;
   } catch (error) {
-    console.error('Error processing analysis text:', error);
-    throw new Error('Failed to process analysis text');
+    console.error('Error in processAnalysisText:', error);
+    throw error;
   }
 };
 
