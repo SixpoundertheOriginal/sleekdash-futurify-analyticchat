@@ -1,6 +1,16 @@
 
 import { Download, DollarSign, Users, Target } from "lucide-react";
 
+export const formatValue = (value: number, prefix = '') => {
+  if (value >= 1000000) {
+    return `${prefix}${(value / 1000000).toFixed(1)}M`;
+  } else if (value >= 1000) {
+    return `${prefix}${(value / 1000).toFixed(1)}K`;
+  } else {
+    return `${prefix}${value.toFixed(value % 1 === 0 ? 0 : 2)}`;
+  }
+};
+
 const extractMetric = (analysisText: string, metricPatterns: RegExp[], defaultValue: number) => {
   for (const pattern of metricPatterns) {
     const match = analysisText.match(pattern);
@@ -28,16 +38,6 @@ const extractChange = (analysisText: string, metricPatterns: RegExp[], defaultVa
     }
   }
   return defaultValue;
-};
-
-const formatValue = (value: number, prefix = '') => {
-  if (value >= 1000000) {
-    return `${prefix}${(value / 1000000).toFixed(1)}M`;
-  } else if (value >= 1000) {
-    return `${prefix}${(value / 1000).toFixed(1)}K`;
-  } else {
-    return `${prefix}${value.toFixed(value % 1 === 0 ? 0 : 2)}`;
-  }
 };
 
 export const parseMetricsFromAnalysis = (analysisText: string) => {
