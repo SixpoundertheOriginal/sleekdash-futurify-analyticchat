@@ -12,6 +12,9 @@ import { RetentionChart } from "./analytics/RetentionChart";
 import { TrendAnalysis } from "./analytics/TrendAnalysis";
 import { PredictiveMetrics } from "./analytics/PredictiveMetrics";
 import { ComparativeAnalysis } from "./analytics/ComparativeAnalysis";
+import { ImpressionAnalytics } from "./analytics/ImpressionAnalytics";
+import { ProceedsAnalysis } from "./analytics/ProceedsAnalysis";
+import { EngagementMetrics } from "./analytics/EngagementMetrics";
 
 export function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState("30days");
@@ -93,6 +96,14 @@ export function AnalyticsDashboard() {
         <PredictiveMetrics data={data} />
       </div>
 
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-white">Acquisition & Revenue</h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <ImpressionAnalytics data={data} />
+          <ProceedsAnalysis data={data} />
+        </div>
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2">
         <ConversionFunnel data={data} />
         <GeographicalDistribution data={data} />
@@ -103,7 +114,13 @@ export function AnalyticsDashboard() {
         <ComparativeAnalysis data={data} />
       </div>
 
-      <RetentionChart data={data} />
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-white">User Engagement</h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <EngagementMetrics data={data} />
+          <RetentionChart data={data} />
+        </div>
+      </div>
     </div>
   );
 }
