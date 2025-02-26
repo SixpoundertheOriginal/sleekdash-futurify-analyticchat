@@ -10,49 +10,54 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const renderMessageContent = (content: string) => {
-    // Handle tabular data if present
-    if (content.includes('|')) {
-      const lines = content.split('\n');
+    // Handle mathematical formulas
+    const processMathFormulas = (text: string) => {
+      return text.replace(/\\\[(.*?)\\\]/g, (_, formula) => {
+        return `\`${formula.trim()}\``;
+      });
+    };
+
+    // Format tables from markdown syntax
+    const formatTable = (tableContent: string) => {
+      const rows = tableContent.split('\n').map(row => row.trim()).filter(Boolean);
+      const headers = rows[0].split('|').map(cell => cell.trim()).filter(Boolean);
+      
       return (
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto border-collapse">
+        <div className="overflow-x-auto my-4 rounded-lg border border-white/10">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-primary/20">
+                {headers.map((header, i) => (
+                  <th key={i} className="px-4 py-3 text-left font-semibold text-white">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
             <tbody>
-              {lines.map((line, index) => {
-                if (line.trim()) {
-                  const cells = line.split('|').map(cell => cell.trim()).filter(Boolean);
-                  return (
-                    <tr key={index} className={`
-                      ${index === 0 ? "bg-primary/20 font-semibold" : "border-t border-white/10"}
-                      ${line.toLowerCase().includes('increase') ? 'bg-green-500/10' : ''}
-                      ${line.toLowerCase().includes('decrease') ? 'bg-red-500/10' : ''}
-                      hover:bg-white/5 transition-colors
-                    `}>
-                      {cells.map((cell, cellIndex) => (
-                        <td key={cellIndex} className="px-4 py-2 whitespace-pre-wrap break-words">
-                          <div className="prose prose-invert">
-                            <ReactMarkdown>{cell}</ReactMarkdown>
-                          </div>
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                }
-                return null;
-              })}
+              {rows.slice(1).map((row, i) => (
+                <tr key={i} className="border-t border-white/10 hover:bg-white/5">
+                  {row.split('|').map(cell => cell.trim()).filter(Boolean).map((cell, j) => (
+                    <td key={j} className="px-4 py-3 text-white/90">
+                      <ReactMarkdown>{cell}</ReactMarkdown>
+                    </td>
+                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       );
-    }
+    };
 
-    // Format the content to handle markdown formatting
+    // Process the content
     const enhancedContent = content
-      .replace(/^### (.*)/gm, '## $1')  // Enhance h3 headers
-      .replace(/^#### (.*)/gm, '### $1') // Enhance h4 headers
-      .replace(/\*\*(.*?)\*\*/g, '**$1**')  // Keep bold text
-      .replace(/^- /gm, '• ')  // Convert basic lists to bullet points
-      .replace(/([+\-]?\d+\.?\d*%)/g, '**$1**') // Bold percentages
-      .replace(/\$\d+\.?\d*/g, (match) => `**${match}**`) // Bold monetary values
+      .replace(/^### (.*)/gm, '## $1')
+      .replace(/^#### (.*)/gm, '### $1')
+      .replace(/\*\*(.*?)\*\*/g, '**$1**')
+      .replace(/^- /gm, '• ')
+      .replace(/(\$[\d,]+\.?\d*)/g, '**$1**')
+      .replace(/([+\-]?\d+\.?\d*%)/g, '**$1**')
       .replace(/increase/gi, '📈 increase')
       .replace(/decrease/gi, '📉 decrease')
       .replace(/improved/gi, '✨ improved')
@@ -61,17 +66,23 @@ export function ChatMessage({ message }: ChatMessageProps) {
       .replace(/users/gi, '👥 users')
       .replace(/growth/gi, '📊 growth');
 
+    const processedContent = processMathFormulas(enhancedContent);
+
     return (
       <Card className="bg-white/5 border-white/10 p-4">
         <div className="prose prose-invert max-w-none 
           prose-headings:text-primary prose-headings:font-semibold 
+          prose-h1:text-3xl prose-h1:mt-8 prose-h1:mb-4
           prose-h2:text-2xl prose-h2:mt-6 prose-h2:mb-4
           prose-h3:text-xl prose-h3:mt-5 prose-h3:mb-3
           prose-h4:text-lg prose-h4:mt-4 prose-h4:mb-2
-          prose-p:my-2
+          prose-p:my-2 prose-p:leading-relaxed
           prose-ul:list-disc prose-ul:pl-6 prose-ul:my-4
           prose-li:my-1
-          prose-strong:text-primary prose-strong:font-semibold"
+          prose-code:px-1.5 prose-code:py-0.5 prose-code:bg-white/10 prose-code:rounded
+          prose-code:text-primary/90 prose-code:font-mono prose-code:text-sm
+          prose-strong:text-primary prose-strong:font-semibold
+          prose-em:text-white/75 prose-em:italic"
         >
           <ReactMarkdown
             components={{
@@ -79,18 +90,39 @@ export function ChatMessage({ message }: ChatMessageProps) {
               h2: ({ children }) => <h2 className="text-2xl font-semibold mb-3 text-primary">{children}</h2>,
               h3: ({ children }) => <h3 className="text-xl font-medium mb-2 text-primary/90">{children}</h3>,
               h4: ({ children }) => <h4 className="text-lg font-medium mb-2 text-primary/80">{children}</h4>,
-              p: ({ children }) => <p className="text-white/90 mb-2">{children}</p>,
+              p: ({ children }) => <p className="text-white/90 mb-2 leading-relaxed">{children}</p>,
               strong: ({ children }) => <strong className="text-primary font-semibold">{children}</strong>,
+              em: ({ children }) => <em className="text-white/75 italic">{children}</em>,
+              code: ({ children }) => (
+                <code className="px-1.5 py-0.5 bg-white/10 rounded text-primary/90 font-mono text-sm">
+                  {children}
+                </code>
+              ),
               li: ({ children }) => (
                 <li className="flex items-start gap-2 text-white/90">
-                  <span className="text-primary">•</span>
+                  <span className="text-primary mt-1">•</span>
                   <span>{children}</span>
                 </li>
               ),
               ul: ({ children }) => <ul className="space-y-2 my-2">{children}</ul>,
+              table: ({ children }) => (
+                <div className="overflow-x-auto my-4 rounded-lg border border-white/10">
+                  <table className="w-full table-auto">
+                    {children}
+                  </table>
+                </div>
+              ),
+              thead: ({ children }) => <thead className="bg-primary/20">{children}</thead>,
+              th: ({ children }) => (
+                <th className="px-4 py-3 text-left font-semibold text-white">{children}</th>
+              ),
+              td: ({ children }) => (
+                <td className="px-4 py-3 text-white/90 border-t border-white/10">{children}</td>
+              ),
+              tr: ({ children }) => <tr className="hover:bg-white/5">{children}</tr>,
             }}
           >
-            {enhancedContent}
+            {processedContent}
           </ReactMarkdown>
         </div>
       </Card>
