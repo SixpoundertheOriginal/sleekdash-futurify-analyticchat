@@ -31,7 +31,7 @@ export function AppStoreAnalysis() {
       const { data, error } = await supabase.functions.invoke('analyze-app-store', {
         body: { 
           appDescription: appDescription.trim(),
-          threadId: 'thread_MDHOcZGZREoIRW3ibVB8pSKc',
+          threadId: 'thread_I56MOmqcb5r8oVHLjKJjS6sP',
           assistantId: 'asst_TfGVD0dcL2vsnPCihybxorC7'
         }
       });
