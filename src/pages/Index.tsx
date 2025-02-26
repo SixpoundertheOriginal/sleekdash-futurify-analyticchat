@@ -5,6 +5,50 @@ import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { AppStoreAnalysis } from "@/components/AppStoreAnalysis";
 import { KeywordsSection } from "@/components/KeywordsSection";
 import { BarChart } from "lucide-react";
+import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+
+const initialData: ProcessedAnalytics = {
+  summary: {
+    title: "",
+    dateRange: "",
+    executiveSummary: ""
+  },
+  acquisition: {
+    impressions: { value: 0, change: 0 },
+    pageViews: { value: 0, change: 0 },
+    conversionRate: { value: 0, change: 0 },
+    downloads: { value: 0, change: 0 },
+    funnelMetrics: {
+      impressionsToViews: 0,
+      viewsToDownloads: 0
+    }
+  },
+  financial: {
+    proceeds: { value: 0, change: 0 },
+    proceedsPerUser: { value: 0, change: 0 },
+    derivedMetrics: {
+      arpd: 0,
+      revenuePerImpression: 0,
+      monetizationEfficiency: 0,
+      payingUserPercentage: 0
+    }
+  },
+  engagement: {
+    sessionsPerDevice: { value: 0, change: 0 },
+    retention: {
+      day1: { value: 0, benchmark: 0 },
+      day7: { value: 0, benchmark: 0 }
+    }
+  },
+  technical: {
+    crashes: { value: 0, change: 0 },
+    crashRate: { value: 0, percentile: "" }
+  },
+  geographical: {
+    markets: [],
+    devices: []
+  }
+};
 
 const Index = () => {
   return (
@@ -27,7 +71,7 @@ const Index = () => {
                 <BarChart className="h-5 w-5 text-primary" />
                 KPI Overview
               </h2>
-              <AnalyticsDashboard />
+              <AnalyticsDashboard data={initialData} />
             </div>
 
             <AppStoreAnalysis />

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCcw } from "lucide-react";
@@ -14,6 +15,7 @@ import { ComparativeAnalysis } from "./analytics/ComparativeAnalysis";
 import { ImpressionAnalytics } from "./analytics/ImpressionAnalytics";
 import { ProceedsAnalysis } from "./analytics/ProceedsAnalysis";
 import { EngagementMetrics } from "./analytics/EngagementMetrics";
+import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 
 interface AnalyticsDashboardProps {
   data: ProcessedAnalytics;
