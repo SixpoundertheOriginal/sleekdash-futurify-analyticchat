@@ -98,8 +98,8 @@ export const processAnalysisText = (text: string): ProcessedAnalytics => {
 
     // Helper function to extract numbers and percentages
     const extractNumberAndChange = (text: string): { value: number; change: number } => {
-      const numberMatch = text.match(/([\d,]+(?:\.\d+)?)/);
-      const changeMatch = text.match(/([+-]\d+(?:\.\d+)?%)/);
+      const numberMatch = text.match(/(\d+(?:,\d{3})*(?:\.\d+)?)/);
+      const changeMatch = text.match(/\(([+-]\d+(?:\.\d+)?)\%\)/);
       
       return {
         value: numberMatch ? parseFloat(numberMatch[1].replace(/,/g, "")) : 0,
@@ -118,21 +118,132 @@ export const processAnalysisText = (text: string): ProcessedAnalytics => {
     if (summaryMatch) result.summary.executiveSummary = summaryMatch[1].trim();
 
     // Extract acquisition metrics
-    const impressionsMatch = text.match(/Impressions.*?(\d+,?\d*)\s*\(([-+]\d+%)\)/);
-    if (impressionsMatch) {
-      result.acquisition.impressions = extractNumberAndChange(impressionsMatch[0]);
+    const acquisitionMetrics = text.match(/User Acquisition Metrics(.*?)(?=###)/s);
+    if (acquisitionMetrics) {
+      const metrics = acquisitionMetrics[1];
+      
+      // Extract impressions
+      const impressionsMatch = metrics.match(/Impressions:\s*([\d,]+)\s*\(([+-]\d+)%\)/);
+      if (impressionsMatch) {
+        result.acquisition.impressions = {
+          value: parseInt(impressionsMatch[1].replace(/,/g, '')),
+          change: parseInt(impressionsMatch[2])
+        };
+      }
+
+      // Extract page views
+      const pageViewsMatch = metrics.match(/Product Page Views:\s*([\d,]+)\s*\(([+-]\d+)%\)/);
+      if (pageViewsMatch) {
+        result.acquisition.pageViews = {
+          value: parseInt(pageViewsMatch[1].replace(/,/g, '')),
+          change: parseInt(pageViewsMatch[2])
+        };
+      }
+
+      // Extract conversion rate
+      const conversionMatch = metrics.match(/Conversion Rate:\s*([\d.]+)%\s*\(([+-]\d+)%\)/);
+      if (conversionMatch) {
+        result.acquisition.conversionRate = {
+          value: parseFloat(conversionMatch[1]),
+          change: parseInt(conversionMatch[2])
+        };
+      }
+
+      // Extract downloads
+      const downloadsMatch = metrics.match(/Total Downloads:\s*([\d,]+)\s*\(([+-]\d+)%\)/);
+      if (downloadsMatch) {
+        result.acquisition.downloads = {
+          value: parseInt(downloadsMatch[1].replace(/,/g, '')),
+          change: parseInt(downloadsMatch[2])
+        };
+      }
     }
 
-    // Extract page views
-    const pageViewsMatch = text.match(/Product Page Views.*?(\d+,?\d*)\s*\(([-+]\d+%)\)/);
-    if (pageViewsMatch) {
-      result.acquisition.pageViews = extractNumberAndChange(pageViewsMatch[0]);
+    // Extract financial metrics
+    const financialSection = text.match(/Financial Performance(.*?)(?=###)/s);
+    if (financialSection) {
+      const metrics = financialSection[1];
+
+      // Extract proceeds
+      const proceedsMatch = metrics.match(/Proceeds:\s*\$?([\d,]+)\s*\(([+-]\d+)%\)/);
+      if (proceedsMatch) {
+        result.financial.proceeds = {
+          value: parseInt(proceedsMatch[1].replace(/,/g, '')),
+          change: parseInt(proceedsMatch[2])
+        };
+      }
+
+      // Extract proceeds per user
+      const proceedsPerUserMatch = metrics.match(/Proceeds per Paying User:\s*\$?([\d.]+)\s*\(([+-]\d+(?:\.\d+)?)%\)/);
+      if (proceedsPerUserMatch) {
+        result.financial.proceedsPerUser = {
+          value: parseFloat(proceedsPerUserMatch[1]),
+          change: parseFloat(proceedsPerUserMatch[2])
+        };
+      }
+
+      // Extract derived metrics
+      const arpdMatch = metrics.match(/ARPD.*?(\d+\.?\d*)/);
+      if (arpdMatch) {
+        result.financial.derivedMetrics.arpd = parseFloat(arpdMatch[1]);
+      }
     }
 
-    // Extract funnel metrics
-    const funnelMatch = text.match(/Impressions to Product Page Views Rate.*?(\d+\.?\d*)%/);
-    if (funnelMatch) {
-      result.acquisition.funnelMetrics.impressionsToViews = parseFloat(funnelMatch[1]);
+    // Extract engagement metrics
+    const engagementSection = text.match(/User Engagement & Retention(.*?)(?=###)/s);
+    if (engagementSection) {
+      const metrics = engagementSection[1];
+
+      // Extract sessions per device
+      const sessionsMatch = metrics.match(/Sessions per Active Device:\s*([\d.]+)\s*\(([+-]\d+)%\)/);
+      if (sessionsMatch) {
+        result.engagement.sessionsPerDevice = {
+          value: parseFloat(sessionsMatch[1]),
+          change: parseInt(sessionsMatch[2])
+        };
+      }
+
+      // Extract retention metrics
+      const day1Match = metrics.match(/Day 1 Retention.*?(\d+(?:\.\d+)?)\%.*?(\d+(?:\.\d+)?)\%/);
+      if (day1Match) {
+        result.engagement.retention.day1 = {
+          value: parseFloat(day1Match[1]),
+          benchmark: parseFloat(day1Match[2])
+        };
+      }
+
+      const day7Match = metrics.match(/Day 7 Retention.*?(\d+(?:\.\d+)?)\%.*?(\d+(?:\.\d+)?)\%/);
+      if (day7Match) {
+        result.engagement.retention.day7 = {
+          value: parseFloat(day7Match[1]),
+          benchmark: parseFloat(day7Match[2])
+        };
+      }
+    }
+
+    // Extract technical metrics
+    const technicalSection = text.match(/Technical Performance(.*?)(?=###)/s);
+    if (technicalSection) {
+      const metrics = technicalSection[1];
+
+      // Extract crash count
+      const crashMatch = metrics.match(/Crash Count:\s*(\d+)\s*\(([+-]\d+)%\)/);
+      if (crashMatch) {
+        result.technical.crashes = {
+          value: parseInt(crashMatch[1]),
+          change: parseInt(crashMatch[2])
+        };
+      }
+
+      // Extract crash rate
+      const crashRateMatch = metrics.match(/Crash Rate:\s*([\d.]+)%/);
+      const percentileMatch = metrics.match(/(\d+)(?:th|st|nd|rd) percentile/);
+      if (crashRateMatch) {
+        result.technical.crashRate = {
+          value: parseFloat(crashRateMatch[1]),
+          percentile: percentileMatch ? percentileMatch[1] : '50th'
+        };
+      }
     }
 
     // Extract geographical data

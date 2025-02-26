@@ -15,13 +15,15 @@ import { ImpressionAnalytics } from "./analytics/ImpressionAnalytics";
 import { ProceedsAnalysis } from "./analytics/ProceedsAnalysis";
 import { EngagementMetrics } from "./analytics/EngagementMetrics";
 
-export function AnalyticsDashboard() {
+interface AnalyticsDashboardProps {
+  data: ProcessedAnalytics;
+}
+
+export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
   const [timeRange, setTimeRange] = useState("30days");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   
-  const { data, error, isProcessing } = useAnalysisData(null);
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -39,22 +41,6 @@ export function AnalyticsDashboard() {
       setIsRefreshing(false);
     }
   };
-
-  if (error) {
-    return (
-      <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-lg">
-        <p className="text-red-500">Error loading dashboard data: {error}</p>
-      </div>
-    );
-  }
-
-  if (isProcessing || !data) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCcw className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

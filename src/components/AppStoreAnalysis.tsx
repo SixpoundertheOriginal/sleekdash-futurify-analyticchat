@@ -121,7 +121,7 @@ export function AppStoreAnalysis() {
       </Card>
 
       {processedData && (
-        <AnalyticsDashboard />
+        <AnalyticsDashboard data={processedData} />
       )}
 
       {processingError && (
