@@ -2,6 +2,7 @@
 import { Bot, User } from "lucide-react";
 import { Message } from "@/types/chat";
 import ReactMarkdown from 'react-markdown';
+import { Card } from "@/components/ui/card";
 
 interface ChatMessageProps {
   message: Message;
@@ -9,6 +10,7 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const renderMessageContent = (content: string) => {
+    // Handle tabular data if present
     if (content.includes('|')) {
       const lines = content.split('\n');
       return (
@@ -42,51 +44,56 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
       );
     }
-    
-    // Format the content to handle special markdown characters
+
+    // Format the content to handle markdown formatting
     const enhancedContent = content
+      .replace(/^### (.*)/gm, '## $1')  // Enhance h3 headers
+      .replace(/^#### (.*)/gm, '### $1') // Enhance h4 headers
       .replace(/\*\*(.*?)\*\*/g, '**$1**')  // Keep bold text
-      .replace(/^\s*#{4}\s+/gm, '#### ')    // Level 4 headings
-      .replace(/^\s*#{3}\s+/gm, '### ')     // Level 3 headings
-      .replace(/^\s*#{2}\s+/gm, '## ')      // Level 2 headings
-      .replace(/^\s*#{1}\s+/gm, '# ')       // Level 1 headings
+      .replace(/^- /gm, '• ')  // Convert basic lists to bullet points
+      .replace(/([+\-]?\d+\.?\d*%)/g, '**$1**') // Bold percentages
+      .replace(/\$\d+\.?\d*/g, (match) => `**${match}**`) // Bold monetary values
       .replace(/increase/gi, '📈 increase')
       .replace(/decrease/gi, '📉 decrease')
       .replace(/improved/gi, '✨ improved')
-      .replace(/KPI/gi, '🎯 KPI')
+      .replace(/downloads/gi, '⬇️ downloads')
       .replace(/revenue/gi, '💰 revenue')
       .replace(/users/gi, '👥 users')
       .replace(/growth/gi, '📊 growth');
 
     return (
-      <div className="prose prose-invert max-w-none 
-        prose-headings:text-primary prose-headings:font-semibold 
-        prose-h1:text-2xl prose-h1:mt-6 prose-h1:mb-4
-        prose-h2:text-xl prose-h2:mt-5 prose-h2:mb-3
-        prose-h3:text-lg prose-h3:mt-4 prose-h3:mb-2
-        prose-h4:text-base prose-h4:mt-3 prose-h4:mb-2
-        prose-p:my-2
-        prose-ul:list-disc prose-ul:pl-6
-        prose-li:my-1"
-      >
-        <ReactMarkdown
-          components={{
-            h1: ({ children }) => <h1 className="text-2xl font-bold">{children}</h1>,
-            h2: ({ children }) => <h2 className="text-xl font-semibold">{children}</h2>,
-            h3: ({ children }) => <h3 className="text-lg font-medium">{children}</h3>,
-            h4: ({ children }) => <h4 className="text-base font-medium">{children}</h4>,
-            li: ({ children }) => (
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>{children}</span>
-              </li>
-            ),
-            p: ({ children }) => <p className="text-white/90">{children}</p>,
-          }}
+      <Card className="bg-white/5 border-white/10 p-4">
+        <div className="prose prose-invert max-w-none 
+          prose-headings:text-primary prose-headings:font-semibold 
+          prose-h2:text-2xl prose-h2:mt-6 prose-h2:mb-4
+          prose-h3:text-xl prose-h3:mt-5 prose-h3:mb-3
+          prose-h4:text-lg prose-h4:mt-4 prose-h4:mb-2
+          prose-p:my-2
+          prose-ul:list-disc prose-ul:pl-6 prose-ul:my-4
+          prose-li:my-1
+          prose-strong:text-primary prose-strong:font-semibold"
         >
-          {enhancedContent}
-        </ReactMarkdown>
-      </div>
+          <ReactMarkdown
+            components={{
+              h1: ({ children }) => <h1 className="text-3xl font-bold mb-4">{children}</h1>,
+              h2: ({ children }) => <h2 className="text-2xl font-semibold mb-3 text-primary">{children}</h2>,
+              h3: ({ children }) => <h3 className="text-xl font-medium mb-2 text-primary/90">{children}</h3>,
+              h4: ({ children }) => <h4 className="text-lg font-medium mb-2 text-primary/80">{children}</h4>,
+              p: ({ children }) => <p className="text-white/90 mb-2">{children}</p>,
+              strong: ({ children }) => <strong className="text-primary font-semibold">{children}</strong>,
+              li: ({ children }) => (
+                <li className="flex items-start gap-2 text-white/90">
+                  <span className="text-primary">•</span>
+                  <span>{children}</span>
+                </li>
+              ),
+              ul: ({ children }) => <ul className="space-y-2 my-2">{children}</ul>,
+            }}
+          >
+            {enhancedContent}
+          </ReactMarkdown>
+        </div>
+      </Card>
     );
   };
 
@@ -103,11 +110,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           <User className="h-4 w-4 text-accent" />
         )}
       </div>
-      <div className={`flex-1 rounded-lg p-4 ${
-        message.role === 'assistant' 
-          ? 'bg-white/10 text-white/90' 
-          : 'bg-accent/10 text-accent'
-      }`}>
+      <div className="flex-1">
         {renderMessageContent(message.content)}
       </div>
     </div>
