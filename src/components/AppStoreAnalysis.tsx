@@ -44,27 +44,10 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         }
       });
 
-      console.log('Edge function raw response:', data);
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Analysis failed');
+      if (!data.analysis) throw new Error('No analysis results found');
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (!data) {
-        throw new Error('No response received from the analysis function');
-      }
-
-      if (!data.success) {
-        console.error('Analysis failed:', data.error);
-        throw new Error(data.error || 'Analysis failed');
-      }
-
-      if (!data.analysis) {
-        throw new Error('No analysis results found in the response');
-      }
-
-      console.log('Raw analysis text:', data.analysis);
       setAnalysisResult(data.analysis);
       setAppDescription("");
       toast({
@@ -85,11 +68,9 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
     }
   };
 
-  console.log('Current processed data:', processedData);
-
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-white/5 border-white/10">
+      <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm">
         <div className="flex items-center gap-2 mb-4">
           <BarChart className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold text-white">AI-Powered App Store Analysis</h2>
@@ -102,7 +83,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
               id="analysis-input"
               value={appDescription}
               onChange={(e) => setAppDescription(e.target.value)}
-              className="bg-white/5 border-white/10 text-white min-h-[120px]"
+              className="bg-white/5 border-white/10 text-white min-h-[120px] focus:ring-primary/30 transition-all duration-200"
               placeholder="Paste your app store data here to analyze performance metrics, user behavior, and market trends..."
               disabled={analyzing}
             />
@@ -111,7 +92,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
           <Button 
             onClick={handleAnalysis}
             disabled={analyzing || !appDescription.trim()}
-            className="w-full md:w-auto"
+            className="w-full md:w-auto bg-primary hover:bg-primary/90 transition-colors duration-200"
           >
             {analyzing ? (
               <>
@@ -127,7 +108,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
 
       <div className="relative">
         {isProcessing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg z-10">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-lg z-10">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
@@ -135,13 +116,13 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
       </div>
 
       {processingError && (
-        <Card className="p-4 bg-red-500/10 border-red-500/20">
-          <p className="text-red-500">Error processing analysis data: {processingError}</p>
+        <Card className="p-4 bg-rose-500/10 border-rose-500/20">
+          <p className="text-rose-500">Error processing analysis data: {processingError}</p>
         </Card>
       )}
 
       {analysisResult && (
-        <Card className="p-4 mt-4 bg-white/5 border-white/10">
+        <Card className="p-4 mt-4 bg-white/5 border-white/10 backdrop-blur-sm">
           <h3 className="text-white font-semibold mb-3">Analysis Report</h3>
           <div className="prose prose-invert max-w-none">
             <div className="text-white/90 whitespace-pre-wrap">{analysisResult}</div>

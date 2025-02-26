@@ -39,7 +39,10 @@ export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       {metrics.map((metric, index) => (
-        <Card key={index} className="p-6 bg-white/5 border-white/10">
+        <Card 
+          key={index} 
+          className="p-6 bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-200 backdrop-blur-sm"
+        >
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm text-white/60">{metric.title}</p>
@@ -48,15 +51,21 @@ export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
               </h3>
             </div>
             <div className={`flex items-center gap-1 ${
-              metric.change > 0 ? 'text-green-400' : 'text-red-400'
+              metric.change > 0 ? 'text-emerald-400' : 'text-rose-400'
             }`}>
               {metric.change > 0 ? (
                 <TrendingUp className="h-4 w-4" />
               ) : (
                 <TrendingDown className="h-4 w-4" />
               )}
-              <span className="text-sm">{Math.abs(metric.change)}%</span>
+              <span className="text-sm font-medium">{Math.abs(metric.change)}%</span>
             </div>
+          </div>
+          <div className="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${metric.change > 0 ? 'bg-emerald-400' : 'bg-rose-400'}`}
+              style={{ width: `${Math.min(Math.abs(metric.change), 100)}%` }}
+            />
           </div>
         </Card>
       ))}
