@@ -15,7 +15,7 @@ export function AppStoreAnalysis() {
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [appDescription, setAppDescription] = useState("");
   const { toast } = useToast();
-  const { data: processedData, error: processingError } = useAnalysisData(analysisResult);
+  const { data: processedData, error: processingError, isProcessing } = useAnalysisData(analysisResult);
 
   const handleAnalysis = async () => {
     if (!appDescription.trim()) {
@@ -29,7 +29,6 @@ export function AppStoreAnalysis() {
 
     try {
       setAnalyzing(true);
-      setAnalysisResult(null);
 
       const { data, error } = await supabase.functions.invoke('analyze-app-store', {
         body: { 
@@ -39,21 +38,10 @@ export function AppStoreAnalysis() {
         }
       });
 
-      if (error) {
-        throw error;
-      }
-
-      if (!data) {
-        throw new Error('No response received from the analysis function');
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Analysis failed');
-      }
-
-      if (!data.analysis) {
-        throw new Error('No analysis results found in the response');
-      }
+      if (error) throw error;
+      if (!data) throw new Error('No response received from the analysis function');
+      if (!data.success) throw new Error(data.error || 'Analysis failed');
+      if (!data.analysis) throw new Error('No analysis results found in the response');
 
       setAnalysisResult(data.analysis);
       setAppDescription("");
@@ -108,25 +96,29 @@ export function AppStoreAnalysis() {
               'Analyze Your Data'
             )}
           </Button>
-
-          {analysisResult && (
-            <Card className="p-4 mt-4 bg-white/5 border-white/10">
-              <h3 className="text-white font-semibold mb-3">Analysis Report</h3>
-              <div className="prose prose-invert max-w-none">
-                <div className="text-white/90 whitespace-pre-wrap">{analysisResult}</div>
-              </div>
-            </Card>
-          )}
         </div>
       </Card>
 
-      {processedData && (
+      {isProcessing ? (
+        <div className="flex items-center justify-center p-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : processedData ? (
         <AnalyticsDashboard data={processedData} />
-      )}
+      ) : null}
 
       {processingError && (
         <Card className="p-4 bg-red-500/10 border-red-500/20">
           <p className="text-red-500">Error processing analysis data: {processingError}</p>
+        </Card>
+      )}
+
+      {analysisResult && (
+        <Card className="p-4 mt-4 bg-white/5 border-white/10">
+          <h3 className="text-white font-semibold mb-3">Analysis Report</h3>
+          <div className="prose prose-invert max-w-none">
+            <div className="text-white/90 whitespace-pre-wrap">{analysisResult}</div>
+          </div>
         </Card>
       )}
     </div>
