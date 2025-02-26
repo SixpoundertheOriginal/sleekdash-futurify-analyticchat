@@ -43,10 +43,25 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         }
       });
 
-      if (error) throw error;
-      if (!data) throw new Error('No response received from the analysis function');
-      if (!data.success) throw new Error(data.error || 'Analysis failed');
-      if (!data.analysis) throw new Error('No analysis results found in the response');
+      console.log('Edge function response:', data);
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('No response received from the analysis function');
+      }
+
+      if (!data.success) {
+        console.error('Analysis failed:', data.error);
+        throw new Error(data.error || 'Analysis failed');
+      }
+
+      if (!data.analysis) {
+        throw new Error('No analysis results found in the response');
+      }
 
       console.log('Analysis response:', data.analysis);
       setAnalysisResult(data.analysis);
@@ -60,7 +75,9 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
       toast({
         variant: "destructive",
         title: "Analysis Error",
-        description: error instanceof Error ? error.message : "Failed to analyze app store data."
+        description: error instanceof Error 
+          ? `Failed to analyze: ${error.message}`
+          : "Failed to analyze app store data."
       });
     } finally {
       setAnalyzing(false);
