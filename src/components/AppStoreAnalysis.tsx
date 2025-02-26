@@ -9,8 +9,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAnalysisData } from "@/hooks/useAnalysisData";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
+import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 
-export function AppStoreAnalysis() {
+interface AppStoreAnalysisProps {
+  initialData: ProcessedAnalytics;
+}
+
+export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [appDescription, setAppDescription] = useState("");
@@ -99,13 +104,14 @@ export function AppStoreAnalysis() {
         </div>
       </Card>
 
-      {isProcessing ? (
-        <div className="flex items-center justify-center p-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : processedData ? (
-        <AnalyticsDashboard data={processedData} />
-      ) : null}
+      <div className="relative">
+        {isProcessing && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg z-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+        <AnalyticsDashboard data={processedData || initialData} />
+      </div>
 
       {processingError && (
         <Card className="p-4 bg-red-500/10 border-red-500/20">
