@@ -25,7 +25,6 @@ serve(async (req) => {
       throw new Error('App description is required');
     }
 
-    // Add message to thread
     console.log('Adding message to thread:', threadId);
     const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: 'POST',
@@ -36,14 +35,14 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         role: 'user',
-        content: `Please analyze this app store data and generate a comprehensive performance report following this exact structure:
+        content: `Analyze this app store data and generate a comprehensive performance report following this exact structure:
 
 Monthly Performance Report: [App Name]
 Date Range: [Date Range]
 
 Executive Summary
-- Summarize key trends and performance highlights
-- Focus on growth areas and major concerns
+- Provide an overarching summary of key trends and performance highlights
+- Emphasize areas of strong growth, notable successes, and critical concerns
 
 User Acquisition Metrics
 - Impressions: [Value] ([Change %])
@@ -52,57 +51,82 @@ User Acquisition Metrics
 - Total Downloads: [Value] ([Change %])
 
 Conversion Funnel Analysis
-- Impressions to Product Page Views Conversion Rate: [Calculated Value]%
-- Product Page Views to Downloads Conversion Rate: [Calculated Value]%
+1. Calculate and report:
+   - Impressions to Product Page Views Rate = (Product Page Views / Impressions × 100)%
+   - Product Page Views to Downloads Rate = (Total Downloads / Product Page Views × 100)%
+2. Identify significant funnel drop-off points
 
 Financial Performance
-- Proceeds: $[Value] ([Change %])
-- Proceeds per Paying User: $[Value] ([Change %])
-- Average Revenue Per Download (ARPD): $[Calculated Value]
-- Download to Proceed Conversion Rate: [Calculated Value]%
+1. Core Metrics:
+   - Proceeds: $[Value] ([Change %])
+   - Proceeds per Paying User: $[Value] ([Change %])
+2. Calculated Revenue Metrics:
+   - ARPD = Proceeds / Total Downloads
+   - Revenue per Impression = Proceeds / Impressions
+   - Monetization Efficiency = Proceeds / Product Page Views
+   - Paying User % = ((Proceeds / Proceeds per Paying User) / Total Downloads × 100)%
 
 User Engagement & Retention
-- Sessions per Active Device: [Value] ([Change %])
-- Retention Rates:
-  • Day 1: [Value]% (Benchmark Comparison)
-  • Day 7: [Value]% (Benchmark Comparison)
-  • Day 14: [Value]% (Benchmark Comparison)
-  • Day 21: [Value]% (Benchmark Comparison)
-  • Day 28: [Value]% (Benchmark Comparison)
+1. Activity Metrics:
+   - Sessions per Active Device: [Value] ([Change %])
+2. Retention Analysis:
+   - Day 1: [Value]% vs Industry Benchmark
+   - Day 7: [Value]% vs Industry Benchmark
+   - Day 14: [Value]% vs Industry Benchmark
+   - Day 21: [Value]% vs Industry Benchmark
+   - Day 28: [Value]% vs Industry Benchmark
+3. Revenue-Retention Correlation Analysis:
+   - Identify patterns between retention spikes and revenue
 
 Technical Performance
-- Crash Count: [Value] ([Change %])
-- Crash Rate: [Calculated Value]% with percentile comparison
-- Include specific actions needed for technical improvements
+1. Core Metrics:
+   - Crash Count: [Value] ([Change %])
+   - Crash Rate vs Industry Percentile
+2. Impact Analysis:
+   - Estimated Revenue Loss from Crashes
+   - Crash-to-Churn Correlation
+   - Technical Improvement Priorities
 
 Geographical & Device Performance
-- Downloads by Country:
-  List top countries with percentage and value of total downloads
-- Market Penetration Analysis:
-  Market Share in Key Regions: [Calculated Value]% for top regions
-- Downloads by Device Type:
-  Detail device type contributions with optimization recommendations
+1. Market Analysis:
+   - Top 3-5 Markets: Downloads (%) and Count
+   - Revenue/Download Ratio by Country
+2. Device Distribution:
+   - Device-specific Downloads
+   - Device-specific Revenue
+   - Optimization Recommendations
 
-Conclusion & Next Steps
+Conclusion & Strategic Analysis
 1. Key Takeaways:
-   - Major insights
-   - Growth opportunities
-   - Areas of improvement
-
+   - Critical Insights
+   - Growth Opportunities
+   - Risk Areas
 2. Action Items:
-   - Specific, actionable recommendations
-   - Retention strategy improvements
-   - Product page optimization suggestions
-
-3. Strategic Considerations:
-   - Long-term growth opportunities
-   - Market expansion possibilities
-   - Product development recommendations
+   - Technical Improvements
+   - Marketing Optimizations
+   - User Experience Enhancements
+3. Strategic Planning:
+   - Market Expansion Opportunities
+   - Platform Strategy
+   - Revenue Optimization Paths
 
 Deep Insights (Derived KPIs)
-- Funnel Conversion Analysis
-- Revenue Maximization Opportunities
-- Long-term Retention Strategies
+1. Financial Efficiency:
+   - Revenue/Impression
+   - Revenue/Page View
+   - Device Revenue Efficiency
+2. Conversion Analysis:
+   - Funnel Drop-off Points
+   - Stage-by-Stage Effectiveness
+3. User Quality Metrics:
+   - Session Value
+   - Retention-Revenue Impact
+4. Geographic Analysis:
+   - Country-specific ARPU
+   - Market Expansion ROI
+5. Growth Indicators:
+   - Growth-Retention Balance
+   - Platform-specific Performance
 
 App Store Data for Analysis:
 ${appDescription}`
@@ -115,7 +139,6 @@ ${appDescription}`
       throw new Error(`Failed to submit app description: ${error}`);
     }
 
-    // Run the assistant
     console.log('Starting analysis with assistant:', assistantId);
     const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
       method: 'POST',
@@ -126,16 +149,32 @@ ${appDescription}`
       },
       body: JSON.stringify({
         assistant_id: assistantId,
-        instructions: `You are an expert App Store Analytics Specialist. Generate a detailed performance report following the exact structure provided in the user's message. Always include:
+        instructions: `You are an expert App Store Analytics Specialist. Generate a detailed performance report following the exact structure provided, with these key requirements:
 
-1. Actual numbers and percentages where data is available
-2. Clear comparisons with previous periods
-3. Actionable insights based on the data
-4. Strategic recommendations for improvement
-5. Calculated KPIs and derived metrics
-6. Benchmark comparisons where relevant
+1. Mathematical Precision:
+   - Use the exact formulas provided for all calculations
+   - Show percentage changes with proper signs (+ or -)
+   - Round monetary values to 2 decimal places
+   - Round percentages to 1 decimal place
 
-Format the report clearly with proper spacing and sections for readability.`
+2. Data Analysis:
+   - Compare all metrics to previous periods
+   - Highlight statistically significant changes
+   - Identify correlations between metrics
+   - Calculate and explain derived KPIs
+
+3. Industry Context:
+   - Compare metrics to industry benchmarks
+   - Identify competitive advantages/disadvantages
+   - Suggest market positioning strategies
+
+4. Actionable Insights:
+   - Provide specific, data-driven recommendations
+   - Prioritize suggestions by potential impact
+   - Include implementation considerations
+
+Format the report with clear sections, bullet points, and proper spacing for readability.
+Use consistent numerical formatting throughout the report.`
       }),
     });
 
@@ -148,7 +187,6 @@ Format the report clearly with proper spacing and sections for readability.`
     const run = await runResponse.json();
     console.log('Started run:', run.id);
 
-    // Poll for completion
     let runStatus;
     let attempts = 0;
     const maxAttempts = 60;
@@ -184,7 +222,6 @@ Format the report clearly with proper spacing and sections for readability.`
       throw new Error(`Analysis failed with status: ${runStatus.status}`);
     }
 
-    // Get messages
     console.log('Retrieving analysis results');
     const messagesResponse = await fetch(
       `https://api.openai.com/v1/threads/${threadId}/messages`,
