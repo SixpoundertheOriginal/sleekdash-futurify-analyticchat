@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { KeywordMetric, ProcessedKeywordData } from '@/components/keywords/types';
 import { useToast } from '@/components/ui/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 // Type definitions for raw data and analysis
 interface RawKeywordAnalysis {
@@ -22,17 +23,20 @@ interface RawKeywordAnalysis {
 }
 
 // Process raw data into the format needed for visualizations
-const processKeywordData = (rawData: RawKeywordAnalysis | null): KeywordMetric[] => {
+const processKeywordData = (rawData: any | null): KeywordMetric[] => {
   if (!rawData?.prioritized_keywords) return [];
   
-  return rawData.prioritized_keywords.map((keyword) => ({
-    keyword: keyword.keyword,
-    volume: keyword.volume || 0,
-    difficulty: keyword.difficulty || 0,
-    kei: keyword.kei || 0,
-    relevancy: keyword.relevancy || 0,
-    chance: keyword.chance || 0,
-    growth: keyword.growth || 0
+  const keywords = rawData.prioritized_keywords;
+  if (!Array.isArray(keywords)) return [];
+  
+  return keywords.map((keyword: any) => ({
+    keyword: keyword.keyword || '',
+    volume: Number(keyword.volume) || 0,
+    difficulty: Number(keyword.difficulty) || 0,
+    kei: Number(keyword.kei) || 0,
+    relevancy: Number(keyword.relevancy) || 0,
+    chance: Number(keyword.chance) || 0,
+    growth: Number(keyword.growth) || 0
   }));
 };
 
@@ -58,7 +62,9 @@ export function useKeywordAnalytics() {
       throw error;
     }
 
-    return data as RawKeywordAnalysis;
+    // Type assertion to handle the Json type from Supabase
+    const rawData = data as unknown as RawKeywordAnalysis;
+    return rawData;
   }, []);
 
   // Set up real-time subscription
@@ -96,12 +102,14 @@ export function useKeywordAnalytics() {
     queryKey: ['keywordAnalysis'],
     queryFn: fetchKeywordData,
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    onError: (err: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Error fetching keyword data",
-        description: err.message || "Please try refreshing the page."
-      });
+    meta: {
+      onError: (err: Error) => {
+        toast({
+          variant: "destructive",
+          title: "Error fetching keyword data",
+          description: err.message || "Please try refreshing the page."
+        });
+      }
     }
   });
 
