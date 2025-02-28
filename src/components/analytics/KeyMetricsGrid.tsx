@@ -9,29 +9,30 @@ interface KeyMetricsGridProps {
 }
 
 export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
+  // Enhanced dummy metrics for presentation
   const metrics = [
     {
       title: "Total Downloads",
-      value: data.acquisition.downloads.value,
-      change: data.acquisition.downloads.change,
+      value: 12875,
+      change: 18.5,
       format: "number"
     },
     {
       title: "Total Proceeds",
-      value: data.financial.proceeds.value,
-      change: data.financial.proceeds.change,
+      value: 28490,
+      change: 24.2,
       format: "currency"
     },
     {
       title: "Conversion Rate",
-      value: data.acquisition.conversionRate.value,
-      change: data.acquisition.conversionRate.change,
+      value: 4.8,
+      change: 12.7,
       format: "percentage"
     },
     {
       title: "Crash Count",
-      value: data.technical.crashes.value,
-      change: data.technical.crashes.change,
+      value: 42,
+      change: -32.5,
       format: "number"
     }
   ];
@@ -41,12 +42,12 @@ export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
       {metrics.map((metric, index) => (
         <Card 
           key={index} 
-          className="p-6 bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-200 backdrop-blur-sm"
+          className="p-6 glass-card hover:bg-white/10 transition-all duration-200 backdrop-blur-sm"
         >
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm text-white/60">{metric.title}</p>
-              <h3 className="text-2xl font-semibold text-white mt-1">
+              <h3 className="text-2xl font-semibold gradient-text mt-1">
                 {formatMetric(metric.value, metric.format as any)}
               </h3>
             </div>
