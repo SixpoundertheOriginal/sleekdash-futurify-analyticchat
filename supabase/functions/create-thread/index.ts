@@ -28,22 +28,35 @@ serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1',
+        'OpenAI-Beta': 'assistants=v2',
       },
       body: JSON.stringify({}),
     });
 
     if (!threadResponse.ok) {
-      const errorText = await threadResponse.text();
-      console.error('Thread creation error:', errorText);
-      throw new Error('Failed to create thread');
+      const errorData = await threadResponse.json();
+      console.error('Thread creation error:', errorData);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Failed to create thread: ${errorData.error?.message || 'Unknown error'}`,
+          details: errorData
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     const thread = await threadResponse.json();
     console.log('Thread created successfully:', thread.id);
 
     return new Response(
-      JSON.stringify({ threadId: thread.id }),
+      JSON.stringify({ 
+        success: true,
+        threadId: thread.id
+      }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -51,10 +64,15 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in create-thread function:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: `Thread creation error: ${error.message}`,
+        details: error
+      }),
       { 
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
