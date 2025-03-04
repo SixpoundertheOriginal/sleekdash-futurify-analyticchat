@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const ASSISTANT_ID = 'asst_TfGVD0dcL2vsnPCihybxorC7';
+const ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj'; // Make sure this matches the one in useChat.ts
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

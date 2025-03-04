@@ -12,18 +12,16 @@ export const useChat = () => {
     content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
   }]);
   const [isLoading, setIsLoading] = useState(false);
-  // Using the specific thread ID provided
-  const [threadId, setThreadId] = useState<string>("thread_2saO94Wc9LZobi27LwrKoqEw");
+  // Using the updated specific thread ID provided
+  const [threadId, setThreadId] = useState<string>("thread_wbaTz1aTmZhcT9bZqpHpTAQj");
   const assistantId = 'asst_EYm70EgIE2okxc8onNc1DVTj';
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Load thread ID on component mount - no longer creates new threads
+  // Load thread ID on component mount - using the fixed thread ID
   useEffect(() => {
     console.log(`Using fixed thread ID: ${threadId}`);
   }, [threadId]);
-
-  // Removed createNewThread function since we're using a fixed thread ID
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
