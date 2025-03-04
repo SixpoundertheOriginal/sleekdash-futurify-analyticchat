@@ -1,6 +1,7 @@
 
-import { processFileData, validateHeaders } from './utils.ts';
-import { corsHeaders, createResponse, handleError } from './utils.ts';
+import { detectDelimiter, processFileData } from './file-parsing.ts';
+import { validateFileContent, validateHeaders } from './file-validation.ts';
+import { corsHeaders, createResponse } from './utils.ts';
 
 export async function processKeywordFile(fileContent: string) {
   console.log('[process-keywords] Starting file processing');
@@ -14,8 +15,7 @@ export async function processKeywordFile(fileContent: string) {
 
   // Split the content into lines and process
   const lines = fileContent.split('\n');
-  if (lines.length < 2) {
-    console.error('[process-keywords] File is empty or has no data rows');
+  if (!validateFileContent(lines)) {
     return createResponse({
       error: { message: 'File is empty or has no data rows' }
     }, 400);
@@ -23,10 +23,7 @@ export async function processKeywordFile(fileContent: string) {
 
   // Detect delimiter (comma or tab)
   const firstLine = lines[0];
-  let delimiter = ',';
-  if (firstLine.includes('\t')) {
-    delimiter = '\t';
-  }
+  const delimiter = detectDelimiter(firstLine);
   
   const { headers, data } = processFileData(lines, delimiter);
   
