@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Sparkles, AlertTriangle, RefreshCw, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useChat } from "@/hooks/useChat";
@@ -27,22 +26,59 @@ export function ChatInterface() {
   const [isCreatingThread, setIsCreatingThread] = useState(false);
   const [lastFileUpload, setLastFileUpload] = useState<Date | null>(null);
   const [isCheckingForResponses, setIsCheckingForResponses] = useState(false);
+  
+  // Use refs to prevent stale closures in the subscription and interval callbacks
+  const messagesRef = useRef(messages);
+  const pollingIntervalRef = useRef<number | null>(null);
+  const pollingTimeoutRef = useRef<number | null>(null);
+  const hasFoundResponseRef = useRef(false);
+  
+  // Update refs when messages change
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // Function to poll for new messages after file upload
   const checkForNewResponses = async () => {
-    if (!threadId) return;
+    if (!threadId || hasFoundResponseRef.current) return;
     
     try {
       setIsCheckingForResponses(true);
       console.log("[ChatInterface] Polling for new assistant responses...");
       await fetchThreadMessages();
+      
+      // Check if there are messages from the assistant after the file upload
+      const hasAssistantResponse = messagesRef.current.some(msg => 
+        msg.role === 'assistant' && 
+        msg.content.includes('analyzed your keywords')
+      );
+      
+      if (hasAssistantResponse) {
+        console.log("[ChatInterface] Found assistant response, stopping polling");
+        hasFoundResponseRef.current = true;
+        clearPollingTimers();
+      }
     } catch (error) {
       console.error("[ChatInterface] Error polling for messages:", error);
     } finally {
       setIsCheckingForResponses(false);
     }
   };
+  
+  // Helper to clear all polling timers
+  const clearPollingTimers = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+      pollingTimeoutRef.current = null;
+    }
+  };
 
+  // Set up real-time subscription for new file analyses
   useEffect(() => {
     if (!threadId) {
       console.warn('[ChatInterface] No thread ID available for subscription');
@@ -50,6 +86,7 @@ export function ChatInterface() {
     }
     
     console.log('[ChatInterface] Setting up real-time subscription for thread:', threadId);
+    hasFoundResponseRef.current = false;
     
     const channel = supabase
       .channel('chat_interface')
@@ -63,31 +100,14 @@ export function ChatInterface() {
         (payload) => {
           console.log('[ChatInterface] Received new analysis:', payload);
           
+          // Clear any existing polling timers
+          clearPollingTimers();
+          
           // Update the last file upload timestamp
           setLastFileUpload(new Date());
           
-          // Start polling for new messages
-          const pollInterval = setInterval(async () => {
-            await checkForNewResponses();
-            
-            // Check if there are messages from the assistant after the file upload
-            const hasAssistantResponse = messages.some(msg => 
-              msg.role === 'assistant' && 
-              msg.content.includes('analyzed your keywords')
-            );
-            
-            if (hasAssistantResponse) {
-              clearInterval(pollInterval);
-            }
-          }, 3000); // Poll every 3 seconds
-          
-          // Stop polling after 30 seconds to prevent endless polling
-          setTimeout(() => {
-            clearInterval(pollInterval);
-          }, 30000);
-          
           // Add an immediate message to let the user know file processing is happening
-          if (!messages.some(msg => msg.content.includes('processing your file'))) {
+          if (!messagesRef.current.some(msg => msg.content.includes('processing your file'))) {
             setMessages(prevMessages => [
               ...prevMessages,
               {
@@ -96,38 +116,33 @@ export function ChatInterface() {
               }
             ]);
           }
+          
+          // Start polling for new messages
+          hasFoundResponseRef.current = false;
+          
+          // Initial check right after file upload
+          checkForNewResponses();
+          
+          // Set up interval to check for new messages
+          pollingIntervalRef.current = window.setInterval(() => {
+            checkForNewResponses();
+          }, 5000); // Check every 5 seconds
+          
+          // Auto-stop polling after 30 seconds to prevent endless polling
+          pollingTimeoutRef.current = window.setTimeout(() => {
+            clearPollingTimers();
+            console.log('[ChatInterface] Polling timeout reached, stopping polling');
+          }, 30000);
         }
       )
       .subscribe();
 
     return () => {
       console.log('[ChatInterface] Cleanup: removing Supabase channel subscription');
+      clearPollingTimers();
       supabase.removeChannel(channel);
     };
-  }, [threadId, messages, setMessages]);
-
-  // Poll for new messages when file upload timestamp changes
-  useEffect(() => {
-    if (lastFileUpload) {
-      // Initial check right after file upload
-      checkForNewResponses();
-      
-      // Set up interval to check for new messages
-      const interval = setInterval(() => {
-        checkForNewResponses();
-      }, 5000); // Check every 5 seconds
-      
-      // Clear interval after 30 seconds
-      const timeout = setTimeout(() => {
-        clearInterval(interval);
-      }, 30000);
-      
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
-    }
-  }, [lastFileUpload]);
+  }, [threadId, setMessages, fetchThreadMessages]);
 
   const handleCreateNewThread = async () => {
     setIsCreatingThread(true);

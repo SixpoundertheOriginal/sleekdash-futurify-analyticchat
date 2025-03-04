@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -267,6 +268,7 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           analysis: messageContent,
+          messageId: latestAssistantMessage.id,
           runId: runData.id,
           messagesCount: messagesData.data.length
         }),

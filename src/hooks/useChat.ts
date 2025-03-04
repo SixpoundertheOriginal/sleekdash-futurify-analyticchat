@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Message } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -55,7 +55,7 @@ export const useChat = () => {
   };
 
   // Function to fetch messages from OpenAI thread
-  const fetchThreadMessages = async () => {
+  const fetchThreadMessages = useCallback(async () => {
     if (!threadId) {
       console.warn('[useChat] Cannot fetch thread messages: No thread ID available');
       return;
@@ -89,10 +89,18 @@ export const useChat = () => {
       const openaiMessages = functionData.messages;
       console.log('[useChat] Received messages from OpenAI thread:', openaiMessages.length);
       
+      // Map to track already seen message IDs
+      const existingMessageIds = new Set<string>();
+      
       // Convert OpenAI messages to our format and filter out any we already have
       const newMessages: Message[] = [];
+      const processedIds = new Set<string>();
       
       for (const openaiMsg of openaiMessages) {
+        // Skip messages we've already processed in this batch
+        if (processedIds.has(openaiMsg.id)) continue;
+        processedIds.add(openaiMsg.id);
+        
         // Skip user messages that contain file uploads
         if (openaiMsg.role === 'user' && 
             typeof openaiMsg.content === 'string' && 
@@ -104,17 +112,28 @@ export const useChat = () => {
         if (openaiMsg.role === 'assistant') {
           const msgContent = extractMessageContent(openaiMsg);
           
-          // Check if we already have this message
+          // Check if we already have this message content
           const messageExists = messages.some(msg => 
             msg.role === 'assistant' && 
             msg.content === msgContent
           );
           
-          if (!messageExists && msgContent) {
+          // Check if we already have a message with similar content
+          // This helps avoid duplicate messages with slightly different formatting
+          const similarMessageExists = !messageExists && messages.some(msg => 
+            msg.role === 'assistant' && 
+            msgContent.length > 20 &&
+            (msg.content.includes(msgContent.substring(0, 20)) || 
+             msgContent.includes(msg.content.substring(0, 20)))
+          );
+          
+          if (!messageExists && !similarMessageExists && msgContent) {
             newMessages.push({
               role: 'assistant',
-              content: msgContent
+              content: msgContent,
+              id: openaiMsg.id // Store the OpenAI message ID for tracking
             });
+            existingMessageIds.add(openaiMsg.id);
           }
         }
       }
@@ -127,7 +146,7 @@ export const useChat = () => {
     } catch (error) {
       console.error('[useChat] Error fetching thread messages:', error);
     }
-  };
+  }, [threadId, assistantId, messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +221,8 @@ export const useChat = () => {
 
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: functionData.analysis
+        content: functionData.analysis,
+        id: functionData.messageId
       }]);
 
     } catch (error) {
