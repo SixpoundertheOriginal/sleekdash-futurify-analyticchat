@@ -1,7 +1,7 @@
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | any[];
   id?: string;
   timestamp?: string | Date;
 }
