@@ -3,7 +3,9 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj'; // This matches the one in useChat.ts
+// Using constants to ensure consistency
+const ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
+const THREAD_ID = 'thread_wbaTz1aTmZhcT9bZqpHpTAQj';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,6 +26,11 @@ serve(async (req) => {
     const { message, threadId } = await req.json();
     console.log('Received message:', message);
     console.log('Thread ID:', threadId);
+
+    // Verify the thread ID matches our constant
+    if (threadId !== THREAD_ID) {
+      console.warn(`Received thread ID ${threadId} doesn't match expected ${THREAD_ID}`);
+    }
 
     if (!message || !threadId) {
       throw new Error('Message and threadId are required');

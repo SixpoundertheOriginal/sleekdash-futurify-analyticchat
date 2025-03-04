@@ -5,6 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/components/AuthProvider";
 
+// Define the constant for the thread ID to ensure consistency
+const THREAD_ID = "thread_wbaTz1aTmZhcT9bZqpHpTAQj";
+const ASSISTANT_ID = "asst_EYm70EgIE2okxc8onNc1DVTj";
+
 export const useChat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([{
@@ -12,9 +16,9 @@ export const useChat = () => {
     content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
   }]);
   const [isLoading, setIsLoading] = useState(false);
-  // Using the fixed thread ID that we've agreed on
-  const [threadId, setThreadId] = useState<string>("thread_wbaTz1aTmZhcT9bZqpHpTAQj");
-  const assistantId = 'asst_EYm70EgIE2okxc8onNc1DVTj';
+  // Using the fixed thread ID as a constant
+  const [threadId, setThreadId] = useState<string>(THREAD_ID);
+  const assistantId = ASSISTANT_ID;
   const { toast } = useToast();
   const { user } = useAuth();
 

@@ -52,7 +52,7 @@ export function ChatInterface() {
         <Sparkles className="h-5 w-5 text-primary animate-pulse" />
         <h2 className="font-semibold text-white">
           AI Analysis Assistant
-          <span className="text-xs text-white/50 ml-2">Thread: {threadId.substring(0, 16)}</span>
+          <span className="text-xs text-white/50 ml-2">Thread: {threadId}</span>
         </h2>
       </div>
       
