@@ -3,9 +3,10 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+
 // Using constants to ensure consistency
-const ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
-const THREAD_ID = 'thread_wbaTz1aTmZhcT9bZqpHpTAQj';
+const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
+const DEFAULT_THREAD_ID = 'thread_wbaTz1aTmZhcT9bZqpHpTAQj';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,29 +25,28 @@ serve(async (req) => {
     }
 
     const { message, threadId, assistantId } = await req.json();
+    
+    // Log the received values
     console.log('Received message:', message);
-    console.log('Thread ID:', threadId);
-    console.log('Assistant ID:', assistantId);
+    console.log('Received Thread ID:', threadId);
+    console.log('Received Assistant ID:', assistantId);
 
-    // Strict validation: Only allow the predefined thread ID
-    if (threadId !== THREAD_ID) {
-      console.error(`Invalid thread ID: ${threadId}, expected: ${THREAD_ID}`);
-      throw new Error('Invalid thread ID provided');
-    }
-
-    // Verify assistant ID matches our constant
-    if (assistantId !== ASSISTANT_ID) {
-      console.error(`Invalid assistant ID: ${assistantId}, expected: ${ASSISTANT_ID}`);
-      throw new Error('Invalid assistant ID provided');
-    }
-
+    // Validate inputs
     if (!message) {
       throw new Error('Message is required');
     }
+    
+    // Use the provided threadId if valid, otherwise fall back to the default
+    const finalThreadId = threadId || DEFAULT_THREAD_ID;
+    console.log('Using Thread ID:', finalThreadId);
+    
+    // Use the provided assistantId if valid, otherwise fall back to the default
+    const finalAssistantId = assistantId || DEFAULT_ASSISTANT_ID;
+    console.log('Using Assistant ID:', finalAssistantId);
 
     // Add message to thread
-    console.log('Adding message to thread:', threadId);
-    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+    console.log('Adding message to thread:', finalThreadId);
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${finalThreadId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -66,8 +66,8 @@ serve(async (req) => {
     }
 
     // Run the assistant
-    console.log('Starting chat with assistant:', ASSISTANT_ID);
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+    console.log('Starting chat with assistant:', finalAssistantId);
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${finalThreadId}/runs`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -75,7 +75,7 @@ serve(async (req) => {
         'OpenAI-Beta': 'assistants=v1',
       },
       body: JSON.stringify({
-        assistant_id: ASSISTANT_ID,
+        assistant_id: finalAssistantId,
         instructions: `You are a helpful AI assistant for marketing and data analysis. 
         When analyzing data:
         - Focus on key metrics and trends
@@ -107,7 +107,7 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const statusResponse = await fetch(
-        `https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`,
+        `https://api.openai.com/v1/threads/${finalThreadId}/runs/${run.id}`,
         {
           headers: {
             'Authorization': `Bearer ${openAIApiKey}`,
@@ -137,7 +137,7 @@ serve(async (req) => {
 
     // Get messages
     const messagesResponse = await fetch(
-      `https://api.openai.com/v1/threads/${threadId}/messages`,
+      `https://api.openai.com/v1/threads/${finalThreadId}/messages`,
       {
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
@@ -165,7 +165,11 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ analysis: assistantMessage }),
+      JSON.stringify({ 
+        analysis: assistantMessage,
+        threadId: finalThreadId,  // Return the thread ID used for confirmation
+        assistantId: finalAssistantId  // Return the assistant ID used for confirmation
+      }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -15,7 +15,7 @@ export const useChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Use the thread context instead of local state
-  const { threadId, assistantId } = useThread();
+  const { threadId, assistantId, setThreadId, setAssistantId } = useThread();
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -27,7 +27,7 @@ export const useChat = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || isLoading || !threadId) return;
+    if (!message.trim() || isLoading) return;
 
     const userMessage = message.trim();
     setMessage("");
@@ -53,6 +53,17 @@ export const useChat = () => {
 
       if (!functionData || !functionData.analysis) {
         throw new Error('No response received from the assistant');
+      }
+
+      // Update with the returned thread and assistant IDs if provided
+      if (functionData.threadId && functionData.threadId !== threadId) {
+        console.log(`Updating thread ID from ${threadId} to ${functionData.threadId}`);
+        setThreadId(functionData.threadId);
+      }
+
+      if (functionData.assistantId && functionData.assistantId !== assistantId) {
+        console.log(`Updating assistant ID from ${assistantId} to ${functionData.assistantId}`);
+        setAssistantId(functionData.assistantId);
       }
 
       setMessages(prev => [...prev, { 
