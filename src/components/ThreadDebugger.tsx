@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, RefreshCw, CheckCircle, XCircle, Info } from "lucide-react";
+import { Sparkles, RefreshCw, CheckCircle, XCircle, Info, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,18 +16,34 @@ export function ThreadDebugger() {
   const [isCreatingThread, setIsCreatingThread] = useState(false);
   const [isTestingThread, setIsTestingThread] = useState(false);
   const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const { toast } = useToast();
 
   const createNewThread = async () => {
     setIsCreatingThread(true);
+    setErrorDetails(null);
+    
     try {
+      console.log('Creating new thread...');
       const { data, error } = await supabase.functions.invoke('create-thread', {
         body: {}
       });
 
-      if (error) throw error;
-      if (!data?.threadId) throw new Error('No thread ID returned');
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Edge function error: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error('No data returned from edge function');
+      }
+      
+      if (!data.threadId) {
+        console.error('Invalid response:', data);
+        throw new Error('No thread ID returned in response');
+      }
 
+      console.log('Thread created successfully:', data.threadId);
       setNewThreadId(data.threadId);
       setThreadId(data.threadId);
       
@@ -37,6 +53,7 @@ export function ThreadDebugger() {
       });
     } catch (error) {
       console.error('Error creating thread:', error);
+      setErrorDetails(error instanceof Error ? error.message : 'Unknown error');
       toast({
         variant: "destructive",
         title: "Error",
@@ -52,6 +69,7 @@ export function ThreadDebugger() {
     setNewAssistantId(DEFAULT_ASSISTANT_ID);
     setThreadId(DEFAULT_THREAD_ID);
     setAssistantId(DEFAULT_ASSISTANT_ID);
+    setErrorDetails(null);
     toast({
       title: "Reset Complete",
       description: "Thread and Assistant IDs reset to defaults",
@@ -61,6 +79,7 @@ export function ThreadDebugger() {
   const applyChanges = () => {
     setThreadId(newThreadId);
     setAssistantId(newAssistantId);
+    setErrorDetails(null);
     toast({
       title: "Changes Applied",
       description: "Thread and Assistant IDs updated",
@@ -70,18 +89,41 @@ export function ThreadDebugger() {
   const testThread = async () => {
     setIsTestingThread(true);
     setTestResult(null);
+    setErrorDetails(null);
     
     try {
-      const { data, error } = await supabase.functions.invoke('chat-message', {
+      console.log('Testing thread:', newThreadId);
+      console.log('Testing assistant:', newAssistantId);
+      
+      // Use the dedicated test-thread function for more detailed diagnostics
+      const { data, error } = await supabase.functions.invoke('test-thread', {
         body: { 
-          message: "This is a test message for thread validation.",
           threadId: newThreadId,
           assistantId: newAssistantId
         }
       });
 
-      if (error) throw error;
-      if (!data?.analysis) throw new Error('No response received');
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Edge function error: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error('No data returned from edge function');
+      }
+
+      console.log('Test response:', data);
+      
+      if (!data.success) {
+        setTestResult("error");
+        setErrorDetails(data.error || 'Unknown error');
+        toast({
+          variant: "destructive",
+          title: "Test Failed",
+          description: data.error || 'Thread validation failed'
+        });
+        return;
+      }
 
       setTestResult("success");
       toast({
@@ -91,6 +133,7 @@ export function ThreadDebugger() {
     } catch (error) {
       console.error('Thread test error:', error);
       setTestResult("error");
+      setErrorDetails(error instanceof Error ? error.message : 'Unknown error');
       toast({
         variant: "destructive",
         title: "Test Failed",
@@ -161,17 +204,26 @@ export function ThreadDebugger() {
         </div>
 
         {testResult && (
-          <div className={`p-3 rounded-md flex items-center gap-2 ${
+          <div className={`p-3 rounded-md flex items-start gap-2 ${
             testResult === "success" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
           }`}>
             {testResult === "success" ? (
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4 mt-0.5" />
             ) : (
-              <XCircle className="h-4 w-4" />
+              <XCircle className="h-4 w-4 mt-0.5" />
             )}
-            {testResult === "success" 
-              ? "Thread and Assistant verified successfully!" 
-              : "Thread test failed. Check console for details."}
+            <div className="space-y-1 flex-1">
+              <p>
+                {testResult === "success" 
+                  ? "Thread and Assistant verified successfully!" 
+                  : "Thread test failed. See details below:"}
+              </p>
+              {errorDetails && testResult === "error" && (
+                <p className="text-xs opacity-90 bg-black/30 p-2 rounded whitespace-pre-wrap">
+                  {errorDetails}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
