@@ -1,6 +1,5 @@
-
 import { useEffect, useState, useRef } from "react";
-import { Sparkles, RefreshCw, Info, AlertTriangle } from "lucide-react";
+import { Sparkles, RefreshCw, Info, AlertTriangle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "@/components/chat/ChatMessage";
@@ -23,31 +22,26 @@ export function ChatInterface() {
     fetchThreadMessages
   } = useChat();
   
-  // Get threadId and other context values
   const { threadId, assistantId, createNewThread, isValidThread } = useThread();
   const { toast } = useToast();
   const [isCreatingThread, setIsCreatingThread] = useState(false);
   const [lastFileUpload, setLastFileUpload] = useState<Date | null>(null);
   const [isCheckingForResponses, setIsCheckingForResponses] = useState(false);
   
-  // Use refs to prevent stale closures
   const pollingTimeoutRef = useRef<number | null>(null);
   const pollingAttemptsRef = useRef(0);
-  const maxPollingAttempts = 20; // Increase max polling attempts
+  const maxPollingAttempts = 20;
   const responseFoundRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Auto-scroll when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
   
-  // Clean up polling timers
   const clearPollingTimers = () => {
     if (pollingTimeoutRef.current) {
       clearTimeout(pollingTimeoutRef.current);
@@ -55,7 +49,6 @@ export function ChatInterface() {
     }
   };
 
-  // Function to check for responses from the assistant after file upload
   const checkForNewResponses = async () => {
     if (!threadId || responseFoundRef.current) {
       clearPollingTimers();
@@ -72,10 +65,8 @@ export function ChatInterface() {
       setIsCheckingForResponses(true);
       console.log(`[ChatInterface] Polling for assistant responses (attempt ${pollingAttemptsRef.current + 1}/${maxPollingAttempts})`);
       
-      // Fetch the latest messages
       const hasNewMessages = await fetchThreadMessages();
       
-      // If we found a substantive response (not just the processing message)
       if (hasNewMessages) {
         console.log("[ChatInterface] Found new assistant response, stopping polling");
         responseFoundRef.current = true;
@@ -86,16 +77,14 @@ export function ChatInterface() {
       
       pollingAttemptsRef.current += 1;
       
-      // Continue polling if we haven't reached the max attempts
       if (pollingAttemptsRef.current < maxPollingAttempts) {
         pollingTimeoutRef.current = window.setTimeout(() => {
           checkForNewResponses();
-        }, 1500); // Poll more frequently (1.5 seconds)
+        }, 1500);
       } else {
         setIsCheckingForResponses(false);
         console.log("[ChatInterface] Stopped polling after max attempts");
-
-        // Add a message to let the user know polling stopped
+        
         setMessages(prevMessages => {
           const processingMsgIndex = prevMessages.findIndex(msg => 
             msg.role === 'assistant' && 
@@ -119,14 +108,11 @@ export function ChatInterface() {
     }
   };
 
-  // Implement automatic polling for new messages periodically
   useEffect(() => {
     if (!threadId) return;
     
-    // Every 15 seconds, quietly check for new messages in the background
     const autoPollingInterval = setInterval(async () => {
       if (!isCheckingForResponses && !isLoading) {
-        // Silent polling without UI indicator
         try {
           await fetchThreadMessages();
         } catch (error) {
@@ -140,16 +126,12 @@ export function ChatInterface() {
     };
   }, [threadId, isCheckingForResponses, isLoading, fetchThreadMessages]);
 
-  // Handle new file analysis events
   useEffect(() => {
     if (!threadId) {
       console.warn('[ChatInterface] No thread ID available for subscription');
       return;
     }
     
-    console.log('[ChatInterface] Setting up real-time subscription for thread:', threadId);
-    
-    // Reset response tracking when component mounts or thread changes
     responseFoundRef.current = false;
     
     const channel = supabase
@@ -164,18 +146,14 @@ export function ChatInterface() {
         (payload) => {
           console.log('[ChatInterface] Received new analysis:', payload);
           
-          // Reset polling state
           clearPollingTimers();
           pollingAttemptsRef.current = 0;
           responseFoundRef.current = false;
           
-          // Update the last file upload timestamp
           setLastFileUpload(new Date());
           
-          // Add an immediate message to let the user know file processing is happening
           const processingMessage = "I'm processing your file. I'll analyze your keywords and provide insights shortly...";
           
-          // Check if we already have this processing message to avoid duplicates
           if (!messages.some(msg => 
             msg.role === 'assistant' && 
             msg.content.includes("processing your file")
@@ -189,7 +167,6 @@ export function ChatInterface() {
             ]);
           }
           
-          // Start polling for new messages immediately
           pollingTimeoutRef.current = window.setTimeout(() => {
             checkForNewResponses();
           }, 1000);
@@ -198,16 +175,13 @@ export function ChatInterface() {
       .subscribe();
 
     return () => {
-      console.log('[ChatInterface] Cleaning up: removing Supabase channel subscription');
       clearPollingTimers();
       supabase.removeChannel(channel);
     };
   }, [threadId, messages, setMessages, fetchThreadMessages]);
 
-  // When the component mounts, check for any pending messages
   useEffect(() => {
     if (threadId) {
-      // Check for any pending messages once on mount
       fetchThreadMessages().catch(console.error);
     }
   }, [threadId, fetchThreadMessages]);
@@ -217,7 +191,6 @@ export function ChatInterface() {
     try {
       const newThreadId = await createNewThread();
       if (newThreadId) {
-        // Reset messages for the new thread
         setMessages([{
           role: 'assistant',
           content: '✨ Welcome to your new conversation! How can I help you today?'
@@ -230,6 +203,25 @@ export function ChatInterface() {
       }
     } catch (error) {
       console.error('[ChatInterface] Error creating new thread:', error);
+    } finally {
+      setIsCreatingThread(false);
+    }
+  };
+
+  const handleClearConversation = () => {
+    setIsCreatingThread(true);
+    try {
+      setMessages([{
+        role: 'assistant',
+        content: '✨ Conversation cleared! How can I help you today?'
+      }]);
+      
+      toast({
+        title: "Conversation Cleared",
+        description: "Your conversation history has been reset."
+      });
+    } catch (error) {
+      console.error('[ChatInterface] Error clearing conversation:', error);
     } finally {
       setIsCreatingThread(false);
     }
@@ -272,14 +264,16 @@ export function ChatInterface() {
         <Button
           variant="outline"
           size="sm"
-          onClick={handleCreateNewThread}
+          onClick={handleClearConversation}
           disabled={isCreatingThread}
           className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs gap-1"
         >
           {isCreatingThread ? (
             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-          ) : null}
-          New Conversation
+          ) : (
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+          )}
+          Clear Chat
         </Button>
       </div>
       
