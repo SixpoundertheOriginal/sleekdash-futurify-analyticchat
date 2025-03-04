@@ -51,7 +51,7 @@ serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1',
+        'OpenAI-Beta': 'assistants=v2', // Updated to v2
       },
       body: JSON.stringify({
         role: 'user',
@@ -60,9 +60,19 @@ serve(async (req) => {
     });
 
     if (!messageResponse.ok) {
-      const error = await messageResponse.text();
-      console.error('Message creation error:', error);
-      throw new Error('Failed to send message');
+      const errorData = await messageResponse.json();
+      console.error('Message creation error:', errorData);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Failed to send message: ${errorData.error?.message || 'Unknown error'}`,
+          details: errorData
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Run the assistant
@@ -72,7 +82,7 @@ serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1',
+        'OpenAI-Beta': 'assistants=v2', // Updated to v2
       },
       body: JSON.stringify({
         assistant_id: finalAssistantId,
@@ -90,9 +100,19 @@ serve(async (req) => {
     });
 
     if (!runResponse.ok) {
-      const error = await runResponse.text();
-      console.error('Run creation error:', error);
-      throw new Error('Failed to process message');
+      const errorData = await runResponse.json();
+      console.error('Run creation error:', errorData);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Failed to process message: ${errorData.error?.message || 'Unknown error'}`,
+          details: errorData
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     const run = await runResponse.json();
@@ -111,13 +131,15 @@ serve(async (req) => {
         {
           headers: {
             'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v1',
+            'OpenAI-Beta': 'assistants=v2', // Updated to v2
+            'Content-Type': 'application/json'
           },
         }
       );
 
       if (!statusResponse.ok) {
-        throw new Error('Failed to check message status');
+        const errorData = await statusResponse.json();
+        throw new Error(`Failed to check message status: ${errorData.error?.message || 'Unknown error'}`);
       }
 
       runStatus = await statusResponse.json();
@@ -132,7 +154,7 @@ serve(async (req) => {
 
     if (runStatus.status !== 'completed') {
       console.error('Run failed with status:', runStatus.status);
-      throw new Error('Failed to generate response');
+      throw new Error(`Failed to generate response: Run status is ${runStatus.status}`);
     }
 
     // Get messages
@@ -141,13 +163,15 @@ serve(async (req) => {
       {
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
-          'OpenAI-Beta': 'assistants=v1',
+          'OpenAI-Beta': 'assistants=v2', // Updated to v2
+          'Content-Type': 'application/json'
         },
       }
     );
 
     if (!messagesResponse.ok) {
-      throw new Error('Failed to retrieve response');
+      const errorData = await messagesResponse.json();
+      throw new Error(`Failed to retrieve response: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const messages = await messagesResponse.json();
@@ -156,7 +180,7 @@ serve(async (req) => {
       throw new Error('No response received');
     }
 
-    // Get the latest assistant message
+    // Get the latest assistant message - Note: content structure might be different in v2
     const assistantMessage = messages.data
       .find(msg => msg.role === 'assistant')?.content[0]?.text?.value;
 
@@ -166,6 +190,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
+        success: true,
         analysis: assistantMessage,
         threadId: finalThreadId,  // Return the thread ID used for confirmation
         assistantId: finalAssistantId  // Return the assistant ID used for confirmation
@@ -178,7 +203,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in chat-message function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message,
+        details: error
+      }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
