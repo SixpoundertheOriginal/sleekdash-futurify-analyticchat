@@ -72,6 +72,27 @@ export const useChat = () => {
         throw new Error(functionData?.error || 'No response received from the assistant');
       }
 
+      // Check if there's an OpenAI error in the response
+      if (functionData.error) {
+        console.error('[useChat] OpenAI error in response:', functionData.error);
+        
+        // Display the OpenAI error in the chat instead of a generic message
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: `❌ I encountered an error processing your message: ${functionData.error.message || 'Unknown error'}`
+        }]);
+        
+        // Also show a toast notification about the error
+        toast({
+          variant: "destructive",
+          title: "OpenAI Error",
+          description: functionData.error.message || "There was an error processing your message."
+        });
+        
+        setIsLoading(false);
+        return;
+      }
+
       if (!functionData.analysis) {
         console.error('[useChat] No analysis content in response:', functionData);
         throw new Error('Empty response received from the assistant');

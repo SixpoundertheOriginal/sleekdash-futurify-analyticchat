@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,10 @@ export function FileUpload() {
       console.log(`[FileUpload] Using thread ID for file processing: ${threadId}`);
       console.log(`[FileUpload] Using assistant ID for file processing: ${assistantId}`);
 
+      if (!threadId || !assistantId) {
+        throw new Error("Thread or assistant ID is missing. Cannot process file.");
+      }
+
       let fileContent;
       
       if (file.name.endsWith('.csv')) {
@@ -64,8 +69,8 @@ export function FileUpload() {
         throw new Error("File appears to be empty");
       }
 
-      console.log('Processed file content length:', fileContent.length);
-      console.log('First few rows:', fileContent.split('\n').slice(0, 3));
+      console.log('[FileUpload] Processed file content length:', fileContent.length);
+      console.log('[FileUpload] First few rows:', fileContent.split('\n').slice(0, 3));
 
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'process-keywords',
@@ -79,7 +84,7 @@ export function FileUpload() {
       );
 
       if (functionError) {
-        console.error('Function error:', functionError);
+        console.error('[FileUpload] Function error:', functionError);
         throw functionError;
       }
 
@@ -87,21 +92,34 @@ export function FileUpload() {
         throw new Error('No data returned from analysis');
       }
 
-      console.log('Function response:', functionData);
+      console.log('[FileUpload] Function response:', functionData);
 
-      toast({
-        title: "Analysis complete",
-        description: "Your keywords have been processed successfully."
-      });
+      // Check if there's an OpenAI error in the response
+      if (functionData.error) {
+        console.error('[FileUpload] OpenAI error:', functionData.error);
+        toast({
+          variant: "destructive",
+          title: "Analysis Error",
+          description: functionData.error.message || "OpenAI couldn't process this file correctly."
+        });
+        // We'll still store the file attempt in the database for reference
+      } else {
+        toast({
+          title: "Analysis complete",
+          description: "Your keywords have been processed successfully."
+        });
+      }
 
+      // Store the analysis in the database regardless of OpenAI success/failure
       const analysisData = {
         file_name: file.name,
         file_path: file.name,
-        prioritized_keywords: functionData.data,
-        openai_analysis: functionData.analysis,
+        prioritized_keywords: functionData.data || [],
+        openai_analysis: functionData.analysis || "Analysis could not be completed",
         app_performance: 'Medium',
         created_at: new Date().toISOString(),
-        user_id: user.id
+        user_id: user.id,
+        has_errors: !!functionData.error
       };
 
       const { error: dbError } = await supabase
@@ -109,12 +127,12 @@ export function FileUpload() {
         .insert([analysisData]);
 
       if (dbError) {
-        console.error('Database error:', dbError);
+        console.error('[FileUpload] Database error:', dbError);
         throw dbError;
       }
 
     } catch (error) {
-      console.error('Error processing file:', error);
+      console.error('[FileUpload] Error processing file:', error);
       toast({
         variant: "destructive",
         title: "Error",

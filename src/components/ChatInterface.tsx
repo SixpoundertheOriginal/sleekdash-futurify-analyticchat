@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Sparkles, AlertTriangle, RefreshCw } from "lucide-react";
+import { Sparkles, AlertTriangle, RefreshCw, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "@/components/chat/ChatMessage";
@@ -8,6 +8,7 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function ChatInterface() {
   const { 
@@ -20,9 +21,10 @@ export function ChatInterface() {
   } = useChat();
   
   // Get threadId and other context values
-  const { threadId, createNewThread, isValidThread } = useThread();
+  const { threadId, assistantId, createNewThread, isValidThread } = useThread();
   const { toast } = useToast();
   const [isCreatingThread, setIsCreatingThread] = useState(false);
+  const [lastFileUpload, setLastFileUpload] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!threadId) {
@@ -43,11 +45,16 @@ export function ChatInterface() {
         },
         (payload) => {
           console.log('[ChatInterface] Received new analysis:', payload);
-          if (payload.new && payload.new.openai_analysis) {
-            setMessages(prev => [...prev, {
-              role: 'assistant',
-              content: payload.new.openai_analysis
-            }]);
+          
+          // Update the last file upload timestamp
+          setLastFileUpload(new Date());
+          
+          // Only add the analysis to the chat if it doesn't have errors
+          if (payload.new && payload.new.openai_analysis && !payload.new.has_errors) {
+            // Don't add the message here, as it should come from the thread
+            console.log('[ChatInterface] File analysis will be handled by the OpenAI thread');
+          } else if (payload.new && payload.new.has_errors) {
+            console.warn('[ChatInterface] File analysis had errors:', payload.new.openai_analysis);
           }
         }
       )
@@ -92,11 +99,27 @@ export function ChatInterface() {
           <Sparkles className="h-5 w-5 text-primary animate-pulse" />
           <h2 className="font-semibold text-white">
             AI Analysis Assistant
-            {isUsingDefaultThread ? (
-              <span className="text-xs text-green-400 ml-2">Thread: {threadId?.substring(0, 10)}...</span>
-            ) : (
-              <span className="text-xs text-amber-400 ml-2">Custom thread: {threadId?.substring(0, 10)}...</span>
-            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <span className={`text-xs ${isUsingDefaultThread ? 'text-green-400' : 'text-amber-400'} ml-2 flex items-center gap-1`}>
+                    <Info className="h-3 w-3" />
+                    Thread: {threadId?.substring(0, 10)}...
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">
+                    {isUsingDefaultThread 
+                      ? "Using default OpenAI thread" 
+                      : "Using custom OpenAI thread"}
+                    <br />
+                    Full ID: {threadId}
+                    <br />
+                    Assistant ID: {assistantId?.substring(0, 10)}...
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </h2>
         </div>
         
@@ -126,6 +149,15 @@ export function ChatInterface() {
             >
               Create new thread?
             </Button>
+          </span>
+        </div>
+      )}
+      
+      {lastFileUpload && (
+        <div className="flex items-center gap-2 p-2 bg-blue-500/20 text-blue-200 text-xs">
+          <Info className="h-3 w-3 flex-shrink-0" />
+          <span>
+            File uploaded at {lastFileUpload.toLocaleTimeString()}. The assistant will process it and respond shortly.
           </span>
         </div>
       )}

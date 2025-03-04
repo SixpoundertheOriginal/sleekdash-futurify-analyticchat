@@ -17,9 +17,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Request headers:', req.headers);
+    console.log('[process-keywords] Request headers:', req.headers);
     const body = await req.json();
-    console.log('Received body:', body);
+    console.log('[process-keywords] Received body:', body);
     
     const fileContent = body.fileContent;
     const threadId = body.threadId || DEFAULT_THREAD_ID;
@@ -29,7 +29,7 @@ serve(async (req) => {
     console.log(`[process-keywords] Using assistant ID: ${assistantId}`);
 
     if (!fileContent) {
-      console.error('No file content provided');
+      console.error('[process-keywords] No file content provided');
       return new Response(
         JSON.stringify({ error: 'No file content provided' }),
         { 
@@ -42,7 +42,7 @@ serve(async (req) => {
     // Split the content into lines and process
     const lines = fileContent.split('\n');
     if (lines.length < 2) {
-      console.error('File is empty or has no data rows');
+      console.error('[process-keywords] File is empty or has no data rows');
       return new Response(
         JSON.stringify({ error: 'File is empty or has no data rows' }),
         { 
@@ -53,7 +53,7 @@ serve(async (req) => {
     }
 
     const headers = lines[0].split(/[,\t]/);
-    console.log('Found headers:', headers);
+    console.log('[process-keywords] Found headers:', headers);
     
     const expectedColumns = [
       "Keyword", "Volume", "Max Reach", "Results", "Difficulty",
@@ -69,9 +69,9 @@ serve(async (req) => {
     );
 
     if (missingColumns.length > 0) {
-      console.error('Missing columns:', missingColumns);
+      console.error('[process-keywords] Missing columns:', missingColumns);
       return new Response(
-        JSON.stringify({ error: `Missing columns: ${missingColumns.join(', ')}` }),
+        JSON.stringify({ error: { message: `Missing columns: ${missingColumns.join(', ')}` } }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
           status: 400 
@@ -92,9 +92,9 @@ serve(async (req) => {
       });
 
     if (data.length === 0) {
-      console.error('No valid data rows found');
+      console.error('[process-keywords] No valid data rows found');
       return new Response(
-        JSON.stringify({ error: 'No valid data rows found in file' }),
+        JSON.stringify({ error: { message: 'No valid data rows found in file' } }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
           status: 400 
@@ -102,44 +102,60 @@ serve(async (req) => {
       );
     }
 
-    console.log('Processed data rows:', data.length);
+    console.log('[process-keywords] Processed data rows:', data.length);
 
     // Process with OpenAI - Get analysis first
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an ASO expert analyzing keyword data. Provide insights on keyword trends, ranking opportunities, and optimization recommendations.'
-          },
-          {
-            role: 'user',
-            content: `Analyze this keyword data: ${JSON.stringify(data)}`
-          }
-        ],
-      }),
-    });
-
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error('Failed to get analysis from OpenAI');
-    }
-
-    const aiAnalysis = await openaiResponse.json();
-    const analysis = aiAnalysis.choices[0].message.content;
+    let analysis = '';
+    let openaiError = null;
     
-    // Now add the analysis to the existing conversation thread
+    try {
+      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an ASO expert analyzing keyword data. Provide insights on keyword trends, ranking opportunities, and optimization recommendations.'
+            },
+            {
+              role: 'user',
+              content: `Analyze this keyword data: ${JSON.stringify(data)}`
+            }
+          ],
+        }),
+      });
+
+      if (!openaiResponse.ok) {
+        const errorText = await openaiResponse.text();
+        console.error('[process-keywords] OpenAI API error:', errorText);
+        openaiError = { message: 'Failed to get analysis from OpenAI: ' + errorText };
+        analysis = 'I was unable to analyze your keyword data due to an error. Please try again or contact support if the issue persists.';
+      } else {
+        const aiAnalysis = await openaiResponse.json();
+        analysis = aiAnalysis.choices[0].message.content;
+      }
+    } catch (error) {
+      console.error('[process-keywords] Error calling OpenAI:', error);
+      openaiError = { message: 'Error processing with OpenAI: ' + error.message };
+      analysis = 'I was unable to analyze your keyword data due to an error. Please try again or contact support if the issue persists.';
+    }
+    
+    // Always add the file upload message to the thread, regardless of success or failure
     console.log(`[process-keywords] Adding keyword analysis to thread: ${threadId}`);
     
     try {
       // 1. Add a message to the thread with the analysis
+      const fileUploadContent = openaiError
+        ? `The user uploaded a keyword file with ${data.length} rows, but there was an error analyzing it: ${openaiError.message}`
+        : `The user uploaded a keyword file with ${data.length} rows. Please analyze it.`;
+        
+      console.log('[process-keywords] Sending message to OpenAI thread with content:', fileUploadContent.substring(0, 100) + '...');
+      
       const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
         method: 'POST',
         headers: {
@@ -149,18 +165,18 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           role: 'user',
-          content: `I've uploaded a keyword file with ${data.length} rows. Please analyze it.`
+          content: fileUploadContent
         }),
       });
 
       if (!messageResponse.ok) {
         const errorText = await messageResponse.text();
         console.error('[process-keywords] Error adding message to thread:', errorText);
-        // Continue despite the error to return the analysis
+        // Continue despite the error to return some analysis
       } else {
         console.log('[process-keywords] Message added to thread successfully');
         
-        // 2. Run the assistant to process the message
+        // 2. Always run the assistant to process the message, regardless of analysis success
         const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
           method: 'POST',
           headers: {
@@ -176,14 +192,13 @@ serve(async (req) => {
         if (!runResponse.ok) {
           const errorText = await runResponse.text();
           console.error('[process-keywords] Error running assistant:', errorText);
-          // Continue despite the error
         } else {
-          console.log('[process-keywords] Assistant run initiated successfully');
+          const runData = await runResponse.json();
+          console.log('[process-keywords] Assistant run initiated successfully:', runData.id);
         }
       }
     } catch (error) {
       console.error('[process-keywords] Error adding file analysis to thread:', error);
-      // Continue despite the error to return the analysis
     }
 
     return new Response(
@@ -191,16 +206,17 @@ serve(async (req) => {
         status: 'success',
         data: data,
         analysis: analysis,
-        threadId: threadId // Return the thread ID in the response
+        threadId: threadId,
+        error: openaiError
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in process-keywords function:', error);
+    console.error('[process-keywords] Error in process-keywords function:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to process file', 
+        error: { message: 'Failed to process file: ' + error.message },
         details: error.message 
       }),
       { 
