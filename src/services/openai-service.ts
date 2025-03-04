@@ -48,12 +48,20 @@ export const fetchThreadMessages = async (
       )
       .map(msg => {
         const content = extractMessageContent(msg);
-        console.log(`[openai-service] Processing message ${msg.id?.substring(0, 10)}...: ${content.substring(0, 50)}...`);
+        const contentPreview = content ? content.substring(0, 50) + '...' : 'Empty content';
+        console.log(`[openai-service] Processing message ${msg.id?.substring(0, 10)}...: ${contentPreview}`);
+        
+        // If content is empty or just "[]", try to extract from other properties
+        if (!content || content === "[]" || content === "Content unavailable. The message appears to be empty.") {
+          console.warn(`[openai-service] Empty content for message ${msg.id}. Attempting to find content in raw message.`);
+          console.log('[openai-service] Raw message:', JSON.stringify(msg).substring(0, 200));
+        }
         
         return {
           role: 'assistant' as const,
           content: content,
-          id: msg.id
+          id: msg.id,
+          timestamp: new Date()
         };
       });
     

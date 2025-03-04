@@ -30,6 +30,12 @@ export function ChatMessage({ message }: ChatMessageProps) {
       }
     }
 
+    // Handle empty content or problematic values
+    if (!content || content === "[]" || content.trim() === "") {
+      console.warn('[ChatMessage] Empty or invalid content detected');
+      content = "Content unavailable. Please try again or upload a new file.";
+    }
+    
     // Process the content for better display
     const enhancedContent = content
       .replace(/^### (.*)/gm, '## $1')
