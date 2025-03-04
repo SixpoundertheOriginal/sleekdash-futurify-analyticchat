@@ -27,19 +27,20 @@ export const ThreadProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     const verifyThreadId = async () => {
       try {
-        console.log(`Using thread ID: ${threadId}`);
+        console.log(`[ThreadContext] Using thread ID: ${threadId}`);
+        console.log(`[ThreadContext] Using assistant ID: ${assistantId}`);
         
         // Store the current thread ID in local storage for persistence
         localStorage.setItem('appThreadId', threadId);
         setIsValidThread(true);
       } catch (error) {
-        console.error('Error verifying thread ID:', error);
+        console.error('[ThreadContext] Error verifying thread ID:', error);
         setIsValidThread(false);
       }
     };
 
     verifyThreadId();
-  }, [threadId]);
+  }, [threadId, assistantId]);
 
   // On initial load, try to restore thread ID from local storage
   useEffect(() => {
@@ -47,11 +48,14 @@ export const ThreadProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (storedThreadId) {
       // Only use stored thread if it matches our default (for safety)
       if (storedThreadId === DEFAULT_THREAD_ID) {
+        console.log(`[ThreadContext] Restoring thread ID from localStorage: ${storedThreadId}`);
         setThreadId(storedThreadId);
       } else {
-        console.warn('Stored thread ID does not match default, using default instead');
+        console.warn('[ThreadContext] Stored thread ID does not match default, using default instead');
         localStorage.setItem('appThreadId', DEFAULT_THREAD_ID);
       }
+    } else {
+      console.log(`[ThreadContext] No stored thread ID found, using default: ${DEFAULT_THREAD_ID}`);
     }
   }, []);
 

@@ -62,6 +62,9 @@ serve(async (req) => {
       );
     }
 
+    const threadData = await threadResponse.json();
+    console.log('Thread validation response:', threadData);
+
     // Test 2: Verify the assistant exists
     const assistantResponse = await fetch(`https://api.openai.com/v1/assistants/${assistantId}`, {
       method: 'GET',
@@ -83,6 +86,9 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const assistantData = await assistantResponse.json();
+    console.log('Assistant validation response:', assistantData);
 
     // Test 3: Send a test message to the thread
     const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
@@ -109,6 +115,9 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const messageData = await messageResponse.json();
+    console.log('Test message sent successfully:', messageData);
 
     // All tests passed
     console.log('Thread validation successful');

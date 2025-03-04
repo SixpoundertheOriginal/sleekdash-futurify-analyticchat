@@ -22,11 +22,11 @@ export function ChatInterface() {
 
   useEffect(() => {
     if (!threadId) {
-      console.warn('No thread ID available for subscription');
+      console.warn('[ChatInterface] No thread ID available for subscription');
       return;
     }
     
-    console.log('Setting up real-time subscription for thread:', threadId);
+    console.log('[ChatInterface] Setting up real-time subscription for thread:', threadId);
     
     const channel = supabase
       .channel('chat_interface')
@@ -38,7 +38,7 @@ export function ChatInterface() {
           table: 'keyword_analyses',
         },
         (payload) => {
-          console.log('Received new analysis:', payload);
+          console.log('[ChatInterface] Received new analysis:', payload);
           if (payload.new && payload.new.openai_analysis) {
             setMessages(prev => [...prev, {
               role: 'assistant',
@@ -50,7 +50,7 @@ export function ChatInterface() {
       .subscribe();
 
     return () => {
-      console.log('Cleanup: removing Supabase channel subscription');
+      console.log('[ChatInterface] Cleanup: removing Supabase channel subscription');
       supabase.removeChannel(channel);
     };
   }, [setMessages, threadId]);
@@ -65,9 +65,9 @@ export function ChatInterface() {
         <h2 className="font-semibold text-white">
           AI Analysis Assistant
           {isUsingDefaultThread ? (
-            <span className="text-xs text-green-400 ml-2">Using thread: {threadId}</span>
+            <span className="text-xs text-green-400 ml-2">Thread: {threadId}</span>
           ) : (
-            <span className="text-xs text-amber-400 ml-2">Using custom thread: {threadId}</span>
+            <span className="text-xs text-amber-400 ml-2">Custom thread: {threadId}</span>
           )}
         </h2>
       </div>

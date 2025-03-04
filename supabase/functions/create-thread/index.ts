@@ -35,12 +35,14 @@ serve(async (req) => {
     }
 
     const threadData = await threadResponse.json();
-    console.log('Thread created successfully:', threadData.id);
+    console.log('Thread created successfully:', threadData);
+    console.log('New thread ID:', threadData.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        threadId: threadData.id 
+        threadId: threadData.id,
+        message: `Successfully created thread: ${threadData.id}`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

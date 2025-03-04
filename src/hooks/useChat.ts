@@ -23,19 +23,22 @@ export const useChat = () => {
   // Force the threadId to match DEFAULT_THREAD_ID to ensure consistency
   useEffect(() => {
     if (threadId !== DEFAULT_THREAD_ID) {
-      console.log(`Ensuring thread consistency: updating from ${threadId} to ${DEFAULT_THREAD_ID}`);
+      console.log(`[useChat] Ensuring thread consistency: updating from ${threadId} to ${DEFAULT_THREAD_ID}`);
       setThreadId(DEFAULT_THREAD_ID);
     }
   }, [threadId, setThreadId]);
 
   // Log the thread ID to confirm we're using the correct one
   useEffect(() => {
-    console.log(`Using thread ID from context: ${threadId}`);
+    console.log(`[useChat] Using thread ID from context: ${threadId}`);
   }, [threadId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isLoading) return;
+
+    console.log("[useChat] Submitting message with thread ID:", threadId);
+    console.log("[useChat] Using assistant ID:", assistantId);
 
     const userMessage = message.trim();
     setMessage("");
@@ -43,6 +46,8 @@ export const useChat = () => {
     setIsLoading(true);
 
     try {
+      console.log("[useChat] Invoking chat-message function...");
+      
       // Always use the DEFAULT_THREAD_ID
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'chat-message',
@@ -55,8 +60,10 @@ export const useChat = () => {
         }
       );
 
+      console.log("[useChat] Response from chat-message:", { functionData, functionError });
+
       if (functionError) {
-        console.error('Function error:', functionError);
+        console.error('[useChat] Function error:', functionError);
         throw new Error(functionError.message);
       }
 
@@ -64,13 +71,15 @@ export const useChat = () => {
         throw new Error('No response received from the assistant');
       }
 
+      console.log("[useChat] Setting assistant message:", functionData.analysis);
+
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: functionData.analysis
       }]);
 
     } catch (error) {
-      console.error('Error processing message:', error);
+      console.error('[useChat] Error processing message:', error);
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: '❌ I apologize, but I encountered an error processing your message. Please try again.' 
