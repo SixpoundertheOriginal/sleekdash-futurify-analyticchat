@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -23,17 +22,25 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const { message, threadId } = await req.json();
+    const { message, threadId, assistantId } = await req.json();
     console.log('Received message:', message);
     console.log('Thread ID:', threadId);
+    console.log('Assistant ID:', assistantId);
 
-    // Verify the thread ID matches our constant
+    // Strict validation: Only allow the predefined thread ID
     if (threadId !== THREAD_ID) {
-      console.warn(`Received thread ID ${threadId} doesn't match expected ${THREAD_ID}`);
+      console.error(`Invalid thread ID: ${threadId}, expected: ${THREAD_ID}`);
+      throw new Error('Invalid thread ID provided');
     }
 
-    if (!message || !threadId) {
-      throw new Error('Message and threadId are required');
+    // Verify assistant ID matches our constant
+    if (assistantId !== ASSISTANT_ID) {
+      console.error(`Invalid assistant ID: ${assistantId}, expected: ${ASSISTANT_ID}`);
+      throw new Error('Invalid assistant ID provided');
+    }
+
+    if (!message) {
+      throw new Error('Message is required');
     }
 
     // Add message to thread

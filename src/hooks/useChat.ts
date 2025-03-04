@@ -4,10 +4,7 @@ import { Message } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/components/AuthProvider";
-
-// Define the constant for the thread ID to ensure consistency
-const THREAD_ID = "thread_wbaTz1aTmZhcT9bZqpHpTAQj";
-const ASSISTANT_ID = "asst_EYm70EgIE2okxc8onNc1DVTj";
+import { useThread } from "@/contexts/ThreadContext";
 
 export const useChat = () => {
   const [message, setMessage] = useState("");
@@ -16,15 +13,16 @@ export const useChat = () => {
     content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
   }]);
   const [isLoading, setIsLoading] = useState(false);
-  // Using the fixed thread ID as a constant
-  const [threadId, setThreadId] = useState<string>(THREAD_ID);
-  const assistantId = ASSISTANT_ID;
+  
+  // Use the thread context instead of local state
+  const { threadId, assistantId } = useThread();
+  
   const { toast } = useToast();
   const { user } = useAuth();
 
   // Log the thread ID to confirm we're using the correct one
   useEffect(() => {
-    console.log(`Using fixed thread ID: ${threadId}`);
+    console.log(`Using thread ID from context: ${threadId}`);
   }, [threadId]);
 
   const handleSubmit = async (e: React.FormEvent) => {

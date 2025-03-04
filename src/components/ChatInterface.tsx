@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
+import { useThread } from "@/contexts/ThreadContext"; 
 
 export function ChatInterface() {
   const { 
@@ -13,9 +14,11 @@ export function ChatInterface() {
     messages, 
     setMessages, 
     isLoading, 
-    handleSubmit,
-    threadId
+    handleSubmit
   } = useChat();
+  
+  // Get threadId from the context
+  const { threadId } = useThread();
 
   useEffect(() => {
     if (!threadId) return;
