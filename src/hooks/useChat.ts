@@ -12,87 +12,18 @@ export const useChat = () => {
     content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
   }]);
   const [isLoading, setIsLoading] = useState(false);
-  const [threadId, setThreadId] = useState<string | null>(null);
+  // Using the specific thread ID provided
+  const [threadId, setThreadId] = useState<string>("thread_2saO94Wc9LZobi27LwrKoqEw");
   const assistantId = 'asst_EYm70EgIE2okxc8onNc1DVTj';
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Load or create thread ID on component mount
+  // Load thread ID on component mount - no longer creates new threads
   useEffect(() => {
-    const loadThreadId = async () => {
-      if (!user) return;
+    console.log(`Using fixed thread ID: ${threadId}`);
+  }, [threadId]);
 
-      try {
-        // Try to get existing thread ID from the database
-        const { data, error } = await supabase
-          .from('user_threads')
-          .select('thread_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) {
-          console.log('No existing thread found, will create a new one');
-          createNewThread();
-        } else if (data?.thread_id) {
-          console.log('Found existing thread:', data.thread_id);
-          setThreadId(data.thread_id);
-        } else {
-          createNewThread();
-        }
-      } catch (error) {
-        console.error('Error loading thread:', error);
-        createNewThread();
-      }
-    };
-
-    loadThreadId();
-  }, [user]);
-
-  const createNewThread = async () => {
-    if (!user) return;
-
-    try {
-      const { data: functionData, error: functionError } = await supabase.functions.invoke(
-        'create-thread',
-        {}
-      );
-
-      if (functionError) {
-        console.error('Function error:', functionError);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to create a new thread. Please try again."
-        });
-        return;
-      }
-
-      if (functionData?.threadId) {
-        console.log('Created new thread:', functionData.threadId);
-        setThreadId(functionData.threadId);
-
-        // Save the new thread ID to the database
-        const { error: saveError } = await supabase
-          .from('user_threads')
-          .upsert({
-            user_id: user.id,
-            thread_id: functionData.threadId,
-            created_at: new Date().toISOString()
-          });
-
-        if (saveError) {
-          console.error('Error saving thread ID:', saveError);
-        }
-      }
-    } catch (error) {
-      console.error('Error creating thread:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to initialize the chat. Please refresh the page."
-      });
-    }
-  };
+  // Removed createNewThread function since we're using a fixed thread ID
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
