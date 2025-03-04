@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const DEFAULT_THREAD_ID = 'thread_2saO94Wc9LZobi27LwrKoqEw';
+const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -20,6 +22,11 @@ serve(async (req) => {
     console.log('Received body:', body);
     
     const fileContent = body.fileContent;
+    const threadId = body.threadId || DEFAULT_THREAD_ID;
+    const assistantId = body.assistantId || DEFAULT_ASSISTANT_ID;
+
+    console.log(`[process-keywords] Using thread ID: ${threadId}`);
+    console.log(`[process-keywords] Using assistant ID: ${assistantId}`);
 
     if (!fileContent) {
       console.error('No file content provided');
@@ -97,7 +104,7 @@ serve(async (req) => {
 
     console.log('Processed data rows:', data.length);
 
-    // Process with OpenAI
+    // Process with OpenAI - Get analysis first
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -127,12 +134,64 @@ serve(async (req) => {
 
     const aiAnalysis = await openaiResponse.json();
     const analysis = aiAnalysis.choices[0].message.content;
+    
+    // Now add the analysis to the existing conversation thread
+    console.log(`[process-keywords] Adding keyword analysis to thread: ${threadId}`);
+    
+    try {
+      // 1. Add a message to the thread with the analysis
+      const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: `I've uploaded a keyword file with ${data.length} rows. Please analyze it.`
+        }),
+      });
+
+      if (!messageResponse.ok) {
+        const errorText = await messageResponse.text();
+        console.error('[process-keywords] Error adding message to thread:', errorText);
+        // Continue despite the error to return the analysis
+      } else {
+        console.log('[process-keywords] Message added to thread successfully');
+        
+        // 2. Run the assistant to process the message
+        const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          },
+          body: JSON.stringify({
+            assistant_id: assistantId
+          }),
+        });
+
+        if (!runResponse.ok) {
+          const errorText = await runResponse.text();
+          console.error('[process-keywords] Error running assistant:', errorText);
+          // Continue despite the error
+        } else {
+          console.log('[process-keywords] Assistant run initiated successfully');
+        }
+      }
+    } catch (error) {
+      console.error('[process-keywords] Error adding file analysis to thread:', error);
+      // Continue despite the error to return the analysis
+    }
 
     return new Response(
       JSON.stringify({
         status: 'success',
         data: data,
-        analysis: analysis
+        analysis: analysis,
+        threadId: threadId // Return the thread ID in the response
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

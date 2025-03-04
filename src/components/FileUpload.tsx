@@ -1,14 +1,15 @@
-
 import { useState } from "react";
 import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import * as XLSX from 'xlsx';
+import { useThread } from "@/contexts/ThreadContext";
 
 export function FileUpload() {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const { threadId, assistantId } = useThread();
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -32,21 +33,20 @@ export function FileUpload() {
 
     setUploading(true);
     try {
-      // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error("You must be logged in to upload files");
       }
 
+      console.log(`[FileUpload] Using thread ID for file processing: ${threadId}`);
+      console.log(`[FileUpload] Using assistant ID for file processing: ${assistantId}`);
+
       let fileContent;
       
       if (file.name.endsWith('.csv')) {
-        // Handle CSV files as text
         fileContent = await file.text();
       } else {
-        // Handle Excel files
         const buffer = await file.arrayBuffer();
-        // Set proper options for reading binary Excel files
         const workbook = XLSX.read(buffer, { 
           type: 'array',
           cellDates: true,
@@ -54,14 +54,12 @@ export function FileUpload() {
           cellText: false
         });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        // Convert to CSV with proper options
         fileContent = XLSX.utils.sheet_to_csv(firstSheet, {
           blankrows: false,
           dateNF: 'YYYY-MM-DD'
         });
       }
 
-      // Validate the content before sending
       if (!fileContent || fileContent.trim().length === 0) {
         throw new Error("File appears to be empty");
       }
@@ -69,11 +67,14 @@ export function FileUpload() {
       console.log('Processed file content length:', fileContent.length);
       console.log('First few rows:', fileContent.split('\n').slice(0, 3));
 
-      // Send the file content to the edge function
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'process-keywords',
         {
-          body: { fileContent }
+          body: { 
+            fileContent,
+            threadId: threadId,
+            assistantId: assistantId
+          }
         }
       );
 
@@ -93,7 +94,6 @@ export function FileUpload() {
         description: "Your keywords have been processed successfully."
       });
 
-      // Create a new analysis record
       const analysisData = {
         file_name: file.name,
         file_path: file.name,
