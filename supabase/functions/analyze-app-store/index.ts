@@ -1,9 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 // Use the same constants as defined in ThreadContext.tsx
 const DEFAULT_THREAD_ID = 'thread_wbaTz1aTmZhcT9bZqpHpTAQj';
 const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +34,140 @@ serve(async (req) => {
     console.log('Using Thread ID:', finalThreadId)
     console.log('Using Assistant ID:', finalAssistantId)
 
-    // Add your analysis logic here
+    // For real OpenAI integration, uncomment this block
+    if (openAIApiKey) {
+      try {
+        // Create a message in the thread
+        const messageResponse = await fetch(`https://api.openai.com/v1/threads/${finalThreadId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2', // Updated to v2
+          },
+          body: JSON.stringify({
+            role: 'user',
+            content: appDescription,
+          }),
+        });
+
+        if (!messageResponse.ok) {
+          const errorData = await messageResponse.json();
+          console.error('Message creation error:', errorData);
+          throw new Error(`Failed to send app data: ${errorData.error?.message || 'Unknown error'}`);
+        }
+        
+        // Run the assistant on the thread
+        const runResponse = await fetch(`https://api.openai.com/v1/threads/${finalThreadId}/runs`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2', // Updated to v2
+          },
+          body: JSON.stringify({
+            assistant_id: finalAssistantId,
+            instructions: `Analyze this app store data and provide insights in a clear, structured format. Focus on key metrics, trends, and actionable recommendations.`
+          }),
+        });
+
+        if (!runResponse.ok) {
+          const errorData = await runResponse.json();
+          console.error('Run creation error:', errorData);
+          throw new Error(`Failed to analyze data: ${errorData.error?.message || 'Unknown error'}`);
+        }
+
+        const run = await runResponse.json();
+        console.log('Started run:', run.id);
+
+        // Poll for completion
+        let runStatus;
+        let attempts = 0;
+        const maxAttempts = 60; // Maximum 60 seconds wait
+
+        do {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const statusResponse = await fetch(
+            `https://api.openai.com/v1/threads/${finalThreadId}/runs/${run.id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${openAIApiKey}`,
+                'OpenAI-Beta': 'assistants=v2', // Updated to v2
+                'Content-Type': 'application/json'
+              },
+            }
+          );
+
+          if (!statusResponse.ok) {
+            const errorData = await statusResponse.json();
+            throw new Error(`Failed to check run status: ${errorData.error?.message || 'Unknown error'}`);
+          }
+
+          runStatus = await statusResponse.json();
+          console.log('Run status:', runStatus.status);
+          attempts++;
+
+        } while ((runStatus.status === 'in_progress' || runStatus.status === 'queued') && attempts < maxAttempts);
+
+        if (attempts >= maxAttempts) {
+          throw new Error('Analysis timed out');
+        }
+
+        if (runStatus.status !== 'completed') {
+          console.error('Run failed with status:', runStatus.status);
+          throw new Error(`Analysis failed with status: ${runStatus.status}`);
+        }
+
+        // Get the latest messages
+        const messagesResponse = await fetch(
+          `https://api.openai.com/v1/threads/${finalThreadId}/messages`,
+          {
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'OpenAI-Beta': 'assistants=v2', // Updated to v2
+              'Content-Type': 'application/json'
+            },
+          }
+        );
+
+        if (!messagesResponse.ok) {
+          const errorData = await messagesResponse.json();
+          throw new Error(`Failed to retrieve analysis results: ${errorData.error?.message || 'Unknown error'}`);
+        }
+
+        const messages = await messagesResponse.json();
+        
+        if (!messages.data || messages.data.length === 0) {
+          throw new Error('No response received from assistant');
+        }
+
+        // Get the latest assistant message
+        const assistantMessage = messages.data
+          .find(msg => msg.role === 'assistant')?.content[0]?.text?.value;
+
+        if (!assistantMessage) {
+          throw new Error('Invalid response format');
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            analysis: assistantMessage,
+            threadId: finalThreadId,
+            assistantId: finalAssistantId
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      } catch (error) {
+        console.error('OpenAI API error:', error);
+        throw error;
+      }
+    }
+
+    // For demo purposes, if no OpenAI API key is available, use a mock response
     const analysis = `Monthly Performance Report: Example App
 Date Range: January 1 - January 31, 2024
 
@@ -78,8 +213,8 @@ iPod: 10% (525)`;
       JSON.stringify({
         success: true,
         analysis: analysis,
-        threadId: finalThreadId,  // Return the thread ID used for confirmation
-        assistantId: finalAssistantId  // Return the assistant ID used for confirmation
+        threadId: finalThreadId,
+        assistantId: finalAssistantId
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
