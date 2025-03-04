@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -9,6 +8,46 @@ const corsHeaders = {
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const DEFAULT_THREAD_ID = 'thread_2saO94Wc9LZobi27LwrKoqEw';
 const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
+
+// Helper function to extract content from various message formats
+const extractMessageContent = (message: any): string => {
+  // For newer OpenAI API format (content as array)
+  if (Array.isArray(message.content)) {
+    // Collect all text content parts
+    const textParts = message.content
+      .filter((part: any) => part.type === 'text')
+      .map((part: any) => part.text?.value || '');
+    
+    if (textParts.length > 0) {
+      return textParts.join('\n\n');
+    }
+  }
+  
+  // For string content
+  if (typeof message.content === 'string') {
+    return message.content;
+  }
+  
+  // Handle empty content
+  if (message.content === "[]" || !message.content) {
+    // Try to find content in other properties
+    for (const key of ['value', 'text', 'message', 'analysis']) {
+      if (message[key] && typeof message[key] === 'string' && message[key].length > 0) {
+        return message[key];
+      }
+    }
+  }
+  
+  // Last resort - check if there's a text value directly in the message
+  if (message.text && typeof message.text.value === 'string') {
+    return message.text.value;
+  }
+  
+  // Fallback for unknown format
+  return typeof message.content === 'object' 
+    ? JSON.stringify(message.content) 
+    : String(message.content || 'No content available');
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -60,6 +99,17 @@ serve(async (req) => {
       
       const messagesData = await listResponse.json();
       console.log('[chat-message] Retrieved messages count:', messagesData.data?.length || 0);
+      
+      // Process messages to ensure content is properly extracted
+      if (messagesData.data && Array.isArray(messagesData.data)) {
+        messagesData.data = messagesData.data.map((msg: any) => {
+          // Keep original content format but add processed_content field
+          return {
+            ...msg,
+            processed_content: extractMessageContent(msg)
+          };
+        });
+      }
       
       return new Response(
         JSON.stringify({ 
@@ -249,20 +299,11 @@ serve(async (req) => {
       const latestAssistantMessage = assistantMessages[0];
       console.log('[chat-message] Latest assistant message:', latestAssistantMessage.id);
       
-      // Extract the content of the message
-      let messageContent = '';
-      
-      if (typeof latestAssistantMessage.content === 'string') {
-        messageContent = latestAssistantMessage.content;
-      } else if (Array.isArray(latestAssistantMessage.content) && latestAssistantMessage.content.length > 0) {
-        // OpenAI's new format has content as an array of objects
-        const textContent = latestAssistantMessage.content.find(item => item.type === 'text');
-        if (textContent) {
-          messageContent = textContent.text.value;
-        }
-      }
+      // Extract the content of the message using our helper function
+      const messageContent = extractMessageContent(latestAssistantMessage);
       
       console.log('[chat-message] Assistant response content length:', messageContent.length);
+      console.log('[chat-message] Assistant response preview:', messageContent.substring(0, 100) + '...');
 
       return new Response(
         JSON.stringify({ 

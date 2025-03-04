@@ -39,6 +39,20 @@ export const fetchThreadMessages = async (
     const openaiMessages = functionData.messages;
     console.log('[openai-service] Received messages from OpenAI thread:', openaiMessages.length);
     
+    // Debug: log all messages with content previews
+    openaiMessages.forEach((msg: any, index: number) => {
+      if (msg.role === 'assistant') {
+        const contentType = typeof msg.content;
+        const contentPreview = contentType === 'string' 
+          ? msg.content.substring(0, 50) 
+          : contentType === 'object' && Array.isArray(msg.content)
+            ? `[Array:${msg.content.length}]`
+            : JSON.stringify(msg.content).substring(0, 50);
+        
+        console.log(`[openai-service] Message #${index}: id=${msg.id?.substring(0, 10)}, content=${contentPreview}...`);
+      }
+    });
+    
     // Filter for assistant messages and messages we haven't processed yet
     const newAssistantMessages = openaiMessages
       .filter(msg => 
@@ -54,7 +68,18 @@ export const fetchThreadMessages = async (
         // If content is empty or just "[]", try to extract from other properties
         if (!content || content === "[]" || content === "Content unavailable. The message appears to be empty.") {
           console.warn(`[openai-service] Empty content for message ${msg.id}. Attempting to find content in raw message.`);
-          console.log('[openai-service] Raw message:', JSON.stringify(msg).substring(0, 200));
+          console.log('[openai-service] Raw message:', JSON.stringify(msg).substring(0, 300));
+          
+          // If message has processed_content from the edge function, use that
+          if (msg.processed_content && typeof msg.processed_content === 'string') {
+            console.log('[openai-service] Using processed_content from edge function');
+            return {
+              role: 'assistant' as const,
+              content: msg.processed_content,
+              id: msg.id,
+              timestamp: new Date()
+            };
+          }
         }
         
         return {
@@ -109,7 +134,8 @@ export const sendMessageToThread = async (
 
   console.log("[openai-service] Response from chat-message:", { 
     success: functionData?.success,
-    hasError: !!functionError || !!functionData?.error
+    hasError: !!functionError || !!functionData?.error,
+    analysisLength: functionData?.analysis ? functionData.analysis.length : 0
   });
 
   if (functionError) {
@@ -117,7 +143,12 @@ export const sendMessageToThread = async (
   }
 
   if (!functionData || !functionData.success) {
-    throw new Error(functionData?.error || 'No response received from the assistant');
+    throw new Error(functionData?.error?.message || 'No response received from the assistant');
+  }
+
+  if (!functionData.analysis || typeof functionData.analysis !== 'string' || functionData.analysis.trim() === '') {
+    console.error('[openai-service] Empty or invalid analysis in response:', functionData);
+    throw new Error('Empty response received from the assistant');
   }
 
   return functionData;

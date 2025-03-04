@@ -3,6 +3,11 @@
  * Extracts the content from an OpenAI message object
  */
 export const extractMessageContent = (msg: any): string => {
+  // Check for processed_content field first (added by our edge function)
+  if (msg.processed_content && typeof msg.processed_content === 'string') {
+    return msg.processed_content;
+  }
+  
   // For newer OpenAI API format (content as array)
   if (Array.isArray(msg.content)) {
     // Collect all text content parts
@@ -20,8 +25,9 @@ export const extractMessageContent = (msg: any): string => {
   }
   
   // Handle case where content is an empty array (sent as string "[]")
-  if (msg.content === "[]") {
-    console.warn('[openai-utils] Empty array content detected, checking for text value');
+  if (msg.content === "[]" || !msg.content) {
+    console.warn('[openai-utils] Empty or null content detected, checking for alternative content');
+    
     // Check if there's a text value directly in the message
     if (msg.text && typeof msg.text.value === 'string') {
       return msg.text.value;
@@ -32,6 +38,16 @@ export const extractMessageContent = (msg: any): string => {
       if (msg[key] && typeof msg[key] === 'string' && msg[key].length > 0) {
         console.log(`[openai-utils] Found content in ${key} property`);
         return msg[key];
+      }
+    }
+    
+    // Look for content in value properties nested within the message
+    if (msg.content && typeof msg.content === 'object') {
+      for (const key in msg.content) {
+        if (msg.content[key] && typeof msg.content[key].value === 'string') {
+          console.log(`[openai-utils] Found content in msg.content.${key}.value`);
+          return msg.content[key].value;
+        }
       }
     }
     
