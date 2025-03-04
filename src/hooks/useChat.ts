@@ -1,10 +1,11 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Message } from "@/types/chat";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/components/AuthProvider";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
+import { fetchThreadMessages, sendMessageToThread } from "@/services/openai-service";
+import { addUserMessage, addAssistantMessage, updateMessagesWithResponse } from "@/utils/message-utils";
 
 export const useChat = () => {
   const [message, setMessage] = useState("");
@@ -33,114 +34,25 @@ export const useChat = () => {
     }
   }, [threadId, assistantId]);
 
-  // Function to extract text content from OpenAI message format
-  const extractMessageContent = (openaiMessage: any): string => {
-    // Handle different content formats
-    if (typeof openaiMessage.content === 'string') {
-      return openaiMessage.content;
-    } 
-    
-    if (Array.isArray(openaiMessage.content) && openaiMessage.content.length > 0) {
-      // Find text content in the array
-      const textContent = openaiMessage.content.find((item: any) => 
-        item.type === 'text' || (item.text && item.text.value)
-      );
-      
-      if (textContent) {
-        return textContent.text?.value || textContent.text || JSON.stringify(textContent);
-      }
-    }
-    
-    // Fallback - return serialized content
-    return typeof openaiMessage.content === 'object' 
-      ? JSON.stringify(openaiMessage.content) 
-      : String(openaiMessage.content || '');
-  };
-
   // Function to fetch messages from OpenAI thread
-  const fetchThreadMessages = useCallback(async (): Promise<boolean> => {
+  const fetchThreadMessagesHandler = useCallback(async (): Promise<boolean> => {
     if (!threadId) {
       console.warn('[useChat] Cannot fetch thread messages: No thread ID available');
       return false;
     }
 
-    try {
-      console.log('[useChat] Fetching thread messages from OpenAI...');
-      
-      const { data: functionData, error: functionError } = await supabase.functions.invoke(
-        'chat-message',
-        {
-          body: { 
-            action: 'get_messages',
-            threadId: threadId,
-            assistantId: assistantId
-          }
-        }
-      );
-
-      if (functionError) {
-        console.error('[useChat] Error fetching thread messages:', functionError);
-        return false;
-      }
-
-      if (!functionData?.messages || !Array.isArray(functionData.messages)) {
-        console.warn('[useChat] No messages returned from thread fetch or invalid format');
-        return false;
-      }
-
-      // Process and update messages if needed
-      const openaiMessages = functionData.messages;
-      console.log('[useChat] Received messages from OpenAI thread:', openaiMessages.length);
-      
-      // Filter for new assistant messages we haven't processed yet
-      const newAssistantMessages = openaiMessages
-        .filter(msg => 
-          msg.role === 'assistant' && 
-          msg.id && 
-          !processedMessageIdsRef.current.has(msg.id)
-        )
-        .map(msg => {
-          const content = extractMessageContent(msg);
-          
-          // Skip processing messages
-          if (content.includes("processing your file")) {
-            return null;
-          }
-          
-          // Add this message ID to our processed set
-          if (msg.id) {
-            processedMessageIdsRef.current.add(msg.id);
-          }
-          
-          return {
-            role: 'assistant' as const,
-            content: content,
-            id: msg.id
-          };
-        })
-        .filter(Boolean) as Message[];
-      
-      if (newAssistantMessages.length > 0) {
-        console.log('[useChat] Adding new assistant messages:', newAssistantMessages.length);
-        
-        setMessages(prevMessages => {
-          // Remove any processing messages when we receive real responses
-          const filteredPrevMessages = prevMessages.filter(msg => 
-            msg.role !== 'assistant' || 
-            !msg.content.includes("processing your file")
-          );
-          
-          return [...filteredPrevMessages, ...newAssistantMessages];
-        });
-        
-        return true; // We found new messages
-      }
-      
-      return false; // No new messages found
-    } catch (error) {
-      console.error('[useChat] Error fetching thread messages:', error);
-      return false;
+    const { newMessages, hasNewMessages } = await fetchThreadMessages(
+      threadId,
+      assistantId,
+      processedMessageIdsRef.current
+    );
+    
+    if (hasNewMessages) {
+      setMessages(prevMessages => updateMessagesWithResponse(prevMessages, newMessages));
+      return true;
     }
+    
+    return false;
   }, [threadId, assistantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -149,52 +61,26 @@ export const useChat = () => {
 
     // Always use the threadId from context, with fallback to DEFAULT_THREAD_ID
     const currentThreadId = threadId || DEFAULT_THREAD_ID;
+    const userMessage = message.trim();
     
     console.log("[useChat] Submitting message with thread ID:", currentThreadId);
-    console.log("[useChat] Using assistant ID:", assistantId);
-    console.log("[useChat] Message content:", message);
-
-    const userMessage = message.trim();
+    
     setMessage("");
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setMessages(prev => addUserMessage(prev, userMessage));
     setIsLoading(true);
 
     try {
-      console.log("[useChat] Invoking chat-message function...");
-      
-      const { data: functionData, error: functionError } = await supabase.functions.invoke(
-        'chat-message',
-        {
-          body: { 
-            message: userMessage,
-            threadId: currentThreadId,
-            assistantId: assistantId,
-            action: 'send_message'
-          }
-        }
-      );
-
-      console.log("[useChat] Response from chat-message:", { functionData, functionError });
-
-      if (functionError) {
-        console.error('[useChat] Function error:', functionError);
-        throw new Error(functionError.message);
-      }
-
-      if (!functionData || !functionData.success) {
-        console.error('[useChat] Function returned error:', functionData?.error || 'Unknown error');
-        throw new Error(functionData?.error || 'No response received from the assistant');
-      }
+      const functionData = await sendMessageToThread(userMessage, currentThreadId, assistantId);
 
       // Check if there's an OpenAI error in the response
       if (functionData.error) {
         console.error('[useChat] OpenAI error in response:', functionData.error);
         
         // Display the OpenAI error in the chat instead of a generic message
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: `❌ I encountered an error processing your message: ${functionData.error.message || 'Unknown error'}`
-        }]);
+        setMessages(prev => addAssistantMessage(
+          prev, 
+          `❌ I encountered an error processing your message: ${functionData.error.message || 'Unknown error'}`
+        ));
         
         // Also show a toast notification about the error
         toast({
@@ -203,7 +89,6 @@ export const useChat = () => {
           description: functionData.error.message || "There was an error processing your message."
         });
         
-        setIsLoading(false);
         return;
       }
 
@@ -219,18 +104,14 @@ export const useChat = () => {
         processedMessageIdsRef.current.add(functionData.messageId);
       }
       
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: functionData.analysis,
-        id: functionData.messageId
-      }]);
+      setMessages(prev => addAssistantMessage(prev, functionData.analysis, functionData.messageId));
 
     } catch (error) {
       console.error('[useChat] Error processing message:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: '❌ I apologize, but I encountered an error processing your message. Please try again.' 
-      }]);
+      setMessages(prev => addAssistantMessage(
+        prev, 
+        '❌ I apologize, but I encountered an error processing your message. Please try again.'
+      ));
       
       toast({
         variant: "destructive",
@@ -250,6 +131,6 @@ export const useChat = () => {
     isLoading,
     handleSubmit,
     threadId,
-    fetchThreadMessages
+    fetchThreadMessages: fetchThreadMessagesHandler
   };
 };
