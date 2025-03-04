@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Message } from "@/types/chat";
 import { useToast } from "@/components/ui/use-toast";
@@ -33,6 +32,15 @@ export const useChat = () => {
       console.warn('[useChat] No thread ID available - this may cause issues with message storage');
     }
   }, [threadId, assistantId]);
+
+  // Force update localStorage with the new thread ID on first load
+  useEffect(() => {
+    // This is a one-time update to ensure the new thread ID is used
+    if (localStorage.getItem('appThreadId') !== DEFAULT_THREAD_ID) {
+      console.log(`[useChat] Updating stored thread ID to new value: ${DEFAULT_THREAD_ID}`);
+      localStorage.setItem('appThreadId', DEFAULT_THREAD_ID);
+    }
+  }, []);
 
   // Function to fetch messages from OpenAI thread
   const fetchThreadMessagesHandler = useCallback(async (): Promise<boolean> => {

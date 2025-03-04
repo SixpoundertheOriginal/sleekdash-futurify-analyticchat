@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 // Define constants for thread and assistant IDs
-export const DEFAULT_THREAD_ID = 'thread_2saO94Wc9LZobi27LwrKoqEw';
+export const DEFAULT_THREAD_ID = 'thread_XexaKEggRcir8kQLQbbLqqy9';
 export const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
 
 interface ThreadContextType {
