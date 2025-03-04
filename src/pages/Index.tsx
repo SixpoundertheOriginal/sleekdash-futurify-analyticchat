@@ -53,9 +53,9 @@ const initialData: ProcessedAnalytics = {
       { country: "Other", downloads: 7830, percentage: 9.2 }
     ],
     devices: [
-      { type: "iPhone", downloads: 58970, percentage: 69.1 },
-      { type: "iPad", downloads: 25620, percentage: 30.0 },
-      { type: "iPod", downloads: 810, percentage: 0.9 }
+      { type: "iPhone", count: 58970, percentage: 69.1 },
+      { type: "iPad", count: 25620, percentage: 30.0 },
+      { type: "iPod", count: 810, percentage: 0.9 }
     ]
   }
 };

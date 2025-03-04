@@ -75,9 +75,9 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
         { country: "Other", downloads: 12190, percentage: 9.5 }
       ],
       devices: [
-        { type: "iPhone", downloads: 89230, percentage: 69.3 },
-        { type: "iPad", downloads: 38360, percentage: 29.8 },
-        { type: "iPod", downloads: 1160, percentage: 0.9 }
+        { type: "iPhone", count: 89230, percentage: 69.3 },
+        { type: "iPad", count: 38360, percentage: 29.8 },
+        { type: "iPod", count: 1160, percentage: 0.9 }
       ]
     }
   };
