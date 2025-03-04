@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { Sparkles, AlertTriangle, RefreshCw, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,58 +28,71 @@ export function ChatInterface() {
   const [lastFileUpload, setLastFileUpload] = useState<Date | null>(null);
   const [isCheckingForResponses, setIsCheckingForResponses] = useState(false);
   
-  // Use refs to prevent stale closures in the subscription and interval callbacks
-  const messagesRef = useRef(messages);
-  const pollingIntervalRef = useRef<number | null>(null);
+  // Use refs to prevent stale closures
   const pollingTimeoutRef = useRef<number | null>(null);
-  const hasFoundResponseRef = useRef(false);
+  const pollingAttemptsRef = useRef(0);
+  const maxPollingAttempts = 10; // Maximum number of polling attempts
+  const responseFoundRef = useRef(false);
   
-  // Update refs when messages change
-  useEffect(() => {
-    messagesRef.current = messages;
-  }, [messages]);
-
-  // Function to poll for new messages after file upload
-  const checkForNewResponses = async () => {
-    if (!threadId || hasFoundResponseRef.current) return;
-    
-    try {
-      setIsCheckingForResponses(true);
-      console.log("[ChatInterface] Polling for new assistant responses...");
-      await fetchThreadMessages();
-      
-      // Check if there are messages from the assistant after the file upload
-      const hasAssistantResponse = messagesRef.current.some(msg => 
-        msg.role === 'assistant' && 
-        msg.content.includes('analyzed your keywords')
-      );
-      
-      if (hasAssistantResponse) {
-        console.log("[ChatInterface] Found assistant response, stopping polling");
-        hasFoundResponseRef.current = true;
-        clearPollingTimers();
-      }
-    } catch (error) {
-      console.error("[ChatInterface] Error polling for messages:", error);
-    } finally {
-      setIsCheckingForResponses(false);
-    }
-  };
-  
-  // Helper to clear all polling timers
+  // Clean up polling timers
   const clearPollingTimers = () => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-    
     if (pollingTimeoutRef.current) {
       clearTimeout(pollingTimeoutRef.current);
       pollingTimeoutRef.current = null;
     }
   };
 
-  // Set up real-time subscription for new file analyses
+  // Function to check for responses from the assistant after file upload
+  const checkForNewResponses = async () => {
+    if (!threadId || pollingAttemptsRef.current >= maxPollingAttempts || responseFoundRef.current) {
+      clearPollingTimers();
+      setIsCheckingForResponses(false);
+      
+      if (pollingAttemptsRef.current >= maxPollingAttempts) {
+        console.log("[ChatInterface] Max polling attempts reached");
+      }
+      
+      if (responseFoundRef.current) {
+        console.log("[ChatInterface] Response already found, stopping polling");
+      }
+      
+      return;
+    }
+    
+    try {
+      setIsCheckingForResponses(true);
+      console.log(`[ChatInterface] Polling for assistant responses (attempt ${pollingAttemptsRef.current + 1}/${maxPollingAttempts})`);
+      
+      // Fetch the latest messages
+      const hasNewMessages = await fetchThreadMessages();
+      
+      // If we found a substantive response (not just the processing message)
+      if (hasNewMessages) {
+        console.log("[ChatInterface] Found new assistant response, stopping polling");
+        responseFoundRef.current = true;
+        clearPollingTimers();
+        setIsCheckingForResponses(false);
+        return;
+      }
+      
+      pollingAttemptsRef.current += 1;
+      
+      // Continue polling if we haven't reached the max attempts
+      if (pollingAttemptsRef.current < maxPollingAttempts) {
+        pollingTimeoutRef.current = window.setTimeout(() => {
+          checkForNewResponses();
+        }, 3000);
+      } else {
+        setIsCheckingForResponses(false);
+        console.log("[ChatInterface] Stopped polling after max attempts");
+      }
+    } catch (error) {
+      console.error("[ChatInterface] Error during polling:", error);
+      setIsCheckingForResponses(false);
+    }
+  };
+
+  // Handle new file analysis events
   useEffect(() => {
     if (!threadId) {
       console.warn('[ChatInterface] No thread ID available for subscription');
@@ -86,10 +100,12 @@ export function ChatInterface() {
     }
     
     console.log('[ChatInterface] Setting up real-time subscription for thread:', threadId);
-    hasFoundResponseRef.current = false;
+    
+    // Reset response tracking when component mounts or thread changes
+    responseFoundRef.current = false;
     
     const channel = supabase
-      .channel('chat_interface')
+      .channel('keyword_analysis_events')
       .on(
         'postgres_changes',
         {
@@ -100,49 +116,45 @@ export function ChatInterface() {
         (payload) => {
           console.log('[ChatInterface] Received new analysis:', payload);
           
-          // Clear any existing polling timers
+          // Reset polling state
           clearPollingTimers();
+          pollingAttemptsRef.current = 0;
+          responseFoundRef.current = false;
           
           // Update the last file upload timestamp
           setLastFileUpload(new Date());
           
           // Add an immediate message to let the user know file processing is happening
-          if (!messagesRef.current.some(msg => msg.content.includes('processing your file'))) {
+          const processingMessage = "I'm processing your file. I'll analyze your keywords and provide insights shortly...";
+          
+          // Check if we already have this processing message to avoid duplicates
+          if (!messages.some(msg => 
+            msg.role === 'assistant' && 
+            msg.content.includes("processing your file")
+          )) {
             setMessages(prevMessages => [
               ...prevMessages,
               {
                 role: 'assistant',
-                content: "I'm processing your file. I'll analyze your keywords and provide insights shortly..."
+                content: processingMessage
               }
             ]);
           }
           
-          // Start polling for new messages
-          hasFoundResponseRef.current = false;
-          
-          // Initial check right after file upload
-          checkForNewResponses();
-          
-          // Set up interval to check for new messages
-          pollingIntervalRef.current = window.setInterval(() => {
-            checkForNewResponses();
-          }, 5000); // Check every 5 seconds
-          
-          // Auto-stop polling after 30 seconds to prevent endless polling
+          // Start polling for new messages after a short delay
           pollingTimeoutRef.current = window.setTimeout(() => {
-            clearPollingTimers();
-            console.log('[ChatInterface] Polling timeout reached, stopping polling');
-          }, 30000);
+            checkForNewResponses();
+          }, 2000);
         }
       )
       .subscribe();
 
     return () => {
-      console.log('[ChatInterface] Cleanup: removing Supabase channel subscription');
+      console.log('[ChatInterface] Cleaning up: removing Supabase channel subscription');
       clearPollingTimers();
       supabase.removeChannel(channel);
     };
-  }, [threadId, setMessages, fetchThreadMessages]);
+  }, [threadId, messages, setMessages, fetchThreadMessages]);
 
   const handleCreateNewThread = async () => {
     setIsCreatingThread(true);
@@ -233,7 +245,7 @@ export function ChatInterface() {
           <Info className="h-3 w-3 flex-shrink-0" />
           <span>
             {isCheckingForResponses ? (
-              <>File uploaded at {lastFileUpload.toLocaleTimeString()}. Checking for assistant's response...</>
+              <>File uploaded at {lastFileUpload.toLocaleTimeString()}. Waiting for the assistant to finish analyzing your data...</>
             ) : (
               <>File uploaded at {lastFileUpload.toLocaleTimeString()}. The assistant will process it and respond shortly.</>
             )}
@@ -243,7 +255,7 @@ export function ChatInterface() {
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => (
-          <ChatMessage key={index} message={msg} />
+          <ChatMessage key={`${msg.id || msg.role}-${index}`} message={msg} />
         ))}
       </div>
 

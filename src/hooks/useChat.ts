@@ -55,10 +55,10 @@ export const useChat = () => {
   };
 
   // Function to fetch messages from OpenAI thread
-  const fetchThreadMessages = useCallback(async () => {
+  const fetchThreadMessages = useCallback(async (): Promise<boolean> => {
     if (!threadId) {
       console.warn('[useChat] Cannot fetch thread messages: No thread ID available');
-      return;
+      return false;
     }
 
     try {
@@ -77,28 +77,32 @@ export const useChat = () => {
 
       if (functionError) {
         console.error('[useChat] Error fetching thread messages:', functionError);
-        return;
+        return false;
       }
 
       if (!functionData?.messages || !Array.isArray(functionData.messages)) {
         console.warn('[useChat] No messages returned from thread fetch or invalid format');
-        return;
+        return false;
       }
 
       // Process and update messages if needed
       const openaiMessages = functionData.messages;
       console.log('[useChat] Received messages from OpenAI thread:', openaiMessages.length);
       
-      // Map to track already seen message IDs
-      const existingMessageIds = new Set<string>();
+      // Collect existing message IDs to prevent duplicates
+      const existingMessageIds = new Set(
+        messages
+          .filter(msg => msg.id)
+          .map(msg => msg.id)
+      );
       
       // Convert OpenAI messages to our format and filter out any we already have
       const newMessages: Message[] = [];
       const processedIds = new Set<string>();
       
       for (const openaiMsg of openaiMessages) {
-        // Skip messages we've already processed in this batch
-        if (processedIds.has(openaiMsg.id)) continue;
+        // Skip messages we've already processed in this batch or already have
+        if (processedIds.has(openaiMsg.id) || existingMessageIds.has(openaiMsg.id)) continue;
         processedIds.add(openaiMsg.id);
         
         // Skip user messages that contain file uploads
@@ -112,14 +116,18 @@ export const useChat = () => {
         if (openaiMsg.role === 'assistant') {
           const msgContent = extractMessageContent(openaiMsg);
           
-          // Check if we already have this message content
+          // Skip processing messages - we're interested in substantive responses
+          if (msgContent.includes("processing your file")) {
+            continue;
+          }
+          
+          // Check if we already have this message content (exact match)
           const messageExists = messages.some(msg => 
             msg.role === 'assistant' && 
             msg.content === msgContent
           );
           
-          // Check if we already have a message with similar content
-          // This helps avoid duplicate messages with slightly different formatting
+          // Check for similar content to avoid near-duplicates
           const similarMessageExists = !messageExists && messages.some(msg => 
             msg.role === 'assistant' && 
             msgContent.length > 20 &&
@@ -133,7 +141,6 @@ export const useChat = () => {
               content: msgContent,
               id: openaiMsg.id // Store the OpenAI message ID for tracking
             });
-            existingMessageIds.add(openaiMsg.id);
           }
         }
       }
@@ -142,9 +149,13 @@ export const useChat = () => {
       if (newMessages.length > 0) {
         console.log('[useChat] Adding new messages from OpenAI thread:', newMessages);
         setMessages(prev => [...prev, ...newMessages]);
+        return true; // We found substantive new messages
       }
+      
+      return false; // No new messages found
     } catch (error) {
       console.error('[useChat] Error fetching thread messages:', error);
+      return false;
     }
   }, [threadId, assistantId, messages]);
 
