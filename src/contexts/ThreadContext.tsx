@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Define constants for thread and assistant IDs
-// Updated thread ID to use the one provided in the example
+// Updated thread ID to use the fixed one
 export const DEFAULT_THREAD_ID = 'thread_2saO94Wc9LZobi27LwrKoqEw';
 export const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
 

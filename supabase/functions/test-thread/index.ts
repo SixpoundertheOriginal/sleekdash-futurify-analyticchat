@@ -1,13 +1,12 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -16,142 +15,120 @@ serve(async (req) => {
   }
 
   try {
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
     const { threadId, assistantId } = await req.json();
-
-    console.log('Testing thread:', threadId);
-    console.log('Testing assistant:', assistantId);
-
+    
     if (!threadId) {
-      throw new Error('Thread ID is required');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Thread ID is required' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
-
+    
     if (!assistantId) {
-      throw new Error('Assistant ID is required');
-    }
-
-    // First step: Check if the thread exists by trying to list messages
-    try {
-      const checkThreadResponse = await fetch(
-        `https://api.openai.com/v1/threads/${threadId}/messages`,
-        {
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v2', // Updated from v1 to v2
-            'Content-Type': 'application/json'
-          },
-        }
-      );
-
-      if (!checkThreadResponse.ok) {
-        const errorData = await checkThreadResponse.json();
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: `Thread validation failed: ${errorData.error?.message || 'Thread not found'}`,
-            step: 'thread_validation',
-            details: errorData
-          }),
-          { 
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
-      // If we got here, the thread exists
-      console.log('Thread exists, checking assistant...');
-    } catch (error) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Thread check error: ${error.message}`,
-          step: 'thread_check',
-          details: error
+          error: 'Assistant ID is required' 
         }),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    // Second step: Check if the assistant exists
-    try {
-      const checkAssistantResponse = await fetch(
-        `https://api.openai.com/v1/assistants/${assistantId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v2', // Updated from v1 to v2
-            'Content-Type': 'application/json'
-          },
-        }
-      );
-
-      if (!checkAssistantResponse.ok) {
-        const errorData = await checkAssistantResponse.json();
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: `Assistant validation failed: ${errorData.error?.message || 'Assistant not found'}`,
-            step: 'assistant_validation',
-            details: errorData
-          }),
-          { 
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+    console.log(`Testing thread ID: ${threadId}`);
+    console.log(`Testing assistant ID: ${assistantId}`);
+    
+    // Test 1: Verify the thread exists
+    const threadResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
       }
+    });
 
-      // If we got here, the assistant exists
-      console.log('Assistant exists, both checks passed!');
-    } catch (error) {
+    if (!threadResponse.ok) {
+      const errorData = await threadResponse.text();
+      console.error('Thread validation failed:', errorData);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Assistant check error: ${error.message}`,
-          step: 'assistant_check',
-          details: error
+          error: `Thread validation failed: ${errorData}` 
         }),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // If we got here, both the thread and assistant exist!
+    // Test 2: Verify the assistant exists
+    const assistantResponse = await fetch(`https://api.openai.com/v1/assistants/${assistantId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      }
+    });
+
+    if (!assistantResponse.ok) {
+      const errorData = await assistantResponse.text();
+      console.error('Assistant validation failed:', errorData);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Assistant validation failed: ${errorData}` 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Test 3: Send a test message to the thread
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        role: 'user',
+        content: 'This is a test message to verify thread functionality.'
+      }),
+    });
+
+    if (!messageResponse.ok) {
+      const errorData = await messageResponse.text();
+      console.error('Message test failed:', errorData);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Message test failed: ${errorData}` 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // All tests passed
+    console.log('Thread validation successful');
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Thread and assistant validated successfully',
-        threadId,
-        assistantId
+        message: 'Thread and Assistant validated successfully',
+        threadId: threadId,
+        assistantId: assistantId
       }),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in test-thread function:', error);
-    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: `General error: ${error.message}`,
-        step: 'general',
-        details: error
+        error: error.message || 'An unknown error occurred' 
       }),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });

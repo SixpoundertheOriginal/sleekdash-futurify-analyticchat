@@ -65,7 +65,7 @@ export function ChatInterface() {
         <h2 className="font-semibold text-white">
           AI Analysis Assistant
           {isUsingDefaultThread ? (
-            <span className="text-xs text-green-400 ml-2">Using global thread: {threadId}</span>
+            <span className="text-xs text-green-400 ml-2">Using thread: {threadId}</span>
           ) : (
             <span className="text-xs text-amber-400 ml-2">Using custom thread: {threadId}</span>
           )}
