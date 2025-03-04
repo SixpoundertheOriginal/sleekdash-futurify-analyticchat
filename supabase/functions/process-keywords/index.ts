@@ -10,11 +10,17 @@ const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204, 
+      headers: corsHeaders 
+    });
   }
 
   try {
     console.log('[process-keywords] Request headers:', req.headers);
+    console.log('[process-keywords] Request method:', req.method);
+    console.log('[process-keywords] Request URL:', req.url);
+    
     const body = await req.json();
     console.log('[process-keywords] Received body:', body);
     

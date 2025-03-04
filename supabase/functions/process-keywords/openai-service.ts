@@ -1,5 +1,5 @@
 
-import { createResponse, handleError } from './utils.ts';
+import { createResponse, handleError, corsHeaders } from './utils.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
