@@ -40,7 +40,8 @@ serve(async (req) => {
         {
           headers: {
             'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v1',
+            'OpenAI-Beta': 'assistants=v2', // Updated from v1 to v2
+            'Content-Type': 'application/json'
           },
         }
       );
@@ -85,7 +86,8 @@ serve(async (req) => {
         {
           headers: {
             'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v1',
+            'OpenAI-Beta': 'assistants=v2', // Updated from v1 to v2
+            'Content-Type': 'application/json'
           },
         }
       );
@@ -119,8 +121,8 @@ serve(async (req) => {
         { 
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        }
+      );
     }
 
     // If we got here, both the thread and assistant exist!
