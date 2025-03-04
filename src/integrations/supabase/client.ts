@@ -14,7 +14,7 @@ export const supabase = createClient<Database>(
   SUPABASE_PUBLISHABLE_KEY,
   {
     global: {
-      fetch: (...args) => fetch(...args)
+      fetch: (url, options) => fetch(url, options)
     }
   }
 );
