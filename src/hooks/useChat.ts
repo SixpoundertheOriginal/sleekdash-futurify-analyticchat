@@ -30,6 +30,83 @@ export const useChat = () => {
     }
   }, [threadId, assistantId]);
 
+  // Function to fetch messages from OpenAI thread
+  const fetchThreadMessages = async () => {
+    if (!threadId) {
+      console.warn('[useChat] Cannot fetch thread messages: No thread ID available');
+      return;
+    }
+
+    try {
+      console.log('[useChat] Fetching thread messages from OpenAI...');
+      
+      const { data: functionData, error: functionError } = await supabase.functions.invoke(
+        'chat-message',
+        {
+          body: { 
+            action: 'get_messages',
+            threadId: threadId,
+            assistantId: assistantId
+          }
+        }
+      );
+
+      if (functionError) {
+        console.error('[useChat] Error fetching thread messages:', functionError);
+        return;
+      }
+
+      if (!functionData?.messages || !Array.isArray(functionData.messages)) {
+        console.warn('[useChat] No messages returned from thread fetch or invalid format');
+        return;
+      }
+
+      // Process and update messages if needed
+      const openaiMessages = functionData.messages;
+      console.log('[useChat] Received messages from OpenAI thread:', openaiMessages.length);
+      
+      // Convert OpenAI messages to our format and filter out any we already have
+      const newMessages: Message[] = [];
+      
+      for (const openaiMsg of openaiMessages) {
+        // Skip user messages that contain file uploads
+        if (openaiMsg.role === 'user' && openaiMsg.content.includes('uploaded a keyword file')) {
+          continue;
+        }
+        
+        // Add assistant messages that we don't already have
+        if (openaiMsg.role === 'assistant') {
+          const msgContent = typeof openaiMsg.content === 'string' 
+            ? openaiMsg.content 
+            : Array.isArray(openaiMsg.content) && openaiMsg.content.length > 0 
+              ? openaiMsg.content[0].text 
+              : '';
+              
+          // Check if we already have this message
+          const messageExists = messages.some(msg => 
+            msg.role === 'assistant' && 
+            msg.content === msgContent
+          );
+          
+          if (!messageExists && msgContent) {
+            newMessages.push({
+              role: 'assistant',
+              content: msgContent
+            });
+          }
+        }
+      }
+      
+      // Add new messages to our state
+      if (newMessages.length > 0) {
+        console.log('[useChat] Adding new messages from OpenAI thread:', newMessages);
+        setMessages(prev => [...prev, ...newMessages]);
+      }
+    } catch (error) {
+      console.error('[useChat] Error fetching thread messages:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isLoading) return;
@@ -55,7 +132,8 @@ export const useChat = () => {
           body: { 
             message: userMessage,
             threadId: currentThreadId,
-            assistantId: assistantId
+            assistantId: assistantId,
+            action: 'send_message'
           }
         }
       );
@@ -129,6 +207,7 @@ export const useChat = () => {
     setMessages,
     isLoading,
     handleSubmit,
-    threadId
+    threadId,
+    fetchThreadMessages
   };
 };

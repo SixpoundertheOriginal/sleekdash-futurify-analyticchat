@@ -17,7 +17,8 @@ export function ChatInterface() {
     messages, 
     setMessages, 
     isLoading, 
-    handleSubmit
+    handleSubmit,
+    fetchThreadMessages
   } = useChat();
   
   // Get threadId and other context values
@@ -25,6 +26,22 @@ export function ChatInterface() {
   const { toast } = useToast();
   const [isCreatingThread, setIsCreatingThread] = useState(false);
   const [lastFileUpload, setLastFileUpload] = useState<Date | null>(null);
+  const [isCheckingForResponses, setIsCheckingForResponses] = useState(false);
+
+  // Function to poll for new messages after file upload
+  const checkForNewResponses = async () => {
+    if (!threadId) return;
+    
+    try {
+      setIsCheckingForResponses(true);
+      console.log("[ChatInterface] Polling for new assistant responses...");
+      await fetchThreadMessages();
+    } catch (error) {
+      console.error("[ChatInterface] Error polling for messages:", error);
+    } finally {
+      setIsCheckingForResponses(false);
+    }
+  };
 
   useEffect(() => {
     if (!threadId) {
@@ -49,12 +66,35 @@ export function ChatInterface() {
           // Update the last file upload timestamp
           setLastFileUpload(new Date());
           
-          // Only add the analysis to the chat if it doesn't have errors
-          if (payload.new && payload.new.openai_analysis && !payload.new.has_errors) {
-            // Don't add the message here, as it should come from the thread
-            console.log('[ChatInterface] File analysis will be handled by the OpenAI thread');
-          } else if (payload.new && payload.new.has_errors) {
-            console.warn('[ChatInterface] File analysis had errors:', payload.new.openai_analysis);
+          // Start polling for new messages
+          const pollInterval = setInterval(async () => {
+            await checkForNewResponses();
+            
+            // Check if there are messages from the assistant after the file upload
+            const hasAssistantResponse = messages.some(msg => 
+              msg.role === 'assistant' && 
+              msg.content.includes('analyzed your keywords')
+            );
+            
+            if (hasAssistantResponse) {
+              clearInterval(pollInterval);
+            }
+          }, 3000); // Poll every 3 seconds
+          
+          // Stop polling after 30 seconds to prevent endless polling
+          setTimeout(() => {
+            clearInterval(pollInterval);
+          }, 30000);
+          
+          // Add an immediate message to let the user know file processing is happening
+          if (!messages.some(msg => msg.content.includes('processing your file'))) {
+            setMessages(prevMessages => [
+              ...prevMessages,
+              {
+                role: 'assistant',
+                content: "I'm processing your file. I'll analyze your keywords and provide insights shortly..."
+              }
+            ]);
           }
         }
       )
@@ -64,10 +104,30 @@ export function ChatInterface() {
       console.log('[ChatInterface] Cleanup: removing Supabase channel subscription');
       supabase.removeChannel(channel);
     };
-  }, [setMessages, threadId]);
+  }, [threadId, messages, setMessages]);
 
-  // Display if we're using the default thread or not
-  const isUsingDefaultThread = threadId === DEFAULT_THREAD_ID;
+  // Poll for new messages when file upload timestamp changes
+  useEffect(() => {
+    if (lastFileUpload) {
+      // Initial check right after file upload
+      checkForNewResponses();
+      
+      // Set up interval to check for new messages
+      const interval = setInterval(() => {
+        checkForNewResponses();
+      }, 5000); // Check every 5 seconds
+      
+      // Clear interval after 30 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+      }, 30000);
+      
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [lastFileUpload]);
 
   const handleCreateNewThread = async () => {
     setIsCreatingThread(true);
@@ -102,14 +162,14 @@ export function ChatInterface() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <span className={`text-xs ${isUsingDefaultThread ? 'text-green-400' : 'text-amber-400'} ml-2 flex items-center gap-1`}>
+                  <span className={`text-xs ${threadId === DEFAULT_THREAD_ID ? 'text-green-400' : 'text-amber-400'} ml-2 flex items-center gap-1`}>
                     <Info className="h-3 w-3" />
                     Thread: {threadId?.substring(0, 10)}...
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   <p className="text-xs">
-                    {isUsingDefaultThread 
+                    {threadId === DEFAULT_THREAD_ID 
                       ? "Using default OpenAI thread" 
                       : "Using custom OpenAI thread"}
                     <br />
@@ -157,7 +217,11 @@ export function ChatInterface() {
         <div className="flex items-center gap-2 p-2 bg-blue-500/20 text-blue-200 text-xs">
           <Info className="h-3 w-3 flex-shrink-0" />
           <span>
-            File uploaded at {lastFileUpload.toLocaleTimeString()}. The assistant will process it and respond shortly.
+            {isCheckingForResponses ? (
+              <>File uploaded at {lastFileUpload.toLocaleTimeString()}. Checking for assistant's response...</>
+            ) : (
+              <>File uploaded at {lastFileUpload.toLocaleTimeString()}. The assistant will process it and respond shortly.</>
+            )}
           </span>
         </div>
       )}
@@ -170,7 +234,7 @@ export function ChatInterface() {
 
       <ChatInput
         message={message}
-        isLoading={isLoading}
+        isLoading={isLoading || isCheckingForResponses}
         onMessageChange={setMessage}
         onSubmit={handleSubmit}
       />
