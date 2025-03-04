@@ -1,15 +1,16 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 // Define constants for thread and assistant IDs
 export const DEFAULT_THREAD_ID = 'thread_XexaKEggRcir8kQLQbbLqqy9';
-export const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
+export const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj'; // For Keywords
+export const APP_STORE_ASSISTANT_ID = 'asst_TfGVD0dcL2vsnPCihybxorC7'; // For App Store Analytics
 
 interface ThreadContextType {
   threadId: string;
   assistantId: string;
+  appStoreAssistantId: string; // Add App Store specific assistant ID
   setThreadId: (id: string) => void;
   setAssistantId: (id: string) => void;
   isValidThread: boolean;
@@ -24,6 +25,9 @@ export const ThreadProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [assistantId, setAssistantId] = useState<string>(DEFAULT_ASSISTANT_ID);
   const [isValidThread, setIsValidThread] = useState<boolean>(true);
   const { toast } = useToast();
+
+  // App Store assistant ID is fixed and does not need a state variable
+  const appStoreAssistantId = APP_STORE_ASSISTANT_ID;
 
   const createNewThread = async (): Promise<string | null> => {
     try {
@@ -140,6 +144,7 @@ export const ThreadProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <ThreadContext.Provider value={{ 
       threadId, 
       assistantId,
+      appStoreAssistantId,
       setThreadId, 
       setAssistantId,
       isValidThread,

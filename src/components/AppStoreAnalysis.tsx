@@ -23,8 +23,8 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
   const { toast } = useToast();
   const { data: processedData, error: processingError, isProcessing } = useAnalysisData(analysisResult);
   
-  // Get assistantId from context
-  const { assistantId } = useThread();
+  // Get appStoreAssistantId from context instead of regular assistantId
+  const { threadId, appStoreAssistantId } = useThread();
 
   const handleAnalysis = async () => {
     if (!appDescription.trim()) {
@@ -39,14 +39,14 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
     try {
       setAnalyzing(true);
       console.log('Submitting app description for analysis:', appDescription.trim());
-      console.log('Using thread ID:', DEFAULT_THREAD_ID);
-      console.log('Using assistant ID:', assistantId);
+      console.log('Using thread ID:', threadId);
+      console.log('Using App Store assistant ID:', appStoreAssistantId);
 
       const { data, error } = await supabase.functions.invoke('analyze-app-store', {
         body: { 
           appDescription: appDescription.trim(),
-          threadId: DEFAULT_THREAD_ID,
-          assistantId: assistantId
+          threadId: threadId,
+          assistantId: appStoreAssistantId
         }
       });
 
