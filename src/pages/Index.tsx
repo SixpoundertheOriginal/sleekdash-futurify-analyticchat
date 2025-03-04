@@ -4,7 +4,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { AppStoreAnalysis } from "@/components/AppStoreAnalysis";
 import { KeywordsSection } from "@/components/KeywordsSection";
-import { BarChart } from "lucide-react";
+import { ThreadDebugger } from "@/components/ThreadDebugger";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 
 const initialData: ProcessedAnalytics = {
@@ -65,6 +65,8 @@ const Index = () => {
                 Monitor your app's performance and optimize your marketing strategy
               </p>
             </header>
+
+            <ThreadDebugger />
 
             <div className="space-y-6">
               <AppStoreAnalysis initialData={initialData} />
