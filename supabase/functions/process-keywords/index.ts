@@ -149,10 +149,33 @@ serve(async (req) => {
     console.log(`[process-keywords] Adding keyword analysis to thread: ${threadId}`);
     
     try {
+      // Format the data for better visualization in the thread
+      const dataSample = data.slice(0, 15).map(row => {
+        // Include most relevant columns for analysis
+        return {
+          Keyword: row.Keyword || '',
+          Volume: row.Volume || '0',
+          Difficulty: row.Difficulty || '0',
+          Chance: row.Chance || '0',
+          KEI: row.KEI || '0',
+          Relevancy: row.Relevancy || '0'
+        };
+      });
+
       // 1. Add a message to the thread with the analysis
       const fileUploadContent = openaiError
         ? `The user uploaded a keyword file with ${data.length} rows, but there was an error analyzing it: ${openaiError.message}`
-        : `The user uploaded a keyword file with ${data.length} rows. Please analyze it.`;
+        : `The user uploaded a keyword file with ${data.length} rows. Here's a sample of the data:
+        
+\`\`\`json
+${JSON.stringify(dataSample, null, 2)}
+\`\`\`
+
+Please analyze this keyword data for App Store Optimization. Focus on:
+1. Identifying high-opportunity keywords (based on volume, difficulty, and relevance)
+2. Suggesting keyword combinations for app metadata
+3. Providing insights on user search behavior
+4. Recommending an optimization strategy based on the data`;
         
       console.log('[process-keywords] Sending message to OpenAI thread with content:', fileUploadContent.substring(0, 100) + '...');
       
