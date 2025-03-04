@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useRef } from "react";
-import { Sparkles, AlertTriangle, RefreshCw, Info } from "lucide-react";
+import { Sparkles, RefreshCw, Info, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "@/components/chat/ChatMessage";
@@ -9,6 +9,8 @@ import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 export function ChatInterface() {
   const { 
@@ -33,6 +35,17 @@ export function ChatInterface() {
   const pollingAttemptsRef = useRef(0);
   const maxPollingAttempts = 20; // Increase max polling attempts
   const responseFoundRef = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
   
   // Clean up polling timers
   const clearPollingTimers = () => {
@@ -223,34 +236,37 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex h-[700px] flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg">
-      <div className="flex items-center justify-between gap-2 border-b border-white/10 p-4 bg-primary/10">
+    <Card className="flex h-[700px] flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg overflow-hidden">
+      <div className="flex items-center justify-between gap-2 border-b border-white/10 p-3 bg-primary/10">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-          <h2 className="font-semibold text-white">
-            AI Analysis Assistant
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <span className={`text-xs ${threadId === DEFAULT_THREAD_ID ? 'text-green-400' : 'text-amber-400'} ml-2 flex items-center gap-1`}>
-                    <Info className="h-3 w-3" />
-                    Thread: {threadId?.substring(0, 10)}...
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="text-xs">
-                    {threadId === DEFAULT_THREAD_ID 
-                      ? "Using default OpenAI thread" 
-                      : "Using custom OpenAI thread"}
-                    <br />
-                    Full ID: {threadId}
-                    <br />
-                    Assistant ID: {assistantId?.substring(0, 10)}...
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </h2>
+          <div className="bg-primary/20 h-8 w-8 rounded-full flex items-center justify-center">
+            <Sparkles className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-white flex items-center">
+              AI Analysis Assistant
+              {threadId && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className={`ml-2 ${threadId === DEFAULT_THREAD_ID ? 'bg-primary/20 hover:bg-primary/30' : 'bg-amber-500/20 hover:bg-amber-500/30'} text-xs border-0`}>
+                        <Info className="h-3 w-3 mr-1" />
+                        {threadId.substring(0, 8)}...
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p className="text-xs space-y-1">
+                        <span className="block font-semibold">{threadId === DEFAULT_THREAD_ID ? "Default Thread" : "Custom Thread"}</span>
+                        <span className="block opacity-80">ID: {threadId}</span>
+                        <span className="block opacity-80">Assistant: {assistantId?.substring(0, 10)}...</span>
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </h2>
+            <p className="text-xs text-white/60">AI-Powered Keyword Analysis</p>
+          </div>
         </div>
         
         <Button
@@ -258,23 +274,23 @@ export function ChatInterface() {
           size="sm"
           onClick={handleCreateNewThread}
           disabled={isCreatingThread}
-          className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs"
+          className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs gap-1"
         >
           {isCreatingThread ? (
-            <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" />
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
           ) : null}
           New Conversation
         </Button>
       </div>
       
       {!isValidThread && (
-        <div className="flex items-center gap-2 p-3 bg-red-500/20 text-red-200 text-sm">
-          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-          <span>
+        <div className="flex items-center gap-2 p-2 bg-red-500/20 text-red-200 text-xs">
+          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="flex-1">
             Thread validation failed. Messages may not be stored correctly.
             <Button
               variant="link"
-              className="text-red-200 underline pl-1 h-auto p-0"
+              className="text-red-200 underline pl-1 h-auto p-0 text-xs"
               onClick={handleCreateNewThread}
             >
               Create new thread?
@@ -284,18 +300,19 @@ export function ChatInterface() {
       )}
       
       {lastFileUpload && isCheckingForResponses && (
-        <div className="flex items-center gap-2 p-2 bg-blue-500/20 text-blue-200 text-xs">
+        <div className="flex items-center gap-2 p-2 bg-blue-500/20 text-blue-200 text-xs border-b border-blue-500/20">
           <RefreshCw className="h-3 w-3 flex-shrink-0 animate-spin" />
           <span>
-            File uploaded at {lastFileUpload.toLocaleTimeString()}. Waiting for the assistant to analyze your data...
+            File uploaded at {lastFileUpload.toLocaleTimeString()}. Analyzing your data...
           </span>
         </div>
       )}
       
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
         {messages.map((msg, index) => (
           <ChatMessage key={`${msg.id || msg.role}-${index}`} message={msg} />
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       <ChatInput
@@ -304,6 +321,6 @@ export function ChatInterface() {
         onMessageChange={setMessage}
         onSubmit={handleSubmit}
       />
-    </div>
+    </Card>
   );
 }
