@@ -52,7 +52,14 @@ serve(async (req) => {
       );
     }
 
-    const headers = lines[0].split(/[,\t]/);
+    // Detect delimiter (comma or tab)
+    const firstLine = lines[0];
+    let delimiter = ',';
+    if (firstLine.includes('\t')) {
+      delimiter = '\t';
+    }
+    
+    const headers = lines[0].split(delimiter).map(h => h.trim());
     console.log('[process-keywords] Found headers:', headers);
     
     const expectedColumns = [
@@ -84,12 +91,20 @@ serve(async (req) => {
       .slice(1)
       .filter(line => line.trim())
       .map(line => {
-        const values = line.split(/[,\t]/);
-        return expectedColumns.reduce((obj, col, index) => {
-          obj[col] = values[index]?.trim() || '';
-          return obj;
-        }, {});
-      });
+        const values = line.split(delimiter);
+        const result = {};
+        
+        // Only add fields that have values
+        headers.forEach((header, index) => {
+          const value = values[index]?.trim() || '';
+          if (value) {
+            result[header] = value;
+          }
+        });
+        
+        return result;
+      })
+      .filter(row => Object.keys(row).length > 0); // Remove empty rows
 
     if (data.length === 0) {
       console.error('[process-keywords] No valid data rows found');
@@ -124,7 +139,7 @@ serve(async (req) => {
             },
             {
               role: 'user',
-              content: `Analyze this keyword data: ${JSON.stringify(data)}`
+              content: `Analyze this keyword data: ${JSON.stringify(data.slice(0, 50))}`
             }
           ],
         }),
@@ -150,17 +165,7 @@ serve(async (req) => {
     
     try {
       // Format the data for better visualization in the thread
-      const dataSample = data.slice(0, 15).map(row => {
-        // Include most relevant columns for analysis
-        return {
-          Keyword: row.Keyword || '',
-          Volume: row.Volume || '0',
-          Difficulty: row.Difficulty || '0',
-          Chance: row.Chance || '0',
-          KEI: row.KEI || '0',
-          Relevancy: row.Relevancy || '0'
-        };
-      });
+      const dataSample = data.slice(0, 15);
 
       // 1. Add a message to the thread with the analysis
       const fileUploadContent = openaiError
@@ -227,7 +232,7 @@ Please analyze this keyword data for App Store Optimization. Focus on:
     return new Response(
       JSON.stringify({
         status: 'success',
-        data: data,
+        data: data.slice(0, 50), // Limit data sent back to avoid payload size issues
         analysis: analysis,
         threadId: threadId,
         error: openaiError

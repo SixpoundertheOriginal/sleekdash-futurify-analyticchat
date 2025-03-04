@@ -1,90 +1,125 @@
-import { createResponse, handleError, extractMessageContent } from './utils.ts';
-import { getMessagesFromThread, addMessageToThread, runAssistantOnThread, waitForRunCompletion } from './thread-operations.ts';
 
-// Function to handle the get_messages action
+import { corsHeaders } from './utils.ts';
+import { getMessagesFromThread, runAssistantOnThread, sendMessageToThread } from './thread-operations.ts';
+
+// Get messages from a thread
 export async function handleGetMessages(threadId: string) {
   try {
+    console.log('[chat-message:actions] Getting messages from thread:', threadId);
     const messages = await getMessagesFromThread(threadId);
     
-    // Process messages to ensure content is properly extracted
-    if (messages && Array.isArray(messages)) {
-      const processedMessages = messages.map((msg: any) => {
-        // Keep original content format but add processed_content field
-        return {
-          ...msg,
-          processed_content: extractMessageContent(msg)
-        };
-      });
-      
-      return createResponse({ 
+    return new Response(
+      JSON.stringify({ 
         success: true, 
-        messages: processedMessages
-      });
-    }
-    
-    return createResponse({ 
-      success: true, 
-      messages: []
-    });
+        messages: messages
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   } catch (error) {
-    return handleError(error, 'Failed to retrieve thread messages');
+    console.error('[chat-message:actions] Error getting messages:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: { message: `Error getting messages: ${error.message}` }
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 500 
+      }
+    );
   }
 }
 
-// Function to handle the send_message action
+// Send a message to a thread and run the assistant
 export async function handleSendMessage(threadId: string, assistantId: string, message: string) {
+  if (!message) {
+    console.error('[chat-message:actions] No message provided');
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: { message: 'No message provided' }
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 400 
+      }
+    );
+  }
+
   try {
-    if (!message) {
-      console.error('[chat-message] No message provided');
-      return createResponse(
-        { error: 'No message provided' },
-        400
-      );
-    }
-
-    // 1. Add the user's message to the thread
-    await addMessageToThread(threadId, message);
-
-    // 2. Run the assistant to process the message
-    const runData = await runAssistantOnThread(threadId, assistantId);
-
-    // 3. Wait for the run to complete
-    await waitForRunCompletion(threadId, runData.id);
-
-    // 4. Get the latest messages from the thread
-    const messages = await getMessagesFromThread(threadId);
+    console.log(`[chat-message:actions] Sending message to thread: ${threadId}`);
+    console.log(`[chat-message:actions] Using assistant: ${assistantId}`);
+    console.log(`[chat-message:actions] Message content: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`);
     
-    // Get the latest assistant message (should be the first in the list)
-    const assistantMessages = messages.filter(msg => msg.role === 'assistant');
+    // 1. Send the user message to the thread
+    const userMessageId = await sendMessageToThread(threadId, message);
+    console.log(`[chat-message:actions] User message sent with ID: ${userMessageId}`);
     
-    if (assistantMessages.length === 0) {
-      console.error('[chat-message] No assistant messages found in thread');
-      return createResponse(
-        { 
-          success: false, 
-          error: { message: 'No assistant response found' } 
-        },
-        400
-      );
-    }
+    // 2. Run the assistant on the thread
+    const runId = await runAssistantOnThread(threadId, assistantId);
+    console.log(`[chat-message:actions] Assistant run started with ID: ${runId}`);
     
-    const latestAssistantMessage = assistantMessages[0];
-    console.log('[chat-message] Latest assistant message:', latestAssistantMessage.id);
+    // 3. Get the assistant's latest response
+    console.log('[chat-message:actions] Retrieving messages to find assistant response');
+    const allMessages = await getMessagesFromThread(threadId);
     
-    // Extract the content of the message using our helper function
-    const messageContent = extractMessageContent(latestAssistantMessage);
+    // Filter to find assistant messages that are newer than the user message
+    const assistantResponses = allMessages
+      .filter(msg => msg.role === 'assistant')
+      .map(msg => {
+        // Extract assistant message content
+        let content = '';
+        if (typeof msg.content === 'string') {
+          content = msg.content;
+        } else if (Array.isArray(msg.content)) {
+          content = msg.content
+            .filter(part => part.type === 'text')
+            .map(part => part.text?.value || '')
+            .join('\n');
+        }
+        
+        return {
+          id: msg.id,
+          content,
+          created_at: msg.created_at
+        };
+      })
+      .filter(msg => msg.content.trim().length > 0);
     
-    console.log('[chat-message] Assistant response content length:', messageContent.length);
-    console.log('[chat-message] Assistant response preview:', messageContent.substring(0, 100) + '...');
-
-    return createResponse({ 
-      success: true, 
-      analysis: messageContent,
-      messageId: latestAssistantMessage.id,
-      runId: runData.id,
-      messagesCount: messages.length
-    });
+    // Get the latest assistant response
+    const latestResponse = assistantResponses[0];
+    
+    // Process and return the results
+    const analysis = latestResponse?.content || 'I\'m processing your request. Please wait a moment and check back for my response.';
+    const messageId = latestResponse?.id;
+    
+    console.log(`[chat-message:actions] Response found with ID: ${messageId}`);
+    console.log(`[chat-message:actions] Response content (preview): ${analysis.substring(0, 100)}${analysis.length > 100 ? '...' : ''}`);
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        messageId: messageId,
+        analysis: analysis,
+        threadId: threadId
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   } catch (error) {
-    return handleError(error, 'Failed to process message');
+    console.error('[chat-message:actions] Error in handleSendMessage:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: { message: `Error processing message: ${error.message}` }
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 500 
+      }
+    );
   }
 }

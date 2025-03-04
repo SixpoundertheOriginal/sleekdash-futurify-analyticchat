@@ -3,6 +3,11 @@
  * Extracts the content from an OpenAI message object
  */
 export const extractMessageContent = (msg: any): string => {
+  if (!msg) {
+    console.warn('[openai-utils] Received null or undefined message');
+    return "No message data available";
+  }
+
   // Check for processed_content field first (added by our edge function)
   if (msg.processed_content && typeof msg.processed_content === 'string') {
     return msg.processed_content;
@@ -19,9 +24,15 @@ export const extractMessageContent = (msg: any): string => {
       return textParts.join('\n\n');
     }
     
+    // Handle image content
+    const hasImageContent = msg.content.some((part: any) => part.type === 'image');
+    if (hasImageContent) {
+      return "This message contains image content that cannot be displayed in text format.";
+    }
+    
     // If no text parts found, stringify the whole content
     console.warn('[openai-utils] Message had content array but no text parts', msg.content);
-    return JSON.stringify(msg.content);
+    return "Message format not supported. Please try a different query.";
   }
   
   // Handle case where content is an empty array (sent as string "[]")
@@ -51,7 +62,12 @@ export const extractMessageContent = (msg: any): string => {
       }
     }
     
-    return "Content unavailable. The message appears to be empty.";
+    // Check for run information
+    if (msg.run_id) {
+      return "Processing your request... (Run ID: " + msg.run_id.substring(0, 8) + ")";
+    }
+    
+    return "Content unavailable. Please try again or upload a new file.";
   }
   
   // For string content (original format)
@@ -61,5 +77,9 @@ export const extractMessageContent = (msg: any): string => {
   
   // Fallback for unknown format
   console.warn('[openai-utils] Unknown message content format', msg);
-  return JSON.stringify(msg.content || "No content available");
+  try {
+    return JSON.stringify(msg.content || "No content available");
+  } catch (e) {
+    return "Content could not be displayed due to an unknown format.";
+  }
 };
