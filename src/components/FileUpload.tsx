@@ -110,7 +110,7 @@ export function FileUpload() {
         });
       }
 
-      // Store the analysis in the database regardless of OpenAI success/failure
+      // Store the analysis in the database - REMOVING THE has_errors FIELD
       const analysisData = {
         file_name: file.name,
         file_path: file.name,
@@ -118,8 +118,8 @@ export function FileUpload() {
         openai_analysis: functionData.analysis || "Analysis could not be completed",
         app_performance: 'Medium',
         created_at: new Date().toISOString(),
-        user_id: user.id,
-        has_errors: !!functionData.error
+        user_id: user.id
+        // has_errors field removed as it doesn't exist in the database schema
       };
 
       const { error: dbError } = await supabase
