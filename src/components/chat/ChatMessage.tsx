@@ -25,11 +25,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
       console.log('[ChatMessage] Received non-string content:', content);
       
       // Handle OpenAI new format where content might be an array
-      if (Array.isArray(content) && content.length > 0) {
+      if (Array.isArray(content)) {
         // Extract the text from the content array
-        const textContent = content.find(item => item.type === 'text');
-        if (textContent && textContent.text) {
-          content = textContent.text.value || JSON.stringify(textContent);
+        const textParts = content
+          .filter((item: any) => item.type === 'text')
+          .map((item: any) => item.text?.value || '');
+        
+        if (textParts.length > 0) {
+          content = textParts.join('\n\n');
         } else {
           // Fallback - stringify the content
           content = JSON.stringify(content);
