@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Message } from "@/types/chat";
 import { useToast } from "@/components/ui/use-toast";
@@ -10,7 +11,8 @@ export const useChat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([{
     role: 'assistant',
-    content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
+    content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.',
+    timestamp: new Date()
   }]);
   const [isLoading, setIsLoading] = useState(false);
   

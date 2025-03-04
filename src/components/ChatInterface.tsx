@@ -213,7 +213,8 @@ export function ChatInterface() {
     try {
       setMessages([{
         role: 'assistant',
-        content: '✨ Conversation cleared! How can I help you today?'
+        content: '✨ Conversation cleared! How can I help you today?',
+        timestamp: new Date()
       }]);
       
       toast({

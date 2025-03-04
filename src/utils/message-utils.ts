@@ -5,7 +5,11 @@ import { Message } from "@/types/chat";
  * Adds user message to the messages array
  */
 export const addUserMessage = (messages: Message[], content: string): Message[] => {
-  return [...messages, { role: 'user', content }];
+  return [...messages, { 
+    role: 'user', 
+    content,
+    timestamp: new Date()
+  }];
 };
 
 /**
@@ -19,7 +23,8 @@ export const addAssistantMessage = (
   return [...messages, { 
     role: 'assistant', 
     content,
-    id: messageId
+    id: messageId,
+    timestamp: new Date()
   }];
 };
 
@@ -53,5 +58,11 @@ export const updateMessagesWithResponse = (
     !msg.content.includes("I'm processing your file")
   );
   
-  return [...filteredMessages, ...filteredNewMessages];
+  // Add timestamps to new messages if they don't have one
+  const timestampedNewMessages = filteredNewMessages.map(msg => ({
+    ...msg,
+    timestamp: msg.timestamp || new Date()
+  }));
+  
+  return [...filteredMessages, ...timestampedNewMessages];
 };

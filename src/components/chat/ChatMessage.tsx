@@ -108,6 +108,11 @@ export function ChatMessage({ message }: ChatMessageProps) {
     );
   };
 
+  // Format timestamp
+  const formattedTime = message.timestamp 
+    ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   return (
     <div className={`flex items-start gap-3 animate-fade-up ${
       message.role === 'assistant' ? 'max-w-full' : 'max-w-[85%] ml-auto flex-row-reverse'
@@ -124,6 +129,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
         )}
       </div>
       <div className="flex-1">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium text-white/60">
+            {message.role === 'assistant' ? 'AI Assistant' : 'You'}
+          </span>
+          <span className="text-xs text-white/40">
+            {formattedTime}
+          </span>
+        </div>
         {renderMessageContent(message.content)}
       </div>
     </div>
