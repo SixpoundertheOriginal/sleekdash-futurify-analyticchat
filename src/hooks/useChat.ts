@@ -30,6 +30,30 @@ export const useChat = () => {
     }
   }, [threadId, assistantId]);
 
+  // Function to extract text content from OpenAI message format
+  const extractMessageContent = (openaiMessage: any): string => {
+    // Handle different content formats
+    if (typeof openaiMessage.content === 'string') {
+      return openaiMessage.content;
+    } 
+    
+    if (Array.isArray(openaiMessage.content) && openaiMessage.content.length > 0) {
+      // Find text content in the array
+      const textContent = openaiMessage.content.find((item: any) => 
+        item.type === 'text' || (item.text && item.text.value)
+      );
+      
+      if (textContent) {
+        return textContent.text?.value || textContent.text || JSON.stringify(textContent);
+      }
+    }
+    
+    // Fallback - return serialized content
+    return typeof openaiMessage.content === 'object' 
+      ? JSON.stringify(openaiMessage.content) 
+      : String(openaiMessage.content || '');
+  };
+
   // Function to fetch messages from OpenAI thread
   const fetchThreadMessages = async () => {
     if (!threadId) {
@@ -70,18 +94,16 @@ export const useChat = () => {
       
       for (const openaiMsg of openaiMessages) {
         // Skip user messages that contain file uploads
-        if (openaiMsg.role === 'user' && openaiMsg.content.includes('uploaded a keyword file')) {
+        if (openaiMsg.role === 'user' && 
+            typeof openaiMsg.content === 'string' && 
+            openaiMsg.content.includes('uploaded a keyword file')) {
           continue;
         }
         
         // Add assistant messages that we don't already have
         if (openaiMsg.role === 'assistant') {
-          const msgContent = typeof openaiMsg.content === 'string' 
-            ? openaiMsg.content 
-            : Array.isArray(openaiMsg.content) && openaiMsg.content.length > 0 
-              ? openaiMsg.content[0].text 
-              : '';
-              
+          const msgContent = extractMessageContent(openaiMsg);
+          
           // Check if we already have this message
           const messageExists = messages.some(msg => 
             msg.role === 'assistant' && 

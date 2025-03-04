@@ -9,7 +9,28 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
-  const renderMessageContent = (content: string) => {
+  const renderMessageContent = (content: any) => {
+    // Check if content is not a string (could be an object from OpenAI API)
+    if (typeof content !== 'string') {
+      console.log('[ChatMessage] Received non-string content:', content);
+      
+      // Handle OpenAI new format where content might be an array
+      if (Array.isArray(content) && content.length > 0) {
+        // Extract the text from the content array
+        const textContent = content.find(item => item.type === 'text');
+        if (textContent && textContent.text) {
+          content = textContent.text.value || JSON.stringify(textContent);
+        } else {
+          // Fallback - stringify the content
+          content = JSON.stringify(content);
+        }
+      } else {
+        // Fallback - stringify the content
+        content = JSON.stringify(content);
+      }
+    }
+
+    // Now we're sure content is a string, proceed with processing
     // Handle mathematical formulas
     const processMathFormulas = (text: string) => {
       return text.replace(/\\\[(.*?)\\\]/g, (_, formula) => {
