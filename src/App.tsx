@@ -9,6 +9,7 @@ import { ThreadProvider } from "@/contexts/ThreadContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import DevTools from "./pages/DevTools";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,16 @@ const AppRoutes = () => (
         <ProtectedRouteWrapper>
           <ThreadProvider>
             <Index />
+          </ThreadProvider>
+        </ProtectedRouteWrapper>
+      }
+    />
+    <Route
+      path="/dev-tools"
+      element={
+        <ProtectedRouteWrapper>
+          <ThreadProvider>
+            <DevTools />
           </ThreadProvider>
         </ProtectedRouteWrapper>
       }
