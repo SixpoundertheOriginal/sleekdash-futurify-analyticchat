@@ -47,9 +47,12 @@ export const fetchThreadMessages = async (
         !processedMessageIds.has(msg.id)
       )
       .map(msg => {
+        const content = extractMessageContent(msg);
+        console.log(`[openai-service] Processing message ${msg.id?.substring(0, 10)}...: ${content.substring(0, 50)}...`);
+        
         return {
           role: 'assistant' as const,
-          content: extractMessageContent(msg),
+          content: content,
           id: msg.id
         };
       });

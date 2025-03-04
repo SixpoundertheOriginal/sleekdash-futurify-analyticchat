@@ -31,7 +31,7 @@ export function ChatInterface() {
   // Use refs to prevent stale closures
   const pollingTimeoutRef = useRef<number | null>(null);
   const pollingAttemptsRef = useRef(0);
-  const maxPollingAttempts = 10; // Maximum number of polling attempts
+  const maxPollingAttempts = 20; // Increase max polling attempts
   const responseFoundRef = useRef(false);
   
   // Clean up polling timers
@@ -44,13 +44,9 @@ export function ChatInterface() {
 
   // Function to check for responses from the assistant after file upload
   const checkForNewResponses = async () => {
-    if (!threadId || pollingAttemptsRef.current >= maxPollingAttempts || responseFoundRef.current) {
+    if (!threadId || responseFoundRef.current) {
       clearPollingTimers();
       setIsCheckingForResponses(false);
-      
-      if (pollingAttemptsRef.current >= maxPollingAttempts) {
-        console.log("[ChatInterface] Max polling attempts reached");
-      }
       
       if (responseFoundRef.current) {
         console.log("[ChatInterface] Response already found, stopping polling");
@@ -81,16 +77,55 @@ export function ChatInterface() {
       if (pollingAttemptsRef.current < maxPollingAttempts) {
         pollingTimeoutRef.current = window.setTimeout(() => {
           checkForNewResponses();
-        }, 3000);
+        }, 1500); // Poll more frequently (1.5 seconds)
       } else {
         setIsCheckingForResponses(false);
         console.log("[ChatInterface] Stopped polling after max attempts");
+
+        // Add a message to let the user know polling stopped
+        setMessages(prevMessages => {
+          const processingMsgIndex = prevMessages.findIndex(msg => 
+            msg.role === 'assistant' && 
+            msg.content.includes("processing your file")
+          );
+          
+          if (processingMsgIndex !== -1) {
+            const updatedMessages = [...prevMessages];
+            updatedMessages[processingMsgIndex] = {
+              role: 'assistant',
+              content: "I've processed your file, but it's taking longer than expected for the analysis to complete. Please check back in a moment or try refreshing the page."
+            };
+            return updatedMessages;
+          }
+          return prevMessages;
+        });
       }
     } catch (error) {
       console.error("[ChatInterface] Error during polling:", error);
       setIsCheckingForResponses(false);
     }
   };
+
+  // Implement automatic polling for new messages periodically
+  useEffect(() => {
+    if (!threadId) return;
+    
+    // Every 15 seconds, quietly check for new messages in the background
+    const autoPollingInterval = setInterval(async () => {
+      if (!isCheckingForResponses && !isLoading) {
+        // Silent polling without UI indicator
+        try {
+          await fetchThreadMessages();
+        } catch (error) {
+          console.error("[ChatInterface] Error during auto-polling:", error);
+        }
+      }
+    }, 15000);
+    
+    return () => {
+      clearInterval(autoPollingInterval);
+    };
+  }, [threadId, isCheckingForResponses, isLoading, fetchThreadMessages]);
 
   // Handle new file analysis events
   useEffect(() => {
@@ -141,10 +176,10 @@ export function ChatInterface() {
             ]);
           }
           
-          // Start polling for new messages after a short delay
+          // Start polling for new messages immediately
           pollingTimeoutRef.current = window.setTimeout(() => {
             checkForNewResponses();
-          }, 2000);
+          }, 1000);
         }
       )
       .subscribe();
@@ -155,6 +190,14 @@ export function ChatInterface() {
       supabase.removeChannel(channel);
     };
   }, [threadId, messages, setMessages, fetchThreadMessages]);
+
+  // When the component mounts, check for any pending messages
+  useEffect(() => {
+    if (threadId) {
+      // Check for any pending messages once on mount
+      fetchThreadMessages().catch(console.error);
+    }
+  }, [threadId, fetchThreadMessages]);
 
   const handleCreateNewThread = async () => {
     setIsCreatingThread(true);
@@ -240,15 +283,11 @@ export function ChatInterface() {
         </div>
       )}
       
-      {lastFileUpload && (
+      {lastFileUpload && isCheckingForResponses && (
         <div className="flex items-center gap-2 p-2 bg-blue-500/20 text-blue-200 text-xs">
-          <Info className="h-3 w-3 flex-shrink-0" />
+          <RefreshCw className="h-3 w-3 flex-shrink-0 animate-spin" />
           <span>
-            {isCheckingForResponses ? (
-              <>File uploaded at {lastFileUpload.toLocaleTimeString()}. Waiting for the assistant to finish analyzing your data...</>
-            ) : (
-              <>File uploaded at {lastFileUpload.toLocaleTimeString()}. The assistant will process it and respond shortly.</>
-            )}
+            File uploaded at {lastFileUpload.toLocaleTimeString()}. Waiting for the assistant to analyze your data...
           </span>
         </div>
       )}
