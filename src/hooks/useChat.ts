@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Message } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -19,6 +19,9 @@ export const useChat = () => {
   
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Using a ref for processed message IDs to persist across renders
+  const processedMessageIdsRef = useRef<Set<string>>(new Set());
 
   // Log the thread ID to confirm we're using the correct one
   useEffect(() => {
@@ -89,67 +92,48 @@ export const useChat = () => {
       const openaiMessages = functionData.messages;
       console.log('[useChat] Received messages from OpenAI thread:', openaiMessages.length);
       
-      // Collect existing message IDs to prevent duplicates
-      const existingMessageIds = new Set(
-        messages
-          .filter(msg => msg.id)
-          .map(msg => msg.id)
-      );
-      
-      // Convert OpenAI messages to our format and filter out any we already have
-      const newMessages: Message[] = [];
-      const processedIds = new Set<string>();
-      
-      for (const openaiMsg of openaiMessages) {
-        // Skip messages we've already processed in this batch or already have
-        if (processedIds.has(openaiMsg.id) || existingMessageIds.has(openaiMsg.id)) continue;
-        processedIds.add(openaiMsg.id);
-        
-        // Skip user messages that contain file uploads
-        if (openaiMsg.role === 'user' && 
-            typeof openaiMsg.content === 'string' && 
-            openaiMsg.content.includes('uploaded a keyword file')) {
-          continue;
-        }
-        
-        // Add assistant messages that we don't already have
-        if (openaiMsg.role === 'assistant') {
-          const msgContent = extractMessageContent(openaiMsg);
+      // Filter for new assistant messages we haven't processed yet
+      const newAssistantMessages = openaiMessages
+        .filter(msg => 
+          msg.role === 'assistant' && 
+          msg.id && 
+          !processedMessageIdsRef.current.has(msg.id)
+        )
+        .map(msg => {
+          const content = extractMessageContent(msg);
           
-          // Skip processing messages - we're interested in substantive responses
-          if (msgContent.includes("processing your file")) {
-            continue;
+          // Skip processing messages
+          if (content.includes("processing your file")) {
+            return null;
           }
           
-          // Check if we already have this message content (exact match)
-          const messageExists = messages.some(msg => 
-            msg.role === 'assistant' && 
-            msg.content === msgContent
-          );
-          
-          // Check for similar content to avoid near-duplicates
-          const similarMessageExists = !messageExists && messages.some(msg => 
-            msg.role === 'assistant' && 
-            msgContent.length > 20 &&
-            (msg.content.includes(msgContent.substring(0, 20)) || 
-             msgContent.includes(msg.content.substring(0, 20)))
-          );
-          
-          if (!messageExists && !similarMessageExists && msgContent) {
-            newMessages.push({
-              role: 'assistant',
-              content: msgContent,
-              id: openaiMsg.id // Store the OpenAI message ID for tracking
-            });
+          // Add this message ID to our processed set
+          if (msg.id) {
+            processedMessageIdsRef.current.add(msg.id);
           }
-        }
-      }
+          
+          return {
+            role: 'assistant' as const,
+            content: content,
+            id: msg.id
+          };
+        })
+        .filter(Boolean) as Message[];
       
-      // Add new messages to our state
-      if (newMessages.length > 0) {
-        console.log('[useChat] Adding new messages from OpenAI thread:', newMessages);
-        setMessages(prev => [...prev, ...newMessages]);
-        return true; // We found substantive new messages
+      if (newAssistantMessages.length > 0) {
+        console.log('[useChat] Adding new assistant messages:', newAssistantMessages.length);
+        
+        setMessages(prevMessages => {
+          // Remove any processing messages when we receive real responses
+          const filteredPrevMessages = prevMessages.filter(msg => 
+            msg.role !== 'assistant' || 
+            !msg.content.includes("processing your file")
+          );
+          
+          return [...filteredPrevMessages, ...newAssistantMessages];
+        });
+        
+        return true; // We found new messages
       }
       
       return false; // No new messages found
@@ -157,7 +141,7 @@ export const useChat = () => {
       console.error('[useChat] Error fetching thread messages:', error);
       return false;
     }
-  }, [threadId, assistantId, messages]);
+  }, [threadId, assistantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,6 +214,11 @@ export const useChat = () => {
 
       console.log("[useChat] Setting assistant message:", functionData.analysis.substring(0, 100) + '...');
 
+      // Record this message ID as processed to avoid duplicates
+      if (functionData.messageId) {
+        processedMessageIdsRef.current.add(functionData.messageId);
+      }
+      
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: functionData.analysis,
