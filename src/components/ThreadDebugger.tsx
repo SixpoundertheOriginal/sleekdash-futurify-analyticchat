@@ -1,13 +1,15 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useThread, DEFAULT_THREAD_ID, DEFAULT_ASSISTANT_ID } from "@/contexts/ThreadContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, RefreshCw, CheckCircle, XCircle, Info, AlertTriangle } from "lucide-react";
+import { Sparkles, RefreshCw, CheckCircle, XCircle, Info, AlertTriangle, Copy, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function ThreadDebugger() {
   const { threadId, assistantId, setThreadId, setAssistantId, isValidThread } = useThread();
@@ -17,10 +19,72 @@ export function ThreadDebugger() {
   const [isTestingThread, setIsTestingThread] = useState(false);
   const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [savedThreads, setSavedThreads] = useState<{id: string, name: string}[]>([]);
+  const [threadName, setThreadName] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { toast } = useToast();
+  
+  // Load saved threads from localStorage on mount
+  useEffect(() => {
+    const savedThreadsStr = localStorage.getItem('savedThreads');
+    if (savedThreadsStr) {
+      try {
+        const threads = JSON.parse(savedThreadsStr);
+        if (Array.isArray(threads)) {
+          setSavedThreads(threads);
+        }
+      } catch (e) {
+        console.error('Failed to parse saved threads', e);
+      }
+    }
+  }, []);
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied",
+      description: "Text copied to clipboard",
+    });
+  };
+  
+  // Save a thread to localStorage
+  const saveThread = () => {
+    if (!newThreadId || !threadName) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Thread ID and name are required"
+      });
+      return;
+    }
+    
+    const newSavedThreads = [...savedThreads, { id: newThreadId, name: threadName }];
+    setSavedThreads(newSavedThreads);
+    localStorage.setItem('savedThreads', JSON.stringify(newSavedThreads));
+    
+    toast({
+      title: "Thread Saved",
+      description: `Thread "${threadName}" saved for future use`,
+    });
+    
+    setThreadName('');
+  };
+  
+  // Remove a saved thread
+  const removeThread = (id: string) => {
+    const newSavedThreads = savedThreads.filter(thread => thread.id !== id);
+    setSavedThreads(newSavedThreads);
+    localStorage.setItem('savedThreads', JSON.stringify(newSavedThreads));
+    
+    toast({
+      title: "Thread Removed",
+      description: "Thread removed from saved list",
+    });
+  };
+  
   const createNewThread = async () => {
     setIsCreatingThread(true);
+    setTestResult(null);
     setErrorDetails(null);
     
     try {
@@ -45,15 +109,18 @@ export function ThreadDebugger() {
 
       console.log('Thread created successfully:', data.threadId);
       setNewThreadId(data.threadId);
-      setThreadId(data.threadId);
       
       toast({
         title: "Success",
         description: `New thread created: ${data.threadId}`,
       });
+      
+      setTestResult("success");
     } catch (error) {
       console.error('Error creating thread:', error);
       setErrorDetails(error instanceof Error ? error.message : 'Unknown error');
+      setTestResult("error");
+      
       toast({
         variant: "destructive",
         title: "Error",
@@ -69,6 +136,7 @@ export function ThreadDebugger() {
     setNewAssistantId(DEFAULT_ASSISTANT_ID);
     setThreadId(DEFAULT_THREAD_ID);
     setAssistantId(DEFAULT_ASSISTANT_ID);
+    setTestResult(null);
     setErrorDetails(null);
     toast({
       title: "Reset Complete",
@@ -79,6 +147,7 @@ export function ThreadDebugger() {
   const applyChanges = () => {
     setThreadId(newThreadId);
     setAssistantId(newAssistantId);
+    setTestResult(null);
     setErrorDetails(null);
     toast({
       title: "Changes Applied",
@@ -147,15 +216,28 @@ export function ThreadDebugger() {
   return (
     <Card className="bg-black/20 border-primary/20 backdrop-blur-sm">
       <CardHeader className="bg-primary/10 rounded-t-lg border-b border-primary/20">
-        <CardTitle className="text-white flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          Thread Debugger
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-white flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Thread Debugger
+          </CardTitle>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="text-white/60 hover:text-white"
+          >
+            {showAdvanced ? "Simple Mode" : "Advanced Mode"}
+          </Button>
+        </div>
+        <CardDescription className="text-white/60">
+          Diagnose and fix thread-related issues
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-4 space-y-4">
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-white text-sm">Current Thread:</span>
+            <span className="text-white text-sm">Thread ID:</span>
             <Badge 
               variant={isValidThread ? "default" : "destructive"}
               className="px-2 py-0.5 flex items-center gap-1"
@@ -169,12 +251,22 @@ export function ThreadDebugger() {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Input 
-              value={newThreadId} 
-              onChange={(e) => setNewThreadId(e.target.value)} 
-              placeholder="Thread ID"
-              className="bg-black/30 border-white/10 text-white"
-            />
+            <div className="flex-1 flex items-center relative">
+              <Input 
+                value={newThreadId} 
+                onChange={(e) => setNewThreadId(e.target.value)} 
+                placeholder="Thread ID"
+                className="bg-black/30 border-white/10 text-white pr-8"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 text-white/60 hover:text-white"
+                onClick={() => copyToClipboard(newThreadId)}
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
             <Button 
               variant="outline" 
               size="sm" 
@@ -203,27 +295,103 @@ export function ThreadDebugger() {
           />
         </div>
 
+        {showAdvanced && (
+          <>
+            <Separator className="bg-white/10" />
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-white text-sm">Saved Threads:</span>
+                {savedThreads.length > 0 && (
+                  <Badge className="bg-primary/30 text-white">{savedThreads.length}</Badge>
+                )}
+              </div>
+              
+              {savedThreads.length > 0 ? (
+                <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1">
+                  {savedThreads.map((thread) => (
+                    <div 
+                      key={thread.id} 
+                      className="flex items-center justify-between gap-2 p-2 bg-black/20 rounded-md"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{thread.name}</p>
+                        <p className="text-white/60 text-xs truncate">{thread.id}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-white/60 hover:text-white hover:bg-primary/20"
+                          onClick={() => {
+                            setNewThreadId(thread.id);
+                            setTestResult(null);
+                          }}
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-white/60 hover:text-red-400 hover:bg-red-500/10"
+                          onClick={() => removeThread(thread.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3 bg-black/20 text-white/60 text-sm rounded-md text-center">
+                  No saved threads. Save threads for quick access.
+                </div>
+              )}
+              
+              <div className="pt-2 flex items-center gap-2">
+                <Input
+                  value={threadName}
+                  onChange={(e) => setThreadName(e.target.value)}
+                  placeholder="Thread name"
+                  className="bg-black/30 border-white/10 text-white"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="whitespace-nowrap bg-primary/20 border-primary/30 hover:bg-primary/30 text-white"
+                  onClick={saveThread}
+                  disabled={!newThreadId || !threadName}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Save
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+
         {testResult && (
-          <div className={`p-3 rounded-md flex items-start gap-2 ${
+          <div className={`p-3 rounded-md flex flex-col gap-2 ${
             testResult === "success" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
           }`}>
-            {testResult === "success" ? (
-              <CheckCircle className="h-4 w-4 mt-0.5" />
-            ) : (
-              <XCircle className="h-4 w-4 mt-0.5" />
-            )}
-            <div className="space-y-1 flex-1">
+            <div className="flex items-center gap-2">
+              {testResult === "success" ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
               <p>
                 {testResult === "success" 
                   ? "Thread and Assistant verified successfully!" 
                   : "Thread test failed. See details below:"}
               </p>
-              {errorDetails && testResult === "error" && (
-                <p className="text-xs opacity-90 bg-black/30 p-2 rounded whitespace-pre-wrap">
-                  {errorDetails}
-                </p>
-              )}
             </div>
+            
+            {testResult === "error" && errorDetails && (
+              <div className="mt-2 p-2 bg-black/20 rounded-md overflow-auto text-xs text-white/80 max-h-[150px]">
+                <pre>{errorDetails}</pre>
+              </div>
+            )}
           </div>
         )}
 
