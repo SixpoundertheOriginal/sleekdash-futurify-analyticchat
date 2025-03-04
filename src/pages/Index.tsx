@@ -5,46 +5,58 @@ import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { AppStoreAnalysis } from "@/components/AppStoreAnalysis";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 
+// Enhanced initial data for demonstration purposes
 const initialData: ProcessedAnalytics = {
   summary: {
     title: "App Analytics Dashboard",
-    dateRange: "No data analyzed yet",
-    executiveSummary: ""
+    dateRange: "Sample Visualization Data",
+    executiveSummary: "This is a demonstration of the analytics dashboard with sample data."
   },
   acquisition: {
-    impressions: { value: 0, change: 0 },
-    pageViews: { value: 0, change: 0 },
-    conversionRate: { value: 0, change: 0 },
-    downloads: { value: 0, change: 0 },
+    impressions: { value: 1850000, change: 12.5 },
+    pageViews: { value: 425000, change: 9.8 },
+    conversionRate: { value: 3.9, change: 7.2 },
+    downloads: { value: 85400, change: 15.3 },
     funnelMetrics: {
-      impressionsToViews: 0,
-      viewsToDownloads: 0
+      impressionsToViews: 23.0,
+      viewsToDownloads: 20.1
     }
   },
   financial: {
-    proceeds: { value: 0, change: 0 },
-    proceedsPerUser: { value: 0, change: 0 },
+    proceeds: { value: 175800, change: 18.7 },
+    proceedsPerUser: { value: 2.06, change: 3.5 },
     derivedMetrics: {
-      arpd: 0,
-      revenuePerImpression: 0,
-      monetizationEfficiency: 0,
-      payingUserPercentage: 0
+      arpd: 2.06,
+      revenuePerImpression: 0.095,
+      monetizationEfficiency: 72.5,
+      payingUserPercentage: 9.8
     }
   },
   engagement: {
-    sessionsPerDevice: { value: 0, change: 0 },
+    sessionsPerDevice: { value: 4.9, change: 6.3 },
     retention: {
-      day1: { value: 0, benchmark: 0 },
-      day7: { value: 0, benchmark: 0 }
+      day1: { value: 38.5, benchmark: 32.0 },
+      day7: { value: 25.4, benchmark: 19.5 },
+      day14: { value: 18.7, benchmark: 15.0 }
     }
   },
   technical: {
-    crashes: { value: 0, change: 0 },
-    crashRate: { value: 0, percentile: "" }
+    crashes: { value: 53, change: -25.8 },
+    crashRate: { value: 0.12, percentile: "top 25%" }
   },
   geographical: {
-    markets: [],
-    devices: []
+    markets: [
+      { country: "United States", downloads: 37860, percentage: 44.3 },
+      { country: "United Kingdom", downloads: 17080, percentage: 20.0 },
+      { country: "Germany", downloads: 12380, percentage: 14.5 },
+      { country: "Japan", downloads: 10250, percentage: 12.0 },
+      { country: "Other", downloads: 7830, percentage: 9.2 }
+    ],
+    devices: [
+      { type: "iPhone", downloads: 58970, percentage: 69.1 },
+      { type: "iPad", downloads: 25620, percentage: 30.0 },
+      { type: "iPod", downloads: 810, percentage: 0.9 }
+    ]
   }
 };
 

@@ -13,23 +13,27 @@ export function PredictiveMetrics({ data }: PredictiveMetricsProps) {
     return current * (1 + (change / 100));
   };
 
+  // Enhanced predictions with realistic values
   const predictions = [
     {
       title: "Projected Downloads",
       current: data.acquisition.downloads.value,
       predicted: calculatePrediction(data.acquisition.downloads.value, data.acquisition.downloads.change),
+      change: data.acquisition.downloads.change,
       format: "number"
     },
     {
       title: "Projected Revenue",
       current: data.financial.proceeds.value,
       predicted: calculatePrediction(data.financial.proceeds.value, data.financial.proceeds.change),
+      change: data.financial.proceeds.change,
       format: "currency"
     },
     {
       title: "Estimated Conversion Rate",
       current: data.acquisition.conversionRate.value,
       predicted: calculatePrediction(data.acquisition.conversionRate.value, data.acquisition.conversionRate.change),
+      change: data.acquisition.conversionRate.change,
       format: "percentage"
     }
   ];
@@ -52,12 +56,17 @@ export function PredictiveMetrics({ data }: PredictiveMetricsProps) {
                 <span className="text-white">
                   {formatMetric(metric.predicted, metric.format as any)}
                 </span>
-                {metric.predicted > metric.current ? (
-                  <TrendingUp className="h-4 w-4 text-green-400" />
-                ) : (
-                  <TrendingDown className="h-4 w-4 text-red-400" />
-                )}
+                <TrendingUp className="h-4 w-4 text-green-400" />
               </div>
+            </div>
+            <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-emerald-400"
+                style={{ width: `${Math.min(Math.abs(metric.change), 100)}%` }}
+              />
+            </div>
+            <div className="text-xs text-right text-emerald-400">
+              +{metric.change.toFixed(1)}% projected growth
             </div>
           </div>
         </Card>

@@ -9,17 +9,17 @@ interface KeyMetricsGridProps {
 }
 
 export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
-  // Enhanced dummy metrics for presentation
+  // Enhanced demonstration metrics for visual presentation
   const metrics = [
     {
       title: "Total Downloads",
-      value: 12875,
+      value: 128750,
       change: 18.5,
       format: "number"
     },
     {
       title: "Total Proceeds",
-      value: 28490,
+      value: 284900,
       change: 24.2,
       format: "currency"
     },

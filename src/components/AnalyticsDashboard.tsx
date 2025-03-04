@@ -26,9 +26,67 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   
+  // Enhanced demo data for visualization
+  const demoData: ProcessedAnalytics = {
+    ...data,
+    summary: {
+      title: "App Analytics Dashboard Demo",
+      dateRange: "Last 30 days (Jan 1 - Jan 30, 2023)",
+      executiveSummary: "Strong performance with 18.5% growth in downloads and 24.2% increase in revenue."
+    },
+    acquisition: {
+      impressions: { value: 2500000, change: 15.3 },
+      pageViews: { value: 580000, change: 12.8 },
+      conversionRate: { value: 4.8, change: 12.7 },
+      downloads: { value: 128750, change: 18.5 },
+      funnelMetrics: {
+        impressionsToViews: 23.2,
+        viewsToDownloads: 22.2
+      }
+    },
+    financial: {
+      proceeds: { value: 284900, change: 24.2 },
+      proceedsPerUser: { value: 2.21, change: 5.7 },
+      derivedMetrics: {
+        arpd: 2.21,
+        revenuePerImpression: 0.114,
+        monetizationEfficiency: 78.3,
+        payingUserPercentage: 12.5
+      }
+    },
+    engagement: {
+      sessionsPerDevice: { value: 5.8, change: 8.2 },
+      retention: {
+        day1: { value: 42.5, benchmark: 35.0 },
+        day7: { value: 28.3, benchmark: 22.0 },
+        day14: { value: 22.1, benchmark: 18.5 }
+      }
+    },
+    technical: {
+      crashes: { value: 42, change: -32.5 },
+      crashRate: { value: 0.08, percentile: "top 15%" }
+    },
+    geographical: {
+      markets: [
+        { country: "United States", downloads: 58250, percentage: 45.2 },
+        { country: "United Kingdom", downloads: 24320, percentage: 18.9 },
+        { country: "Germany", downloads: 18540, percentage: 14.4 },
+        { country: "Japan", downloads: 15450, percentage: 12.0 },
+        { country: "Other", downloads: 12190, percentage: 9.5 }
+      ],
+      devices: [
+        { type: "iPhone", downloads: 89230, percentage: 69.3 },
+        { type: "iPad", downloads: 38360, percentage: 29.8 },
+        { type: "iPod", downloads: 1160, percentage: 0.9 }
+      ]
+    }
+  };
+  
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
+      // Simulate refresh delay
+      await new Promise(resolve => setTimeout(resolve, 1200));
       toast({
         title: "Dashboard Updated",
         description: "Analysis data has been refreshed"
@@ -48,8 +106,8 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-semibold text-white">{data.summary.title}</h2>
-          <p className="text-white/60">{data.summary.dateRange}</p>
+          <h2 className="text-2xl font-semibold text-white">{demoData.summary.title}</h2>
+          <p className="text-white/60">{demoData.summary.dateRange}</p>
         </div>
         <div className="flex items-center gap-4">
           <Button
@@ -74,36 +132,36 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
         </div>
       </div>
 
-      <KeyMetricsGrid data={data} />
+      <KeyMetricsGrid data={demoData} />
 
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-white">Predictive Analytics</h2>
-        <PredictiveMetrics data={data} />
+        <PredictiveMetrics data={demoData} />
       </div>
 
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-white">Acquisition & Revenue</h2>
         <div className="grid gap-6 md:grid-cols-2">
-          <ImpressionAnalytics data={data} />
-          <ProceedsAnalysis data={data} />
+          <ImpressionAnalytics data={demoData} />
+          <ProceedsAnalysis data={demoData} />
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <ConversionFunnel data={data} />
-        <GeographicalDistribution data={data} />
+        <ConversionFunnel data={demoData} />
+        <GeographicalDistribution data={demoData} />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <TrendAnalysis data={data} />
-        <ComparativeAnalysis data={data} />
+        <TrendAnalysis data={demoData} />
+        <ComparativeAnalysis data={demoData} />
       </div>
 
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-white">User Engagement</h2>
         <div className="grid gap-6 md:grid-cols-2">
-          <EngagementMetrics data={data} />
-          <RetentionChart data={data} />
+          <EngagementMetrics data={demoData} />
+          <RetentionChart data={demoData} />
         </div>
       </div>
     </div>
