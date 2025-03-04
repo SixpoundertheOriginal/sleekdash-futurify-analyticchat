@@ -1,6 +1,10 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
+// Use the same constants as defined in ThreadContext.tsx
+const DEFAULT_THREAD_ID = 'thread_wbaTz1aTmZhcT9bZqpHpTAQj';
+const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -20,8 +24,13 @@ serve(async (req) => {
     }
 
     console.log('Received request with description:', appDescription.substring(0, 100) + '...')
-    console.log('Thread ID:', threadId)
-    console.log('Assistant ID:', assistantId)
+    
+    // Use provided IDs if available, otherwise use defaults
+    const finalThreadId = threadId || DEFAULT_THREAD_ID;
+    const finalAssistantId = assistantId || DEFAULT_ASSISTANT_ID;
+    
+    console.log('Using Thread ID:', finalThreadId)
+    console.log('Using Assistant ID:', finalAssistantId)
 
     // Add your analysis logic here
     const analysis = `Monthly Performance Report: Example App
@@ -69,6 +78,8 @@ iPod: 10% (525)`;
       JSON.stringify({
         success: true,
         analysis: analysis,
+        threadId: finalThreadId,  // Return the thread ID used for confirmation
+        assistantId: finalAssistantId  // Return the assistant ID used for confirmation
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
