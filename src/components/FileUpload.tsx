@@ -102,7 +102,6 @@ export function FileUpload() {
           title: "Analysis Error",
           description: functionData.error.message || "OpenAI couldn't process this file correctly."
         });
-        // We'll still store the file attempt in the database for reference
       } else {
         toast({
           title: "Analysis complete",
@@ -110,21 +109,18 @@ export function FileUpload() {
         });
       }
 
-      // Store the analysis in the database - REMOVING THE has_errors FIELD
-      const analysisData = {
-        file_name: file.name,
-        file_path: file.name,
-        prioritized_keywords: functionData.data || [],
-        openai_analysis: functionData.analysis || "Analysis could not be completed",
-        app_performance: 'Medium',
-        created_at: new Date().toISOString(),
-        user_id: user.id
-        // has_errors field removed as it doesn't exist in the database schema
-      };
-
+      // Store the analysis in the database with explicitly specified columns
       const { error: dbError } = await supabase
         .from('keyword_analyses')
-        .insert([analysisData]);
+        .insert({
+          file_name: file.name,
+          file_path: file.name,
+          prioritized_keywords: functionData.data || [],
+          openai_analysis: functionData.analysis || "Analysis could not be completed",
+          app_performance: 'Medium',
+          created_at: new Date().toISOString(),
+          user_id: user.id
+        });
 
       if (dbError) {
         console.error('[FileUpload] Database error:', dbError);
