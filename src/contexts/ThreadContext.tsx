@@ -3,7 +3,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Define constants for thread and assistant IDs
-export const DEFAULT_THREAD_ID = 'thread_wbaTz1aTmZhcT9bZqpHpTAQj';
+// Updated thread ID to use the one provided in the example
+export const DEFAULT_THREAD_ID = 'thread_2saO94Wc9LZobi27LwrKoqEw';
 export const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
 
 interface ThreadContextType {
@@ -17,6 +18,7 @@ interface ThreadContextType {
 const ThreadContext = createContext<ThreadContextType | undefined>(undefined);
 
 export const ThreadProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Always initialize with the default thread ID to ensure consistency
   const [threadId, setThreadId] = useState<string>(DEFAULT_THREAD_ID);
   const [assistantId, setAssistantId] = useState<string>(DEFAULT_ASSISTANT_ID);
   const [isValidThread, setIsValidThread] = useState<boolean>(true);

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
-import { useThread } from "@/contexts/ThreadContext";
+import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 
 export function ChatInterface() {
   const { 
@@ -55,13 +55,20 @@ export function ChatInterface() {
     };
   }, [setMessages, threadId]);
 
+  // Display if we're using the default thread or not
+  const isUsingDefaultThread = threadId === DEFAULT_THREAD_ID;
+
   return (
     <div className="flex h-[700px] flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg">
       <div className="flex items-center gap-2 border-b border-white/10 p-4 bg-primary/10">
         <Sparkles className="h-5 w-5 text-primary animate-pulse" />
         <h2 className="font-semibold text-white">
           AI Analysis Assistant
-          <span className="text-xs text-white/50 ml-2">Thread: {threadId}</span>
+          {isUsingDefaultThread ? (
+            <span className="text-xs text-green-400 ml-2">Using global thread: {threadId}</span>
+          ) : (
+            <span className="text-xs text-amber-400 ml-2">Using custom thread: {threadId}</span>
+          )}
         </h2>
       </div>
       

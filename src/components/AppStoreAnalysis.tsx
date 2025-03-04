@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAnalysisData } from "@/hooks/useAnalysisData";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
-import { useThread } from "@/contexts/ThreadContext";
+import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 
 interface AppStoreAnalysisProps {
   initialData: ProcessedAnalytics;
@@ -23,8 +23,8 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
   const { toast } = useToast();
   const { data: processedData, error: processingError, isProcessing } = useAnalysisData(analysisResult);
   
-  // Get threadId and assistantId from context
-  const { threadId, assistantId } = useThread();
+  // Get assistantId from context
+  const { assistantId } = useThread();
 
   const handleAnalysis = async () => {
     if (!appDescription.trim()) {
@@ -39,13 +39,13 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
     try {
       setAnalyzing(true);
       console.log('Submitting app description for analysis:', appDescription.trim());
-      console.log('Using thread ID:', threadId);
+      console.log('Using thread ID:', DEFAULT_THREAD_ID);
       console.log('Using assistant ID:', assistantId);
 
       const { data, error } = await supabase.functions.invoke('analyze-app-store', {
         body: { 
           appDescription: appDescription.trim(),
-          threadId: threadId,
+          threadId: DEFAULT_THREAD_ID,
           assistantId: assistantId
         }
       });

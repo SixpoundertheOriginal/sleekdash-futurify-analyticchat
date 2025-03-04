@@ -4,7 +4,7 @@ import { Message } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/components/AuthProvider";
-import { useThread } from "@/contexts/ThreadContext";
+import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 
 export const useChat = () => {
   const [message, setMessage] = useState("");
@@ -14,11 +14,19 @@ export const useChat = () => {
   }]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Use the thread context instead of local state
-  const { threadId, assistantId, setThreadId, setAssistantId } = useThread();
+  // Use the thread context
+  const { threadId, assistantId, setThreadId } = useThread();
   
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Force the threadId to match DEFAULT_THREAD_ID to ensure consistency
+  useEffect(() => {
+    if (threadId !== DEFAULT_THREAD_ID) {
+      console.log(`Ensuring thread consistency: updating from ${threadId} to ${DEFAULT_THREAD_ID}`);
+      setThreadId(DEFAULT_THREAD_ID);
+    }
+  }, [threadId, setThreadId]);
 
   // Log the thread ID to confirm we're using the correct one
   useEffect(() => {
@@ -35,12 +43,13 @@ export const useChat = () => {
     setIsLoading(true);
 
     try {
+      // Always use the DEFAULT_THREAD_ID
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'chat-message',
         {
           body: { 
             message: userMessage,
-            threadId: threadId,
+            threadId: DEFAULT_THREAD_ID,
             assistantId: assistantId
           }
         }
@@ -53,17 +62,6 @@ export const useChat = () => {
 
       if (!functionData || !functionData.analysis) {
         throw new Error('No response received from the assistant');
-      }
-
-      // Update with the returned thread and assistant IDs if provided
-      if (functionData.threadId && functionData.threadId !== threadId) {
-        console.log(`Updating thread ID from ${threadId} to ${functionData.threadId}`);
-        setThreadId(functionData.threadId);
-      }
-
-      if (functionData.assistantId && functionData.assistantId !== assistantId) {
-        console.log(`Updating assistant ID from ${assistantId} to ${functionData.assistantId}`);
-        setAssistantId(functionData.assistantId);
       }
 
       setMessages(prev => [...prev, { 
@@ -95,6 +93,6 @@ export const useChat = () => {
     setMessages,
     isLoading,
     handleSubmit,
-    threadId
+    threadId: DEFAULT_THREAD_ID // Always return the DEFAULT_THREAD_ID
   };
 };

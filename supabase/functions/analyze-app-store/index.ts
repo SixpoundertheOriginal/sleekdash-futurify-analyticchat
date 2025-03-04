@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 // Use the same constants as defined in ThreadContext.tsx
-const DEFAULT_THREAD_ID = 'thread_wbaTz1aTmZhcT9bZqpHpTAQj';
+const DEFAULT_THREAD_ID = 'thread_2saO94Wc9LZobi27LwrKoqEw';
 const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -28,7 +28,8 @@ serve(async (req) => {
     console.log('Received request with description:', appDescription.substring(0, 100) + '...')
     
     // Use provided IDs if available, otherwise use defaults
-    const finalThreadId = threadId || DEFAULT_THREAD_ID;
+    // We prioritize the DEFAULT_THREAD_ID to ensure we're adding to the same thread
+    const finalThreadId = DEFAULT_THREAD_ID;
     const finalAssistantId = assistantId || DEFAULT_ASSISTANT_ID;
     
     console.log('Using Thread ID:', finalThreadId)

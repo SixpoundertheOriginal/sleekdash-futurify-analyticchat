@@ -6,7 +6,7 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 // Using constants to ensure consistency
 const DEFAULT_ASSISTANT_ID = 'asst_EYm70EgIE2okxc8onNc1DVTj';
-const DEFAULT_THREAD_ID = 'thread_wbaTz1aTmZhcT9bZqpHpTAQj';
+const DEFAULT_THREAD_ID = 'thread_2saO94Wc9LZobi27LwrKoqEw';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,8 +36,8 @@ serve(async (req) => {
       throw new Error('Message is required');
     }
     
-    // Use the provided threadId if valid, otherwise fall back to the default
-    const finalThreadId = threadId || DEFAULT_THREAD_ID;
+    // Use the DEFAULT_THREAD_ID to ensure consistency
+    const finalThreadId = DEFAULT_THREAD_ID;
     console.log('Using Thread ID:', finalThreadId);
     
     // Use the provided assistantId if valid, otherwise fall back to the default
