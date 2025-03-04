@@ -15,30 +15,31 @@ export const useChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Use the thread context
-  const { threadId, assistantId, setThreadId } = useThread();
+  const { threadId, assistantId } = useThread();
   
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Force the threadId to match DEFAULT_THREAD_ID to ensure consistency
-  useEffect(() => {
-    if (threadId !== DEFAULT_THREAD_ID) {
-      console.log(`[useChat] Ensuring thread consistency: updating from ${threadId} to ${DEFAULT_THREAD_ID}`);
-      setThreadId(DEFAULT_THREAD_ID);
-    }
-  }, [threadId, setThreadId]);
-
   // Log the thread ID to confirm we're using the correct one
   useEffect(() => {
     console.log(`[useChat] Using thread ID from context: ${threadId}`);
-  }, [threadId]);
+    console.log(`[useChat] Using assistant ID from context: ${assistantId}`);
+    
+    if (!threadId) {
+      console.warn('[useChat] No thread ID available - this may cause issues with message storage');
+    }
+  }, [threadId, assistantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isLoading) return;
 
-    console.log("[useChat] Submitting message with thread ID:", threadId);
+    // Always use the threadId from context, with fallback to DEFAULT_THREAD_ID
+    const currentThreadId = threadId || DEFAULT_THREAD_ID;
+    
+    console.log("[useChat] Submitting message with thread ID:", currentThreadId);
     console.log("[useChat] Using assistant ID:", assistantId);
+    console.log("[useChat] Message content:", message);
 
     const userMessage = message.trim();
     setMessage("");
@@ -48,13 +49,12 @@ export const useChat = () => {
     try {
       console.log("[useChat] Invoking chat-message function...");
       
-      // Always use the DEFAULT_THREAD_ID
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'chat-message',
         {
           body: { 
             message: userMessage,
-            threadId: DEFAULT_THREAD_ID,
+            threadId: currentThreadId,
             assistantId: assistantId
           }
         }
@@ -67,11 +67,17 @@ export const useChat = () => {
         throw new Error(functionError.message);
       }
 
-      if (!functionData || !functionData.analysis) {
-        throw new Error('No response received from the assistant');
+      if (!functionData || !functionData.success) {
+        console.error('[useChat] Function returned error:', functionData?.error || 'Unknown error');
+        throw new Error(functionData?.error || 'No response received from the assistant');
       }
 
-      console.log("[useChat] Setting assistant message:", functionData.analysis);
+      if (!functionData.analysis) {
+        console.error('[useChat] No analysis content in response:', functionData);
+        throw new Error('Empty response received from the assistant');
+      }
+
+      console.log("[useChat] Setting assistant message:", functionData.analysis.substring(0, 100) + '...');
 
       setMessages(prev => [...prev, { 
         role: 'assistant', 
@@ -102,6 +108,6 @@ export const useChat = () => {
     setMessages,
     isLoading,
     handleSubmit,
-    threadId: DEFAULT_THREAD_ID // Always return the DEFAULT_THREAD_ID
+    threadId
   };
 };
