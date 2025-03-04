@@ -12,13 +12,13 @@ export const useChat = () => {
     content: '✨ Welcome! I\'m your AI assistant. Upload your marketing data, and I\'ll help you analyze it.'
   }]);
   const [isLoading, setIsLoading] = useState(false);
-  // Using the updated specific thread ID provided
+  // Using the fixed thread ID that we've agreed on
   const [threadId, setThreadId] = useState<string>("thread_wbaTz1aTmZhcT9bZqpHpTAQj");
   const assistantId = 'asst_EYm70EgIE2okxc8onNc1DVTj';
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Load thread ID on component mount - using the fixed thread ID
+  // Log the thread ID to confirm we're using the correct one
   useEffect(() => {
     console.log(`Using fixed thread ID: ${threadId}`);
   }, [threadId]);
