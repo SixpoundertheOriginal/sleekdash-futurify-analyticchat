@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
-import { useThread } from "@/contexts/ThreadContext"; 
+import { useThread } from "@/contexts/ThreadContext";
 
 export function ChatInterface() {
   const { 
@@ -21,7 +21,12 @@ export function ChatInterface() {
   const { threadId } = useThread();
 
   useEffect(() => {
-    if (!threadId) return;
+    if (!threadId) {
+      console.warn('No thread ID available for subscription');
+      return;
+    }
+    
+    console.log('Setting up real-time subscription for thread:', threadId);
     
     const channel = supabase
       .channel('chat_interface')
@@ -45,6 +50,7 @@ export function ChatInterface() {
       .subscribe();
 
     return () => {
+      console.log('Cleanup: removing Supabase channel subscription');
       supabase.removeChannel(channel);
     };
   }, [setMessages, threadId]);
