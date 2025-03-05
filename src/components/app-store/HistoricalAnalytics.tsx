@@ -16,12 +16,7 @@ export function HistoricalAnalytics() {
         setLoading(true);
         const data = await getHistoricalAnalytics(10);
         if (data) {
-          // Format dates for better display
-          const formattedData = data.map(item => ({
-            ...item,
-            formattedDate: new Date(item.timestamp).toLocaleDateString()
-          }));
-          setHistoricalData(formattedData);
+          setHistoricalData(data);
         }
       } catch (error) {
         console.error("Error fetching historical data:", error);

@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { MetricsCacheEntry } from "./types";
+import type { MetricsCacheEntry } from "./types";
 
 /**
  * Store processed analytics data in Supabase for historical tracking
@@ -31,9 +31,9 @@ export async function storeAnalyticsData(metrics: Record<string, any>, dateRange
           downloads: metrics.downloads || 0, 
           proceeds: metrics.proceeds || 0,
           growth_metrics: growthValues,
-          raw_metrics: metrics
-        },
-        timestamp: timestamp
+          raw_metrics: metrics,
+          timestamp: timestamp
+        }
       });
       
     if (error) {
@@ -66,10 +66,18 @@ export async function getHistoricalAnalytics(limit: number = 5) {
     }
     
     // Map the data to a more usable format for our frontend
-    return data.map(item => ({
-      timestamp: item.created_at,
-      ...item.performance_metrics
-    }));
+    return data.map(item => {
+      const metricsData = item.performance_metrics || {};
+      return {
+        timestamp: item.created_at,
+        formattedDate: new Date(item.created_at).toLocaleDateString(),
+        impressions: metricsData.impressions || 0,
+        page_views: metricsData.page_views || 0,
+        downloads: metricsData.downloads || 0,
+        proceeds: metricsData.proceeds || 0,
+        conversion_rate: metricsData.conversion_rate || 0
+      };
+    });
   } catch (error) {
     console.error('Error in getHistoricalAnalytics:', error);
     return null;
