@@ -26,7 +26,10 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
     isProcessing,
     handleSubmit,
     fetchThreadMessages
-  } = useChat(preprocessDataFn);
+  } = useChat({
+    preprocessDataFn,
+    feature: 'general'
+  });
   
   const { threadId, assistantId, isValidThread } = useThread();
   const { toast } = useToast();
