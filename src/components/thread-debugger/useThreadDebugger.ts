@@ -15,6 +15,8 @@ export interface UseThreadDebuggerReturn extends Omit<
   createNewThread: () => Promise<void>;
   testThread: () => Promise<void>;
   copyToClipboard: (text: string) => void;
+  setIsCreatingThread: (isCreating: boolean) => void;
+  setIsTestingThread: (isTesting: boolean) => void;
 }
 
 export function useThreadDebugger(): UseThreadDebuggerReturn {
@@ -72,6 +74,8 @@ export function useThreadDebugger(): UseThreadDebuggerReturn {
     setNewAssistantId,
     setThreadName,
     setShowAdvanced,
+    setIsCreatingThread,
+    setIsTestingThread,
     copyToClipboard,
     saveThread: handleSaveThread,
     removeThread,

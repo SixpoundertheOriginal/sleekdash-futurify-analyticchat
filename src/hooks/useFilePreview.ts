@@ -16,7 +16,7 @@ export interface UseFilePreviewReturn {
   setFileError: (error: string | null) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   clearFilePreview: () => void;
-  simulateProgress: () => number;
+  simulateProgress: () => NodeJS.Timeout;
   formatFileSize: (bytes: number) => string;
 }
 

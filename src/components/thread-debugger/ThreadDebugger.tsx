@@ -26,6 +26,8 @@ export function ThreadDebugger() {
     setNewAssistantId,
     setThreadName,
     setShowAdvanced,
+    setIsCreatingThread,
+    setIsTestingThread,
     copyToClipboard,
     saveThread,
     removeThread,
