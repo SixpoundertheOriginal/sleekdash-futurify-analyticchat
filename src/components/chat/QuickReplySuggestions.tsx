@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { getSuggestedReplies } from "@/utils/message-content-utils";
+import { getSuggestedReplies, extractKeywords } from "@/utils/message-content-utils";
 import { useState, useEffect } from "react";
+import { detectContentType } from "@/utils/analytics/offline-processing";
 
 interface QuickReplySuggestionsProps {
   content: string;
@@ -19,9 +20,38 @@ export function QuickReplySuggestions({ content, role, onReply }: QuickReplySugg
       return;
     }
     
+    // Convert content to string if needed
+    const contentStr = content?.toString() || '';
+    
     // Get suggestions based on content
-    const newSuggestions = getSuggestedReplies(content.toString(), role);
-    setSuggestions(newSuggestions);
+    const newSuggestions = getSuggestedReplies(contentStr, role);
+    
+    // If no context-specific suggestions were found, generate based on content type
+    if (newSuggestions.length === 0 || (newSuggestions.length === 3 && newSuggestions[0] === "Tell me more")) {
+      // Extract keywords to determine content type
+      const keywords = extractKeywords(contentStr);
+      const contentType = detectContentType(contentStr);
+      
+      // Generate content-type specific suggestions
+      if (contentType === 'keywords') {
+        setSuggestions([
+          "Show me high-volume keywords",
+          "Which keywords have low competition?",
+          "How can I improve my keyword rankings?"
+        ]);
+      } else if (contentType === 'analytics') {
+        setSuggestions([
+          "What's causing the trends?",
+          "How do I improve these metrics?",
+          "Compare to industry benchmarks"
+        ]);
+      } else {
+        // Use the default suggestions
+        setSuggestions(newSuggestions);
+      }
+    } else {
+      setSuggestions(newSuggestions);
+    }
   }, [content, role]);
   
   if (suggestions.length === 0) return null;
