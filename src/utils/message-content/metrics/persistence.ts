@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { MetricsCacheEntry } from "./types";
+import type { MetricsCacheEntry } from "../types";
+import type { Json } from "@/integrations/supabase/types";
 
 /**
  * Store processed analytics data in Supabase for historical tracking
@@ -67,15 +68,15 @@ export async function getHistoricalAnalytics(limit: number = 5) {
     
     // Map the data to a more usable format for our frontend
     return data.map(item => {
-      const metricsData = item.performance_metrics || {};
+      const metricsData = item.performance_metrics as Record<string, any> || {};
       return {
         timestamp: item.created_at,
         formattedDate: new Date(item.created_at).toLocaleDateString(),
         impressions: metricsData.impressions || 0,
-        page_views: metricsData.page_views || 0,
+        pageViews: metricsData.page_views || 0,
         downloads: metricsData.downloads || 0,
         proceeds: metricsData.proceeds || 0,
-        conversion_rate: metricsData.conversion_rate || 0
+        conversionRate: metricsData.conversion_rate || 0
       };
     });
   } catch (error) {

@@ -33,7 +33,7 @@ export function HistoricalAnalytics() {
     return historicalData.map(item => ({
       date: item.formattedDate,
       impressions: item.impressions,
-      pageViews: item.page_views,
+      pageViews: item.pageViews,
       downloads: item.downloads,
       proceeds: item.proceeds
     })).reverse(); // Reverse to show oldest to newest
