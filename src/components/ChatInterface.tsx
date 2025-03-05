@@ -1,5 +1,5 @@
+
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
 import { useChat } from "@/hooks/useChat";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -11,9 +11,9 @@ import { ChatMessageList } from "@/components/chat/ChatMessageList";
 import { useMessagePolling } from "@/hooks/useMessagePolling";
 import { ChatStats } from "@/components/chat/ChatStats";
 import { exportChatHistory } from "@/services/export-service";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { X } from "lucide-react";
 import { DateRange } from "@/components/chat/DateRangePicker";
+import { ChatError } from "@/components/chat/ChatError";
+import { ChatForm } from "@/components/chat/ChatForm";
 
 export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (message: string) => Promise<any> }) {
   
@@ -148,33 +148,17 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
     }
   };
 
-  const handleSubmitWithDateCheck = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!isDateRangeSelected && !message.trim().startsWith('/')) {
-      setError('Please select a date range before sending your message.');
-      toast({
-        variant: "destructive",
-        title: "Date Range Required",
-        description: "Please select a date range to continue with your analysis."
-      });
-      return;
-    }
-    
-    // Append date range info to the message if needed
-    if (isDateRangeSelected && dateRange && !message.trim().startsWith('/')) {
-      const originalMessage = message;
-      const dateInfo = `Date range: ${format(dateRange.from, "yyyy-MM-dd")} to ${format(dateRange.to, "yyyy-MM-dd")}.\n\n`;
-      setMessage(dateInfo + originalMessage);
-      handleSubmit(e);
-      // Reset to original message to avoid showing the date prefix in the input
-      setTimeout(() => setMessage(""), 100);
-    } else {
-      handleSubmit(e);
-    }
-  };
-
   const dismissError = () => setError(null);
+  
+  // Use the extracted ChatForm component
+  const { handleSubmitWithDateCheck } = ChatForm({
+    message,
+    dateRange,
+    onSubmit: handleSubmit,
+    isDateRangeSelected,
+    handleSubmit,
+    setMessage
+  });
 
   return (
     <div className="flex h-[700px] gap-4">
@@ -188,16 +172,7 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
           onExportChat={handleExportChat}
         />
         
-        {error && (
-          <Alert variant="destructive" className="mx-3 mt-2 bg-red-500/10 text-red-200 border-red-500/20">
-            <AlertDescription className="flex justify-between items-center">
-              <span>{error}</span>
-              <button onClick={dismissError} className="p-1">
-                <X className="h-4 w-4" />
-              </button>
-            </AlertDescription>
-          </Alert>
-        )}
+        <ChatError error={error} onDismiss={dismissError} />
         
         <ChatNotifications
           isValidThread={isValidThread}
@@ -217,7 +192,7 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
           message={message}
           isLoading={isLoading || isCheckingForResponses || isProcessing}
           onMessageChange={setMessage}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitWithDateCheck}
           messages={messages}
         />
       </Card>
