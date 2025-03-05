@@ -106,8 +106,6 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
         : "We'll use your feedback to improve our responses.",
       variant: reaction === 'like' ? "default" : "destructive",
     });
-    
-    // In a real app, you would send this to your backend
   };
 
   const handleExportChat = async (format: 'json' | 'csv' | 'pdf') => {

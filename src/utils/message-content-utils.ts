@@ -66,6 +66,10 @@ export const getSuggestedReplies = (content: string, role: string): string[] => 
     return ["Show me detailed metrics", "How can I improve?"];
   } else if (content.includes('trend')) {
     return ["What's driving this trend?", "Compare to last month"];
+  } else if (content.includes('analysis')) {
+    return ["Show me the data breakdown", "What actions should I take?"];
+  } else if (content.includes('report') || content.includes('insight')) {
+    return ["Export this report", "Highlight key findings"];
   }
   
   // Default suggestions

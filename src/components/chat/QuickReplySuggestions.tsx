@@ -14,6 +14,8 @@ export function QuickReplySuggestions({ content, role, onReply }: QuickReplySugg
   
   const suggestions = getSuggestedReplies(content.toString(), role);
   
+  if (suggestions.length === 0) return null;
+  
   return (
     <div className="flex flex-wrap gap-2 mt-3">
       {suggestions.map((suggestion, index) => (
