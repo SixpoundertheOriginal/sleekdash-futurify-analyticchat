@@ -42,18 +42,18 @@ export function ChatHeader({
     switch (feature) {
       case 'keywords':
         return {
-          title: "Keywords Research Assistant",
-          description: "AI-Powered Keyword Discovery & Analysis"
+          title: "ASO Keywords Research Assistant",
+          description: "AI-Powered Keyword Discovery & Optimization"
         };
       case 'appStore':
         return {
-          title: "App Store Analytics Assistant",
-          description: "AI-Powered App Performance Analysis"
+          title: "App Store Growth Assistant",
+          description: "AI-Powered App Performance & Metadata Analysis"
         };
       default:
         return {
-          title: "AI Analysis Assistant",
-          description: "AI-Powered Data Analysis"
+          title: "AI Growth Analysis Assistant",
+          description: "App Store Optimization & Analytics"
         };
     }
   };

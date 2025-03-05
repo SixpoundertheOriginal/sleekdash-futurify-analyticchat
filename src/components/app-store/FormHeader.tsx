@@ -8,7 +8,7 @@ export function FormHeader() {
         <BarChart className="h-6 w-6 text-primary" />
       </div>
       <h2 className="text-xl font-display font-semibold text-white tracking-tight">
-        AI-Powered App Store Analysis
+        AI-Driven App Store Growth & Metadata Optimization
       </h2>
     </div>
   );

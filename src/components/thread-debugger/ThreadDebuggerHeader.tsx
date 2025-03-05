@@ -18,7 +18,7 @@ export function ThreadDebuggerHeader({
       <div className="flex justify-between items-center">
         <CardTitle className="text-white flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
-          Thread Debugger
+          ASO Thread Debugger
         </CardTitle>
         <Button 
           variant="ghost" 
@@ -30,7 +30,7 @@ export function ThreadDebuggerHeader({
         </Button>
       </div>
       <CardDescription className="text-white/60">
-        Diagnose and fix thread-related issues
+        Diagnose and fix thread-related issues for ASO analysis
       </CardDescription>
     </>
   );

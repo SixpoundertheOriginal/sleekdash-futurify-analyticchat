@@ -1,4 +1,5 @@
-# Welcome to your Lovable project
+
+# AI-Driven App Store Growth & Metadata Optimization Tool
 
 ## Project info
 

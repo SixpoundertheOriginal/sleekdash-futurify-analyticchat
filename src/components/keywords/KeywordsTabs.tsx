@@ -43,7 +43,7 @@ export function KeywordsTabs({ activeTab: externalActiveTab, setActiveTab: exter
       <TabsContent value="chat" className="pt-4 space-y-6">
         <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-indigo-400" />
-          Keywords Research Assistant
+          ASO Keywords Research Assistant
         </h3>
         <ChatInterface feature="keywords" />
       </TabsContent>
@@ -51,7 +51,7 @@ export function KeywordsTabs({ activeTab: externalActiveTab, setActiveTab: exter
       <TabsContent value="upload" className="pt-4 space-y-6">
         <h3 className="text-xl font-semibold text-white/80 mb-4 flex items-center gap-2">
           <Upload className="h-5 w-5 text-indigo-400" />
-          Upload Keyword Files
+          Upload Keyword Data
         </h3>
         <Card className="bg-indigo-950/5 border-indigo-500/10">
           <div className="p-4">
