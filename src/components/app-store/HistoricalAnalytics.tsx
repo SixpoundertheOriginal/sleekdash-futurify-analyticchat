@@ -1,35 +1,44 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useMemo, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getHistoricalAnalytics } from "@/utils/message-content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function HistoricalAnalytics() {
+function HistoricalAnalyticsBase() {
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch data
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchHistoricalData = async () => {
       try {
         setLoading(true);
         const data = await getHistoricalAnalytics(10);
-        if (data) {
+        if (data && isMounted) {
           setHistoricalData(data);
         }
       } catch (error) {
         console.error("Error fetching historical data:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchHistoricalData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Format data for charts
-  const prepareChartData = () => {
+  // Memoize chart data to prevent recalculation on each render
+  const chartData = useMemo(() => {
     return historicalData.map(item => ({
       date: item.formattedDate,
       impressions: item.impressions,
@@ -37,7 +46,23 @@ export function HistoricalAnalytics() {
       downloads: item.downloads,
       proceeds: item.proceeds
     })).reverse(); // Reverse to show oldest to newest
-  };
+  }, [historicalData]);
+
+  // Loading skeleton
+  const LoadingSkeleton = useCallback(() => (
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-48 w-full" />
+    </div>
+  ), []);
+
+  // Empty state
+  const EmptyState = useCallback(() => (
+    <p className="text-center text-muted-foreground py-8">
+      No historical data available yet. Submit analytics data to start tracking.
+    </p>
+  ), []);
 
   return (
     <Card className="col-span-1 md:col-span-2">
@@ -49,15 +74,9 @@ export function HistoricalAnalytics() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-48 w-full" />
-          </div>
+          <LoadingSkeleton />
         ) : historicalData.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">
-            No historical data available yet. Submit analytics data to start tracking.
-          </p>
+          <EmptyState />
         ) : (
           <Tabs defaultValue="trends">
             <TabsList className="mb-4">
@@ -69,7 +88,7 @@ export function HistoricalAnalytics() {
             <TabsContent value="trends">
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={prepareChartData()}>
+                  <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
@@ -86,7 +105,7 @@ export function HistoricalAnalytics() {
             <TabsContent value="downloads">
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={prepareChartData()}>
+                  <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
@@ -101,7 +120,7 @@ export function HistoricalAnalytics() {
             <TabsContent value="revenue">
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={prepareChartData()}>
+                  <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
@@ -118,3 +137,6 @@ export function HistoricalAnalytics() {
     </Card>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export const HistoricalAnalytics = memo(HistoricalAnalyticsBase);

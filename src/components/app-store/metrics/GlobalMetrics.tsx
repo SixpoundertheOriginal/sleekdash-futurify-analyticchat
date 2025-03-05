@@ -1,6 +1,6 @@
 
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { MetricCard } from "./MetricCard";
 import { NoDataCard } from "./NoDataCard";
 import { MetricsLoadingSkeleton } from "./MetricsLoadingSkeleton";
@@ -11,7 +11,7 @@ interface GlobalMetricsProps {
   isLoading?: boolean;
 }
 
-export function GlobalMetrics({ data, isLoading = false }: GlobalMetricsProps) {
+function GlobalMetricsBase({ data, isLoading = false }: GlobalMetricsProps) {
   const [dataReady, setDataReady] = useState(false);
 
   // Verify we have valid data after component mount
@@ -60,3 +60,6 @@ export function GlobalMetrics({ data, isLoading = false }: GlobalMetricsProps) {
     </div>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export const GlobalMetrics = memo(GlobalMetricsBase);

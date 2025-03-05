@@ -22,6 +22,8 @@ export interface ProcessingResult<T = any> {
   error?: string;
 }
 
+const processingCache = new Map<string, ProcessingResult>();
+
 export function detectDataFormat(data: string): DataFormat {
   if (data.trim().startsWith('{') || data.trim().startsWith('[')) {
     try {
@@ -55,6 +57,13 @@ export function processData<T = any>(
   options: ProcessingOptions = {}
 ): ProcessingResult<T> {
   try {
+    const cacheKey = generateCacheKey(rawData, options);
+    
+    if (processingCache.has(cacheKey)) {
+      console.log("Using cached processing result");
+      return processingCache.get(cacheKey) as ProcessingResult<T>;
+    }
+    
     const format = options.formatHint || detectDataFormat(rawData);
     let processedData: any = null;
     
@@ -81,12 +90,16 @@ export function processData<T = any>(
       processedData = normalizeDataValues(processedData);
     }
     
-    return {
+    const result = {
       success: true,
       data: processedData as T,
       metrics,
       format
     };
+    
+    processingCache.set(cacheKey, result);
+    
+    return result;
   } catch (error) {
     console.error('Data processing error:', error);
     return {
@@ -95,6 +108,12 @@ export function processData<T = any>(
       format: 'unknown'
     };
   }
+}
+
+function generateCacheKey(data: string, options: ProcessingOptions): string {
+  const dataHash = btoa(data.slice(0, 100) + data.length.toString()).slice(0, 20);
+  const optionsKey = JSON.stringify(options);
+  return `${dataHash}-${optionsKey}`;
 }
 
 function parseCSV(csvContent: string): Record<string, any>[] {
@@ -161,4 +180,8 @@ export function normalizeDataValues(data: Record<string, any>): Record<string, a
   }
   
   return normalized;
+}
+
+export function clearProcessingCache() {
+  processingCache.clear();
 }
