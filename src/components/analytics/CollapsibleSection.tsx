@@ -3,17 +3,20 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDevice } from "@/hooks/use-mobile";
+import { SkeletonWrapper } from "@/components/ui/skeleton-wrapper";
 
 interface CollapsibleSectionProps {
   title: string;
   defaultExpanded?: boolean;
   children: React.ReactNode;
+  isLoading?: boolean;
 }
 
 export function CollapsibleSection({ 
   title, 
   defaultExpanded = true, 
-  children 
+  children,
+  isLoading = false
 }: CollapsibleSectionProps) {
   const deviceType = useDevice();
   const isMobile = deviceType === 'mobile';
@@ -32,36 +35,45 @@ export function CollapsibleSection({
       role="region"
       aria-labelledby={headerId}
     >
-      <div 
-        className="flex items-center justify-between p-3 sm:p-4 cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-        role="button"
-        id={headerId}
-        aria-expanded={isExpanded}
-        aria-controls={contentId}
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsExpanded(!isExpanded);
-          }
-        }}
+      <SkeletonWrapper 
+        isLoading={isLoading} 
+        className="p-4"
+        items={[
+          { height: "24px", width: "180px", className: "rounded-md" }
+        ]}
       >
-        <h2 className="text-lg sm:text-xl font-semibold text-white">{title}</h2>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsExpanded(!isExpanded);
+        <div 
+          className="flex items-center justify-between p-3 sm:p-4 cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+          role="button"
+          id={headerId}
+          aria-expanded={isExpanded}
+          aria-controls={contentId}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsExpanded(!isExpanded);
+            }
           }}
-          aria-label={isExpanded ? `Collapse ${title}` : `Expand ${title}`}
-          aria-pressed={isExpanded}
         >
-          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-        </Button>
-      </div>
+          <h2 className="text-lg sm:text-xl font-semibold text-white">{title}</h2>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            aria-label={isExpanded ? `Collapse ${title}` : `Expand ${title}`}
+            aria-pressed={isExpanded}
+          >
+            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </Button>
+        </div>
+      </SkeletonWrapper>
+      
       <div 
         id={contentId}
         className={`transition-all duration-300 ${
@@ -72,7 +84,9 @@ export function CollapsibleSection({
         role="region"
         aria-hidden={!isExpanded}
       >
-        {children}
+        <SkeletonWrapper isLoading={isLoading} count={3}>
+          {children}
+        </SkeletonWrapper>
       </div>
     </div>
   );

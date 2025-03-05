@@ -3,12 +3,14 @@ import { Card } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { useState, useRef, KeyboardEvent } from "react";
+import { SkeletonWrapper } from "@/components/ui/skeleton-wrapper";
 
 interface ConversionFunnelProps {
   data: ProcessedAnalytics;
+  isLoading?: boolean;
 }
 
-export function ConversionFunnel({ data }: ConversionFunnelProps) {
+export function ConversionFunnel({ data, isLoading = false }: ConversionFunnelProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const chartRef = useRef<HTMLDivElement>(null);
   
@@ -107,78 +109,92 @@ export function ConversionFunnel({ data }: ConversionFunnelProps) {
         </table>
       </div>
 
-      <div 
+      <SkeletonWrapper 
+        isLoading={isLoading} 
         className="h-[300px]"
-        ref={chartRef}
-        tabIndex={0}
-        role="figure"
-        aria-labelledby="conversion-funnel-title"
-        aria-describedby="conversion-funnel-desc"
-        onKeyDown={handleKeyDown}
+        items={[
+          { height: "100%", width: "100%", className: "rounded-md" }
+        ]}
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={funnelData} layout="vertical">
-            <XAxis 
-              type="number" 
-              tick={{ fill: '#9ca3af' }} 
-              tickFormatter={(value) => value.toLocaleString()}
-            />
-            <YAxis 
-              dataKey="stage" 
-              type="category" 
-              tick={{ fill: '#9ca3af' }} 
-            />
-            <Tooltip 
-              formatter={(value: number) => [value.toLocaleString(), "Count"]}
-              contentStyle={{ 
-                backgroundColor: 'rgba(0,0,0,0.8)', 
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                color: 'white' 
-              }}
-            />
-            <Bar 
-              dataKey="value" 
-              fill="#9b87f5" 
-              radius={[0, 4, 4, 0]}
-              isAnimationActive={false} // Reduce motion for accessibility
-              label={{ 
-                position: 'right',
-                formatter: (value: number) => value.toLocaleString(),
-                fill: 'white'
-              }}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+        <div 
+          className="h-[300px]"
+          ref={chartRef}
+          tabIndex={0}
+          role="figure"
+          aria-labelledby="conversion-funnel-title"
+          aria-describedby="conversion-funnel-desc"
+          onKeyDown={handleKeyDown}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={funnelData} layout="vertical">
+              <XAxis 
+                type="number" 
+                tick={{ fill: '#9ca3af' }} 
+                tickFormatter={(value) => value.toLocaleString()}
+              />
+              <YAxis 
+                dataKey="stage" 
+                type="category" 
+                tick={{ fill: '#9ca3af' }} 
+              />
+              <Tooltip 
+                formatter={(value: number) => [value.toLocaleString(), "Count"]}
+                contentStyle={{ 
+                  backgroundColor: 'rgba(0,0,0,0.8)', 
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '8px',
+                  color: 'white' 
+                }}
+              />
+              <Bar 
+                dataKey="value" 
+                fill="#9b87f5" 
+                radius={[0, 4, 4, 0]}
+                isAnimationActive={false} // Reduce motion for accessibility
+                label={{ 
+                  position: 'right',
+                  formatter: (value: number) => value.toLocaleString(),
+                  fill: 'white'
+                }}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </SkeletonWrapper>
 
       {/* Extra visual accessibility info */}
-      <div className="mt-4 space-y-2">
-        {funnelData.map((item, index) => (
-          <div 
-            key={index} 
-            className={`p-2 rounded flex justify-between items-center ${focusedIndex === index ? 'bg-white/10' : ''}`}
-            id={`funnel-item-${index}`}
-          >
-            <div className="flex items-center">
-              <div 
-                className="w-3 h-3 mr-2 rounded-full" 
-                style={{ backgroundColor: item.color }}
-                aria-hidden="true"
-              />
-              <span className="text-white">{item.stage}</span>
+      <SkeletonWrapper 
+        isLoading={isLoading} 
+        className="mt-4 space-y-2"
+        items={Array(3).fill(0).map(() => ({ height: "40px", width: "100%", className: "rounded-md" }))}
+      >
+        <div className="mt-4 space-y-2">
+          {funnelData.map((item, index) => (
+            <div 
+              key={index} 
+              className={`p-2 rounded flex justify-between items-center ${focusedIndex === index ? 'bg-white/10' : ''}`}
+              id={`funnel-item-${index}`}
+            >
+              <div className="flex items-center">
+                <div 
+                  className="w-3 h-3 mr-2 rounded-full" 
+                  style={{ backgroundColor: item.color }}
+                  aria-hidden="true"
+                />
+                <span className="text-white">{item.stage}</span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-white font-medium">{item.value.toLocaleString()}</span>
+                {index < funnelData.length - 1 && (
+                  <span className="text-white/60 text-xs">
+                    {getConversionRate(index, index + 1)} to {funnelData[index + 1].stage}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex flex-col items-end">
-              <span className="text-white font-medium">{item.value.toLocaleString()}</span>
-              {index < funnelData.length - 1 && (
-                <span className="text-white/60 text-xs">
-                  {getConversionRate(index, index + 1)} to {funnelData[index + 1].stage}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </SkeletonWrapper>
     </Card>
   );
 }
