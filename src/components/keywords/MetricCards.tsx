@@ -24,13 +24,13 @@ export function MetricCards({
 }: MetricCardsProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      <Card className="p-6 bg-white/5 border-white/10">
+      <Card className="p-6 bg-indigo-950/5 border-indigo-500/10">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-white/60 text-sm">Top Opportunity</p>
-            <h3 className="text-lg font-semibold text-primary mt-1">{topOpportunity.keyword}</h3>
+            <h3 className="text-lg font-semibold text-indigo-300 mt-1">{topOpportunity.keyword}</h3>
           </div>
-          <Target className="h-5 w-5 text-primary" />
+          <Target className="h-5 w-5 text-indigo-400" />
         </div>
         <div className="mt-4">
           <div className="flex justify-between items-center">
@@ -39,20 +39,20 @@ export function MetricCards({
           </div>
           <div className="w-full bg-white/5 rounded-full h-2 mt-1">
             <div 
-              className="bg-primary h-2 rounded-full transition-all duration-500" 
+              className="bg-indigo-500 h-2 rounded-full transition-all duration-500" 
               style={{ width: `${Math.min(100, topOpportunity.opportunityScore)}%` }}
             />
           </div>
         </div>
       </Card>
 
-      <Card className="p-6 bg-white/5 border-white/10">
+      <Card className="p-6 bg-indigo-950/5 border-indigo-500/10">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-white/60 text-sm">Total Keywords</p>
-            <h3 className="text-lg font-semibold text-primary mt-1">{keywordCount}</h3>
+            <h3 className="text-lg font-semibold text-indigo-300 mt-1">{keywordCount}</h3>
           </div>
-          <ChartBar className="h-5 w-5 text-primary" />
+          <ChartBar className="h-5 w-5 text-indigo-400" />
         </div>
         <div className="mt-4">
           <div className="flex justify-between text-sm text-white/60">
@@ -68,41 +68,41 @@ export function MetricCards({
         </div>
       </Card>
 
-      <Card className="p-6 bg-white/5 border-white/10">
+      <Card className="p-6 bg-indigo-950/5 border-indigo-500/10">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-white/60 text-sm">Avg. Search Volume</p>
-            <h3 className="text-lg font-semibold text-primary mt-1">{avgVolume}</h3>
+            <h3 className="text-lg font-semibold text-indigo-300 mt-1">{avgVolume.toLocaleString()}</h3>
           </div>
-          <Search className="h-5 w-5 text-primary" />
+          <Search className="h-5 w-5 text-indigo-400" />
         </div>
         <div className="mt-4">
           <div className="flex justify-between items-center">
             <span className="text-sm text-white/60">Monthly Growth</span>
-            <span className="text-primary font-semibold">+12.4%</span>
+            <span className="text-indigo-300 font-semibold">+12.4%</span>
           </div>
           <div className="h-8 mt-1">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData}>
-                <Line type="monotone" dataKey="growth" stroke="#9b87f5" strokeWidth={2} dot={false} />
+              <LineChart data={trendData.slice(0, 10)}>
+                <Line type="monotone" dataKey="growth" stroke="#8884d8" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
       </Card>
 
-      <Card className="p-6 bg-white/5 border-white/10">
+      <Card className="p-6 bg-indigo-950/5 border-indigo-500/10">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-white/60 text-sm">Avg. Difficulty</p>
-            <h3 className="text-lg font-semibold text-primary mt-1">{avgDifficulty}</h3>
+            <h3 className="text-lg font-semibold text-indigo-300 mt-1">{avgDifficulty}</h3>
           </div>
-          <Award className="h-5 w-5 text-primary" />
+          <Award className="h-5 w-5 text-indigo-400" />
         </div>
         <div className="mt-4 flex justify-between items-center text-sm">
           <div className="flex items-center">
             <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
-            <span className="text-white/60">Easy</span>
+            <span className="text-white/60">Easy (&lt;30)</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1"></div>
@@ -110,7 +110,7 @@ export function MetricCards({
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 rounded-full bg-red-500 mr-1"></div>
-            <span className="text-white/60">Hard</span>
+            <span className="text-white/60">Hard (&gt;50)</span>
           </div>
         </div>
       </Card>

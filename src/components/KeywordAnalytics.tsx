@@ -48,24 +48,15 @@ export function KeywordAnalytics() {
     );
   }
 
-  if (!keywordData.length) {
-    return (
-      <Alert>
-        <AlertDescription>
-          No keyword data available. Try uploading a file to get started.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
     <div className="space-y-6 animate-fade-up">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-white">Keyword Analytics</h2>
+        <h2 className="text-xl font-semibold text-white">Keyword Analytics Dashboard</h2>
         <Button
           variant="outline"
           size="sm"
           onClick={() => refreshData()}
+          className="bg-indigo-900/20 border-indigo-500/30 text-indigo-100 hover:bg-indigo-800/30"
         >
           Refresh Data
         </Button>
@@ -83,21 +74,21 @@ export function KeywordAnalytics() {
         <div className="flex space-x-4">
           <Button
             variant="ghost"
-            className={`pb-2 px-1 rounded-none ${activeTab === 'opportunity' ? 'text-primary border-b-2 border-primary' : 'text-white/60'}`}
+            className={`pb-2 px-1 rounded-none ${activeTab === 'opportunity' ? 'text-indigo-300 border-b-2 border-indigo-500' : 'text-white/60'}`}
             onClick={() => setActiveTab('opportunity')}
           >
             Opportunity Matrix
           </Button>
           <Button
             variant="ghost"
-            className={`pb-2 px-1 rounded-none ${activeTab === 'competitive' ? 'text-primary border-b-2 border-primary' : 'text-white/60'}`}
+            className={`pb-2 px-1 rounded-none ${activeTab === 'competitive' ? 'text-indigo-300 border-b-2 border-indigo-500' : 'text-white/60'}`}
             onClick={() => setActiveTab('competitive')}
           >
             Competitive Landscape
           </Button>
           <Button
             variant="ghost"
-            className={`pb-2 px-1 rounded-none ${activeTab === 'top5' ? 'text-primary border-b-2 border-primary' : 'text-white/60'}`}
+            className={`pb-2 px-1 rounded-none ${activeTab === 'top5' ? 'text-indigo-300 border-b-2 border-indigo-500' : 'text-white/60'}`}
             onClick={() => setActiveTab('top5')}
           >
             Top Opportunities
@@ -105,7 +96,7 @@ export function KeywordAnalytics() {
         </div>
       </div>
 
-      <Card className="p-6 bg-white/5 border-white/10">
+      <Card className="p-6 bg-indigo-950/10 border-indigo-500/20">
         {activeTab === 'opportunity' && (
           <OpportunityMatrix data={keywordData} getColor={getColor} />
         )}

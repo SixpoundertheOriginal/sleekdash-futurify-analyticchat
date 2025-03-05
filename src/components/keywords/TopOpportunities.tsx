@@ -11,12 +11,12 @@ interface TopOpportunitiesProps {
 function TopOpportunitiesBase({ data }: TopOpportunitiesProps) {
   const topOpportunities = [...data]
     .sort((a, b) => b.opportunityScore - a.opportunityScore)
-    .slice(0, 5);
+    .slice(0, 10);
 
   // Table header component
   const TableHeader = () => (
     <thead>
-      <tr className="text-xs text-white/60 border-b border-white/10">
+      <tr className="text-xs text-white/60 border-b border-indigo-500/20">
         <th className="px-3 py-3 text-left">Keyword</th>
         <th className="px-3 py-3 text-right">Volume</th>
         <th className="px-3 py-3 text-right">Difficulty</th>
@@ -30,16 +30,16 @@ function TopOpportunitiesBase({ data }: TopOpportunitiesProps) {
 
   // Table row component as a renderItem function for VirtualizedList
   const renderKeywordRow = (item: ProcessedKeywordData, index: number) => (
-    <tr key={index} className="hover:bg-white/5 text-sm">
-      <td className="px-3 py-3 font-medium text-primary">{item.keyword}</td>
-      <td className="px-3 py-3 text-right text-white">{item.volume}</td>
+    <tr key={index} className="hover:bg-indigo-900/10 text-sm">
+      <td className="px-3 py-3 font-medium text-indigo-300">{item.keyword}</td>
+      <td className="px-3 py-3 text-right text-white">{item.volume.toLocaleString()}</td>
       <td className="px-3 py-3 text-right">
-        <span className={item.difficulty < 20 ? 'text-green-400' : item.difficulty < 50 ? 'text-yellow-400' : 'text-red-400'}>
+        <span className={item.difficulty < 30 ? 'text-green-400' : item.difficulty < 50 ? 'text-yellow-400' : 'text-red-400'}>
           {item.difficulty}
         </span>
       </td>
-      <td className="px-3 py-3 text-right text-white">{item.kei}</td>
-      <td className="px-3 py-3 text-right text-white">{item.relevancy}</td>
+      <td className="px-3 py-3 text-right text-white">{item.kei.toFixed(1)}</td>
+      <td className="px-3 py-3 text-right text-white">{item.relevancy}%</td>
       <td className="px-3 py-3 text-right text-white">{item.chance}%</td>
       <td className="px-3 py-3 text-right">
         <span className="font-semibold text-green-400">{(item.opportunityScore/10).toFixed(1)}</span>
@@ -55,7 +55,7 @@ function TopOpportunitiesBase({ data }: TopOpportunitiesProps) {
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <TableHeader />
-          <tbody className="divide-y divide-white/10">
+          <tbody className="divide-y divide-indigo-500/10">
             {topOpportunities.length > 20 ? (
               <VirtualizedList
                 data={topOpportunities}
@@ -71,20 +71,20 @@ function TopOpportunitiesBase({ data }: TopOpportunitiesProps) {
         </table>
       </div>
 
-      <Card className="mt-8 p-4 bg-primary/5 border-primary/20">
-        <h3 className="text-primary font-semibold mb-2">AI-Powered Recommendations</h3>
+      <Card className="mt-8 p-4 bg-indigo-600/5 border-indigo-500/20">
+        <h3 className="text-indigo-300 font-semibold mb-2">AI-Powered Recommendations</h3>
         <ul className="space-y-2 text-sm text-white/80">
           <li className="flex items-start gap-2">
-            <div className="w-1 h-1 mt-2 rounded-full bg-primary"></div>
-            <span>Optimize app content for <span className="text-primary font-medium">reading games for kids</span> (low difficulty, high relevancy)</span>
+            <div className="w-1 h-1 mt-2 rounded-full bg-indigo-400"></div>
+            <span>Optimize app content for <span className="text-indigo-300 font-medium">reading games for kids</span> (low difficulty, high relevancy)</span>
           </li>
           <li className="flex items-start gap-2">
-            <div className="w-1 h-1 mt-2 rounded-full bg-primary"></div>
-            <span>Create landing pages for <span className="text-primary font-medium">books for kids</span> to capitalize on higher volume</span>
+            <div className="w-1 h-1 mt-2 rounded-full bg-indigo-400"></div>
+            <span>Create landing pages for <span className="text-indigo-300 font-medium">free reading app for children</span> to capitalize on higher volume</span>
           </li>
           <li className="flex items-start gap-2">
-            <div className="w-1 h-1 mt-2 rounded-full bg-primary"></div>
-            <span>Include <span className="text-primary font-medium">free</span> in app store metadata (appears in 3 of top 5 opportunities)</span>
+            <div className="w-1 h-1 mt-2 rounded-full bg-indigo-400"></div>
+            <span>Include <span className="text-indigo-300 font-medium">interactive reading</span> in app store metadata (appears in 3 of top 10 opportunities)</span>
           </li>
         </ul>
       </Card>
