@@ -23,17 +23,23 @@ interface DashboardTabsProps {
 export function DashboardTabs({ activeTab, setActiveTab, data }: DashboardTabsProps) {
   const deviceType = useDevice();
   const isMobile = deviceType === 'mobile';
+  const isTablet = deviceType === 'tablet';
+  
+  // Determine number of tabs to show based on screen size
+  const tabCount = isMobile ? 3 : isTablet ? 4 : 5;
   
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} bg-white/5 p-1 w-full overflow-x-auto`}>
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="acquisition">Acquisition</TabsTrigger>
-        <TabsTrigger value="revenue">Revenue</TabsTrigger>
-        {!isMobile && <TabsTrigger value="engagement">Engagement</TabsTrigger>}
-        {!isMobile && <TabsTrigger value="performance">Performance</TabsTrigger>}
-        {isMobile && <TabsTrigger value="more">More</TabsTrigger>}
-      </TabsList>
+      <div className="overflow-x-auto pb-2">
+        <TabsList className={`grid ${isMobile ? 'grid-cols-3' : isTablet ? 'grid-cols-4' : 'grid-cols-5'} bg-white/5 p-1 w-full min-w-max`}>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="acquisition">Acquisition</TabsTrigger>
+          <TabsTrigger value="revenue">Revenue</TabsTrigger>
+          {(isTablet || !isMobile) && <TabsTrigger value="engagement">Engagement</TabsTrigger>}
+          {!isMobile && !isTablet && <TabsTrigger value="performance">Performance</TabsTrigger>}
+          {(isMobile || isTablet) && <TabsTrigger value="more">More</TabsTrigger>}
+        </TabsList>
+      </div>
       
       <TabsContent value="overview" className="pt-4 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -90,11 +96,14 @@ export function DashboardTabs({ activeTab, setActiveTab, data }: DashboardTabsPr
         </div>
       </TabsContent>
       
-      {isMobile && (
+      {(isMobile || isTablet) && (
         <TabsContent value="more" className="pt-4 space-y-6">
           <div className="grid grid-cols-1 gap-6">
-            <UserRetentionPanel data={data} />
+            {!isTablet && <UserRetentionPanel data={data} />}
             <PerformancePanel data={data} />
+            {isMobile && (
+              <CompetitiveAnalysis data={data} />
+            )}
           </div>
         </TabsContent>
       )}

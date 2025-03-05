@@ -144,3 +144,97 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+/* Mobile-specific overrides */
+@media (max-width: 640px) {
+  .tabs-overflow-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  .tabs-overflow-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  
+  /* Adjust padding for mobile */
+  .card {
+    padding: 1rem;
+  }
+  
+  /* Ensure form inputs have proper touch targets */
+  input, textarea, select {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* Tablet-specific styles */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .tablet-row {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+  }
+  
+  .tablet-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+/* Height utilities for responsive containers */
+.h-screen-dynamic {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height - modern browsers */
+}
+
+.min-h-screen-dynamic {
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height - modern browsers */
+}
+
+/* Responsive font sizing */
+.responsive-text-sm {
+  font-size: 0.875rem;
+}
+
+.responsive-text-base {
+  font-size: 1rem;
+}
+
+.responsive-text-lg {
+  font-size: 1.125rem;
+}
+
+.responsive-text-xl {
+  font-size: 1.25rem;
+}
+
+.responsive-text-2xl {
+  font-size: 1.375rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .responsive-text-base {
+    font-size: 1rem;
+  }
+  
+  .responsive-text-lg {
+    font-size: 1.125rem;
+  }
+  
+  .responsive-text-xl {
+    font-size: 1.5rem;
+  }
+  
+  .responsive-text-2xl {
+    font-size: 1.75rem;
+  }
+}

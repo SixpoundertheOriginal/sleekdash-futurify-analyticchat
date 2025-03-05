@@ -23,11 +23,12 @@ export function FormInput({ value, onChange, disabled, placeholder }: FormInputP
         id="analysis-input"
         value={value}
         onChange={onChange}
-        className="bg-white/5 border-white/10 text-white min-h-[100px] sm:min-h-[150px] focus:ring-primary/30 transition-all duration-200 rounded-lg"
+        className="bg-white/5 border-white/10 text-white min-h-[100px] sm:min-h-[150px] md:min-h-[200px] focus:ring-primary/30 transition-all duration-200 rounded-lg"
         placeholder={placeholder || (isMobile ? 
           "Paste app store data here..." : 
           "Paste your app store data here to analyze performance metrics, user behavior, and market trends...")}
         disabled={disabled}
+        style={{ fontSize: isMobile ? '16px' : undefined }} // Prevents zoom on iOS
       />
     </div>
   );

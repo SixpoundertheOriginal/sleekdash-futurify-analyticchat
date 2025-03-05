@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useDevice } from "@/hooks/use-mobile";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -14,15 +15,19 @@ export function CollapsibleSection({
   defaultExpanded = true, 
   children 
 }: CollapsibleSectionProps) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const deviceType = useDevice();
+  const isMobile = deviceType === 'mobile';
+  
+  // For mobile devices, we may want different default behavior for certain sections
+  const [isExpanded, setIsExpanded] = useState(isMobile ? false : defaultExpanded);
 
   return (
     <div className="border border-white/10 rounded-lg bg-white/5 overflow-hidden transition-all duration-200">
       <div 
-        className="flex items-center justify-between p-4 cursor-pointer"
+        className="flex items-center justify-between p-3 sm:p-4 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h2 className="text-xl font-semibold text-white">{title}</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-white">{title}</h2>
         <Button 
           variant="ghost" 
           size="icon"
@@ -38,7 +43,7 @@ export function CollapsibleSection({
       <div 
         className={`transition-all duration-300 ${
           isExpanded 
-            ? "max-h-[2000px] opacity-100 p-4 pt-0" 
+            ? "max-h-[2000px] opacity-100 p-3 sm:p-4 pt-0" 
             : "max-h-0 opacity-0 overflow-hidden p-0"
         }`}
       >

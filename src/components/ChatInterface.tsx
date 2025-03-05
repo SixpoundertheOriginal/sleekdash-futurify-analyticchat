@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useChat } from "@/hooks/useChat";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
@@ -97,7 +98,7 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
       lastFileUpload,
       isCheckingForResponses
     }}>
-      <div className="flex h-[700px] gap-4">
+      <div className="flex flex-col md:flex-row gap-4 h-[60vh] min-h-[400px] max-h-[800px]">
         <Card className="flex flex-1 flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg overflow-hidden">
           <ChatHeader 
             threadId={threadId || ""}
@@ -134,11 +135,13 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
         </Card>
         
         {showStats && (
-          <ChatStats 
-            messages={messages} 
-            lastFileUpload={lastFileUpload} 
-            isProcessing={isProcessing}
-          />
+          <div className="hidden md:block w-full md:w-72 lg:w-80">
+            <ChatStats 
+              messages={messages} 
+              lastFileUpload={lastFileUpload} 
+              isProcessing={isProcessing}
+            />
+          </div>
         )}
       </div>
     </ChatContextProvider>
