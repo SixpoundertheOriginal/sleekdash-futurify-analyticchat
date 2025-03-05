@@ -12,6 +12,8 @@ export type Database = {
       analysis_results: {
         Row: {
           created_at: string
+          date_from: string | null
+          date_to: string | null
           device_distribution: Json | null
           geographical_data: Json | null
           id: string
@@ -21,6 +23,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          date_from?: string | null
+          date_to?: string | null
           device_distribution?: Json | null
           geographical_data?: Json | null
           id?: string
@@ -30,6 +34,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          date_from?: string | null
+          date_to?: string | null
           device_distribution?: Json | null
           geographical_data?: Json | null
           id?: string
@@ -43,7 +49,9 @@ export type Database = {
         Row: {
           conversion_rate: number | null
           crashes: number | null
+          date_from: string | null
           date_range: string
+          date_to: string | null
           downloads: number | null
           growth_metrics: Json | null
           id: string
@@ -56,7 +64,9 @@ export type Database = {
         Insert: {
           conversion_rate?: number | null
           crashes?: number | null
+          date_from?: string | null
           date_range: string
+          date_to?: string | null
           downloads?: number | null
           growth_metrics?: Json | null
           id?: string
@@ -69,7 +79,9 @@ export type Database = {
         Update: {
           conversion_rate?: number | null
           crashes?: number | null
+          date_from?: string | null
           date_range?: string
+          date_to?: string | null
           downloads?: number | null
           growth_metrics?: Json | null
           id?: string

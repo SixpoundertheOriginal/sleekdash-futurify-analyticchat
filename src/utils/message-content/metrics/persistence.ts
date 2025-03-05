@@ -20,11 +20,25 @@ export async function storeAnalyticsData(metrics: Record<string, any>, dateRange
       proceedsGrowth: metrics.proceedsChange || 0
     };
     
+    // Parse date range if available
+    let dateFrom = null;
+    let dateTo = null;
+    
+    if (dateRange) {
+      const dateRangeParts = dateRange.split(' to ');
+      if (dateRangeParts.length === 2) {
+        dateFrom = dateRangeParts[0];
+        dateTo = dateRangeParts[1];
+      }
+    }
+    
     // Insert the metrics data to Supabase using the new app_analytics table
     const { data, error } = await supabase
       .from('app_analytics')
       .insert({
         date_range: dateRange,
+        date_from: dateFrom,
+        date_to: dateTo,
         impressions: metrics.impressions || 0,
         page_views: metrics.pageViews || 0,
         conversion_rate: metrics.conversionRate || 0,
@@ -73,7 +87,10 @@ export async function getHistoricalAnalytics(limit: number = 5) {
         pageViews: item.page_views || 0,
         downloads: item.downloads || 0,
         proceeds: item.proceeds || 0,
-        conversionRate: item.conversion_rate || 0
+        conversionRate: item.conversion_rate || 0,
+        dateRange: item.date_range,
+        dateFrom: item.date_from,
+        dateTo: item.date_to
       };
     });
   } catch (error) {
