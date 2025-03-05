@@ -1,12 +1,14 @@
 
 // Extractors for different types of data from app store analytics
 
-// Enhanced date extraction patterns
+// Enhanced date extraction patterns with better regex matching
 export const datePatterns = [
-  /([A-Za-z]+ \d{1,2})[\s-]+([A-Za-z]+ \d{1,2})/i, // "Feb 2 - Mar 3"
-  /(\d{2}\/\d{2}\/\d{4})[\s-]+(\d{2}\/\d{2}\/\d{4})/i, // "02/02/2025 - 03/03/2025"
-  /(\d{4}-\d{2}-\d{2})[\s-]+(\d{4}-\d{2}-\d{2})/i, // "2025-02-02 - 2025-03-03" (ISO format)
+  /([A-Za-z]+ \d{1,2})[\s-–]+([A-Za-z]+ \d{1,2},? \d{4})/i, // "Feb 2 - Mar 3, 2025"
+  /([A-Za-z]+ \d{1,2})[\s-–]+([A-Za-z]+ \d{1,2})/i, // "Feb 2 - Mar 3"
+  /(\d{2}\/\d{2}\/\d{4})[\s-–]+(\d{2}\/\d{2}\/\d{4})/i, // "02/02/2025 - 03/03/2025"
+  /(\d{4}-\d{2}-\d{2})[\s-–]+(\d{4}-\d{2}-\d{2})/i, // "2025-02-02 - 2025-03-03" (ISO format)
   /Date Range:[\s]*(.+?)(?:\n|$)/i, // "Date Range: Feb 2 - Mar 3"
+  /(?:Feb|Jan|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[\s\d,-–]+\d{4}/i, // "Feb 3-Feb 9, 2025"
 ];
 
 // Define metric schema for structured parsing with improved patterns
@@ -109,6 +111,15 @@ export const metricSchema = {
     aliases: ['revenue per user', 'arpu', 'average revenue per user'],
     unit: 'currency',
     calculateFrom: null
+  },
+  crashRate: {
+    patterns: [
+      /crash rate[:\s]+([0-9,.]+)%/i,
+      /([0-9,.]+)%[\s]*crash rate/i
+    ],
+    aliases: ['error rate', 'app crash rate'],
+    unit: 'percentage',
+    calculateFrom: null
   }
 };
 
@@ -187,15 +198,25 @@ export const changeSchema = {
   }
 };
 
-// Improved retention patterns
+// Improved retention patterns with better benchmark extraction
 export const retentionPatterns = {
   day1: {
     pattern: /day 1 retention.*?([\d.]+)%/i,
-    benchmarkPattern: /day 1 retention.*?(\d+(?:\.\d+)?)\%.*?(\d+(?:\.\d+)?)\%/i
+    benchmarkPattern: /day 1 retention.*?(\d+(?:\.\d+)?)\%.*?(\d+(?:\.\d+)?)\%/i,
+    percentilePatterns: {
+      p25: /day 1.*?25th.*?~([\d.]+)%/i,
+      p50: /day 1.*?50th.*?~([\d.]+)%/i,
+      p75: /day 1.*?75th.*?~([\d.]+)%/i
+    }
   },
   day7: {
     pattern: /day 7 retention.*?([\d.]+)%/i,
-    benchmarkPattern: /day 7 retention.*?(\d+(?:\.\d+)?)\%.*?(\d+(?:\.\d+)?)\%/i
+    benchmarkPattern: /day 7 retention.*?(\d+(?:\.\d+)?)\%.*?(\d+(?:\.\d+)?)\%/i,
+    percentilePatterns: {
+      p25: /day 7.*?25th.*?~([\d.]+)%/i,
+      p50: /day 7.*?50th.*?~([\d.]+)%/i,
+      p75: /day 7.*?75th.*?~([\d.]+)%/i
+    }
   },
   day14: {
     pattern: /day 14 retention.*?([\d.]+)%/i,
@@ -203,6 +224,57 @@ export const retentionPatterns = {
   },
   day28: {
     pattern: /day 28 retention.*?([\d.]+)%/i,
-    benchmarkPattern: /day 28 retention.*?(\d+(?:\.\d+)?)\%.*?(\d+(?:\.\d+)?)\%/i
+    benchmarkPattern: /day 28 retention.*?(\d+(?:\.\d+)?)\%.*?(\d+(?:\.\d+)?)\%/i,
+    percentilePatterns: {
+      p25: /day 28.*?25th.*?~([\d.]+)%/i,
+      p50: /day 28.*?50th.*?~([\d.]+)%/i,
+      p75: /day 28.*?75th.*?~([\d.]+)%/i
+    }
+  }
+};
+
+// Source extraction patterns
+export const sourcePatterns = {
+  pattern: /Total Downloads by Source[\s\S]*?See All([\s\S]*?)(?=Total Downloads|$)/i,
+  itemPattern: /([A-Za-z\s]+)\s+([0-9.]+%)\s+([0-9,]+)/i
+};
+
+// Device extraction patterns
+export const devicePatterns = {
+  pattern: /Total Downloads by Device[\s\S]*?See All([\s\S]*?)(?=Total Downloads|$)/i,
+  itemPattern: /([A-Za-z\s]+)\s+([0-9.]+%)\s+([0-9,]+)/i
+};
+
+// Territory extraction patterns
+export const territoryPatterns = {
+  pattern: /Total Downloads by Territory[\s\S]*?See All([\s\S]*?)(?=Total Downloads|$)/i,
+  itemPattern: /([A-Za-z\s]+)\s+([0-9,]+)/i
+};
+
+// Benchmark extraction patterns
+export const benchmarkPatterns = {
+  conversionRate: {
+    pattern: /Your conversion rate of ([\d.]+)% is.*?(\d+)(?:th|st|nd|rd) (?:and|to) (\d+)(?:th|st|nd|rd)/i,
+    percentiles: {
+      p25: /conversion rate.*?25th.*?~([\d.]+)%/i,
+      p50: /conversion rate.*?50th.*?~([\d.]+)%/i,
+      p75: /conversion rate.*?75th.*?~([\d.]+)%/i
+    }
+  },
+  proceedsPerUser: {
+    pattern: /Your proceeds per paying user.*?\$([\d.]+) is (above|below|between)/i,
+    percentiles: {
+      p25: /proceeds per paying user.*?25th.*?~\$([\d.]+)/i,
+      p50: /proceeds per paying user.*?50th.*?~\$([\d.]+)/i,
+      p75: /proceeds per paying user.*?75th.*?~\$([\d.]+)/i
+    }
+  },
+  crashRate: {
+    pattern: /Your crash rate of ([\d.]+)% is (above|below|between)/i,
+    percentiles: {
+      p25: /crash rate.*?25th.*?~([\d.]+)%/i,
+      p50: /crash rate.*?50th.*?~([\d.]+)%/i,
+      p75: /crash rate.*?75th.*?~([\d.]+)%/i
+    }
   }
 };

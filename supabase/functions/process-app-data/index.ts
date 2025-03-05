@@ -5,6 +5,10 @@ import { extractDateRange } from "./date-extraction.ts";
 import { extractMetrics } from "./metrics-extraction.ts";
 import { extractChangePercentages, extractRetentionData } from "./change-extraction.ts";
 import { validateData } from "./validation.ts";
+import { extractBenchmarks } from "./benchmark-extraction.ts";
+import { extractSourceData } from "./source-extraction.ts";
+import { extractDeviceData } from "./device-extraction.ts";
+import { extractTerritoryData } from "./territory-extraction.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -55,6 +59,18 @@ serve(async (req) => {
 
     // Extract retention data
     const retentionData = extractRetentionData(rawText);
+    
+    // Extract benchmark data
+    const benchmarks = extractBenchmarks(rawText);
+    
+    // Extract source data
+    const sourceData = extractSourceData(rawText);
+    
+    // Extract device data
+    const deviceData = extractDeviceData(rawText);
+    
+    // Extract territory data
+    const territoryData = extractTerritoryData(rawText);
 
     // Validate the data
     const validation = validateData(extractedMetrics, extractedChanges, dateRange);
@@ -75,7 +91,8 @@ serve(async (req) => {
           proceedsPerUser: extractedMetrics.proceedsPerUser
         },
         engagementMetrics: {
-          sessionsPerDevice: extractedMetrics.sessionsPerDevice
+          sessionsPerDevice: extractedMetrics.sessionsPerDevice,
+          crashRate: extractedMetrics.crashRate
         },
         technicalMetrics: {
           crashes: extractedMetrics.crashes
@@ -90,6 +107,12 @@ serve(async (req) => {
         proceedsChange: extractedChanges.proceedsChange,
         crashesChange: extractedChanges.crashesChange,
         sessionsPerDeviceChange: extractedChanges.sessionsPerDeviceChange
+      },
+      benchmarks: benchmarks,
+      distribution: {
+        source: sourceData,
+        device: deviceData,
+        territory: territoryData
       },
       validation: {
         isValid: validation.isValid,
