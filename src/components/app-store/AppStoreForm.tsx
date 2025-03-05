@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { isAppStoreFormat, processAppStoreText } from "@/utils/file-processing";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { CustomDateRangePicker } from "./CustomDateRangePicker";
+import { useThread } from "@/contexts/ThreadContext";
 
 interface AppStoreFormProps {
   onProcessSuccess: (data: any) => void;
@@ -35,6 +36,9 @@ export function AppStoreForm({
   onDateRangeChange
 }: AppStoreFormProps) {
   const { toast } = useToast();
+  const { setActiveFeature, getFeatureAssistantId } = useThread();
+  const appStoreAssistantId = getFeatureAssistantId('appStore');
+  
   const {
     appDescription,
     setAppDescription,
@@ -46,6 +50,13 @@ export function AppStoreForm({
     onDirectExtractionSuccess,
     setProcessing,
     setAnalyzing
+  });
+
+  // Set the active feature to appStore when this component mounts
+  useState(() => {
+    setActiveFeature('appStore');
+    console.log('[AppStoreForm] Set active feature to appStore');
+    console.log('[AppStoreForm] Using App Store assistant ID:', appStoreAssistantId);
   });
 
   const handleProcessAndAnalyze = () => {
