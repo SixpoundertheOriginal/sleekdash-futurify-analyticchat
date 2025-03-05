@@ -1,6 +1,6 @@
 
 // Date range extraction functionality
-import { datePatterns } from './extractors';
+import { datePatterns } from './extractors.ts';
 
 /**
  * Extract date range from analysis text

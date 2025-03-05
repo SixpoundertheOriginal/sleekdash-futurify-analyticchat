@@ -1,7 +1,7 @@
 
 // Extract changes and percentages from text
-import { changeSchema, retentionPatterns } from './extractors';
-import { cleanText } from './data-cleaning';
+import { changeSchema, retentionPatterns } from './extractors.ts';
+import { cleanText } from './data-cleaning.ts';
 
 /**
  * Extract change percentages from analysis text

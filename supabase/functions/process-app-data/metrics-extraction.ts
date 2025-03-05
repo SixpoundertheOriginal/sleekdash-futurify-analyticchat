@@ -1,7 +1,7 @@
 
 // Core extraction functionality for metrics from text
-import { metricSchema } from './extractors';
-import { cleanText, normalizeNumber } from './data-cleaning';
+import { metricSchema } from './extractors.ts';
+import { cleanText, normalizeNumber } from './data-cleaning.ts';
 
 /**
  * Extract metrics from analysis text
