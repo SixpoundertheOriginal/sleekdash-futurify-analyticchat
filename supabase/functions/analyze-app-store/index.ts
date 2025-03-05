@@ -51,7 +51,7 @@ serve(async (req) => {
     
     // Log if we received pre-processed data
     if (processedData) {
-      console.log('Received pre-processed data with validation confidence:', processedData.validation.confidence);
+      console.log('Received pre-processed data with validation confidence:', processedData.validation?.confidence);
     }
 
     // 1. Add a message to the thread
@@ -220,7 +220,7 @@ Please use these structured values in your analysis where appropriate.`;
     }
 
     // If we have processed data, store it in Supabase
-    if (processedData && processedData.validation.isValid) {
+    if (processedData && processedData.validation?.isValid) {
       // This is where you would store in Supabase
       console.log('Would store processed data in Supabase');
       // TODO: Add Supabase storage logic if needed

@@ -1,4 +1,3 @@
-
 // Date range extraction functionality
 import { datePatterns } from './extractors.ts';
 
@@ -10,6 +9,15 @@ import { datePatterns } from './extractors.ts';
 export function extractDateRange(text: string): string | null {
   console.log("Extracting date range...");
   
+  // First look for explicit date range format
+  const explicitDateRange = text.match(/Date range: ([^\n]+)/i);
+  if (explicitDateRange) {
+    const dateRange = explicitDateRange[1].trim();
+    console.log("Found explicit date range:", dateRange);
+    return dateRange;
+  }
+  
+  // Otherwise try the patterns from extractors
   for (const pattern of datePatterns) {
     const match = text.match(pattern);
     if (match) {
@@ -60,5 +68,22 @@ export function parseDateRange(dateRangeStr: string): { from: Date, to: Date } |
   } catch (error) {
     console.error("Error parsing date range:", error);
     return null;
+  }
+}
+
+/**
+ * Format date range as a string for storage and display
+ * @param from From date
+ * @param to To date
+ * @returns Formatted date range string
+ */
+export function formatDateRange(from: Date, to: Date): string {
+  try {
+    const fromStr = from.toISOString().split('T')[0]; // YYYY-MM-DD
+    const toStr = to.toISOString().split('T')[0]; // YYYY-MM-DD
+    return `${fromStr} to ${toStr}`;
+  } catch (error) {
+    console.error("Error formatting date range:", error);
+    return "";
   }
 }

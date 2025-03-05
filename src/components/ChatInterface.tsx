@@ -13,7 +13,7 @@ import { ChatStats } from "@/components/chat/ChatStats";
 import { exportChatHistory } from "@/services/export-service";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { X } from "lucide-react";
-import { DateRangePicker, DateRange } from "@/components/chat/DateRangePicker";
+import { DateRange } from "@/components/chat/DateRangePicker";
 
 export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (message: string) => Promise<any> }) {
   
@@ -199,13 +199,6 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
           </Alert>
         )}
         
-        <div className="mx-3 my-2">
-          <DateRangePicker 
-            dateRange={dateRange}
-            onDateRangeChange={handleDateRangeChange}
-          />
-        </div>
-        
         <ChatNotifications
           isValidThread={isValidThread}
           onCreateNewThread={handleCreateNewThread}
@@ -224,7 +217,7 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
           message={message}
           isLoading={isLoading || isCheckingForResponses || isProcessing}
           onMessageChange={setMessage}
-          onSubmit={handleSubmitWithDateCheck}
+          onSubmit={handleSubmit}
           messages={messages}
         />
       </Card>

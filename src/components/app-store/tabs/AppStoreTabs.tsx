@@ -21,6 +21,7 @@ interface AppStoreTabsProps {
   processedAnalytics: ProcessedAnalytics | null;
   directlyExtractedMetrics: Partial<ProcessedAnalytics> | null;
   dateRange: DateRange | null;
+  onDateRangeChange: (dateRange: DateRange | null) => void;
   initialData: ProcessedAnalytics | null;
   processingError: string | null;
   onProcessSuccess: (data: any) => void;
@@ -40,6 +41,7 @@ export function AppStoreTabs({
   processedAnalytics,
   directlyExtractedMetrics,
   dateRange,
+  onDateRangeChange,
   initialData,
   processingError,
   onProcessSuccess,
@@ -70,6 +72,7 @@ export function AppStoreTabs({
           setProcessing={setProcessing}
           setAnalyzing={setAnalyzing}
           dateRange={dateRange}
+          onDateRangeChange={onDateRangeChange}
         />
         
         {extractedData && (
@@ -82,7 +85,7 @@ export function AppStoreTabs({
           <Info className="h-5 w-5 text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-white/80">
             <p className="font-medium mb-1">How to use this tool:</p>
-            <p>Paste your App Store Connect analytics data here and we'll analyze it for you. Copy the data directly from the App Store Connect dashboard or export as text.</p>
+            <p>Paste your App Store Connect analytics data here and we'll analyze it for you. First select the date range, then copy the data directly from the App Store Connect dashboard or export as text.</p>
           </div>
         </div>
       </TabsContent>

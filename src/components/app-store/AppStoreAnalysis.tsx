@@ -19,6 +19,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
     processedAnalytics,
     directlyExtractedMetrics,
     dateRange,
+    setDateRange,
     processingError,
     setProcessing,
     setAnalyzing,
@@ -41,6 +42,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         processedAnalytics={processedAnalytics}
         directlyExtractedMetrics={directlyExtractedMetrics}
         dateRange={dateRange}
+        onDateRangeChange={setDateRange}
         initialData={initialData || null}
         processingError={processingError}
         onProcessSuccess={handleProcessSuccess}

@@ -5,6 +5,7 @@ import { saveAnalyticsToStorage, getAnalyticsFromStorage } from "@/utils/analyti
 import { useToast } from "@/components/ui/use-toast";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { hasValidMetricsForVisualization } from "@/utils/analytics/offline/directExtraction";
+import { storeAnalyticsData } from "@/utils/message-content/metrics/persistence";
 
 interface UseAppStoreAnalysisParams {
   initialData?: ProcessedAnalytics;
@@ -44,7 +45,7 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) 
     }
   };
 
-  const handleAnalysisSuccess = (analysisText: string) => {
+  const handleAnalysisSuccess = async (analysisText: string) => {
     setAnalysisResult(analysisText);
     setActiveTab("analysis");
     
@@ -69,6 +70,23 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) 
           variant: "destructive"
         });
       } else {
+        // Format date range string for storage
+        let dateRangeStr = "";
+        if (dateRange && dateRange.from && dateRange.to) {
+          dateRangeStr = `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}`;
+          processedData.dateRange = dateRangeStr;
+          
+          // Store data in Supabase
+          try {
+            const stored = await storeAnalyticsData(processedData, dateRangeStr);
+            if (stored) {
+              console.log("Analytics data stored in Supabase");
+            }
+          } catch (error) {
+            console.error("Error storing data in Supabase:", error);
+          }
+        }
+        
         setProcessedAnalytics(processedData);
         // Save to localStorage
         saveAnalyticsToStorage(processedData);
@@ -127,6 +145,7 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) 
     processedAnalytics,
     directlyExtractedMetrics,
     dateRange,
+    setDateRange,
     processingError,
     setProcessing,
     setAnalyzing,
