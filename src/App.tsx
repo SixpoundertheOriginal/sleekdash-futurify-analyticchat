@@ -1,97 +1,57 @@
 
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { 
-  Navigate,
-  BrowserRouter as Router,
-  Routes,
-  Route
-} from "react-router-dom";
-import { AuthProvider, useAuth } from "@/components/AuthProvider";
-import { ThreadProvider } from "@/contexts/ThreadContext";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import DevTools from "./pages/DevTools";
-import KeywordsAnalysis from "./pages/KeywordsAnalysis";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { Index } from './pages/Index';
+import { Auth } from './pages/Auth';
+import { KeywordsAnalysis } from './pages/KeywordsAnalysis';
+import { FileUpload } from './pages/FileUpload';
+import { DevTools } from './pages/DevTools';
+import { NotFound } from './pages/NotFound';
+import { AuthProvider } from './components/AuthProvider';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
+// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      useErrorBoundary: true
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      onError: (error) => {
+        console.error('Query error:', error);
+      }
     },
     mutations: {
-      useErrorBoundary: true
+      retry: 1,
+      onError: (error) => {
+        console.error('Mutation error:', error);
+      }
     }
   }
 });
 
-// Protected route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary to-secondary/95">
-      <p className="text-white">Loading...</p>
-    </div>;
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ErrorBoundary>
-      <Router>
+function App() {
+  return (
+    <ErrorBoundary fallback={<div className="p-8">Something went wrong. Please refresh the page.</div>}>
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
+          <Router>
             <Routes>
+              <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <ThreadProvider>
-                    <ErrorBoundary>
-                      <Index />
-                    </ErrorBoundary>
-                  </ThreadProvider>
-                </ProtectedRoute>
-              } />
-              <Route path="/keywords" element={
-                <ProtectedRoute>
-                  <ThreadProvider>
-                    <ErrorBoundary>
-                      <KeywordsAnalysis />
-                    </ErrorBoundary>
-                  </ThreadProvider>
-                </ProtectedRoute>
-              } />
-              <Route path="/dev-tools" element={
-                <ProtectedRoute>
-                  <ThreadProvider>
-                    <ErrorBoundary>
-                      <DevTools />
-                    </ErrorBoundary>
-                  </ThreadProvider>
-                </ProtectedRoute>
-              } />
+              <Route path="/keywords" element={<KeywordsAnalysis />} />
+              <Route path="/file-upload" element={<FileUpload />} />
+              <Route path="/devtools" element={<DevTools />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </TooltipProvider>
+          </Router>
+          <Toaster />
         </AuthProvider>
-      </Router>
+      </QueryClientProvider>
     </ErrorBoundary>
-  </QueryClientProvider>
-);
+  );
+}
 
 export default App;

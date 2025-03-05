@@ -4,12 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { processExcelFile, validateFileContent, validateFileType } from "@/utils/file-processing";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { processData, DataFormat } from "@/utils/data-processing/DataProcessingService";
 
 export interface UseFileUploadReturn {
   dragActive: boolean;
   uploading: boolean;
   progress: number;
   error: string | null;
+  supportedFormats: DataFormat[];
   handleDrag: (e: React.DragEvent) => void;
   processFile: (file: File) => Promise<void>;
   setDragActive: (active: boolean) => void;
@@ -22,6 +24,9 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
   const { error, setError, clearError, handleError } = useErrorHandler();
+  
+  // Define all supported file formats
+  const supportedFormats: DataFormat[] = ['csv', 'excel', 'json', 'text'];
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -75,17 +80,38 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
       let fileContent = '';
       setProgress(20);
       
-      // Process based on file type
-      if (file.name.endsWith('.csv')) {
+      // Determine file format based on extension
+      const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+      let formatHint: DataFormat = 'text';
+      
+      if (fileExtension === 'csv') {
+        formatHint = 'csv';
         fileContent = await file.text();
-        console.log('[FileUpload] CSV detected, processed text length:', fileContent.length);
-      } else {
-        // For Excel files
+      } else if (['xlsx', 'xls'].includes(fileExtension)) {
+        formatHint = 'excel';
         fileContent = await processExcelFile(file);
+      } else if (fileExtension === 'json') {
+        formatHint = 'json';
+        fileContent = await file.text();
+      } else {
+        // Default to text
+        fileContent = await file.text();
       }
+      
+      console.log(`[FileUpload] File format detected: ${formatHint}`);
       
       setProgress(40);
 
+      // Process the file data using our DataProcessingService
+      const processingResult = processData(fileContent, {
+        formatHint,
+        extractMetrics: true
+      });
+      
+      if (!processingResult.success) {
+        throw new Error(`Processing failed: ${processingResult.error}`);
+      }
+      
       try {
         await validateFileContent(fileContent);
       } catch (validationError) {
@@ -111,7 +137,8 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
           body: { 
             fileContent,
             threadId,
-            assistantId
+            assistantId,
+            format: processingResult.format
           }
         }
       );
@@ -141,7 +168,7 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
       } else {
         toast({
           title: "Analysis complete",
-          description: "Your keywords have been processed successfully."
+          description: "Your file has been processed successfully."
         });
       }
       
@@ -157,7 +184,8 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
           openai_analysis: functionData.analysis || "Analysis could not be completed",
           app_performance: 'Medium',
           created_at: new Date().toISOString(),
-          user_id: user.id
+          user_id: user.id,
+          format: processingResult.format
         });
         
       setProgress(100);
@@ -188,6 +216,7 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
     uploading,
     progress,
     error,
+    supportedFormats,
     handleDrag,
     processFile,
     setDragActive,
