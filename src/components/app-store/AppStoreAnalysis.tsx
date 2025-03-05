@@ -9,7 +9,7 @@ import { AnalysisResultCard } from "./AnalysisResultCard";
 import { DateRangePicker, DateRange } from "@/components/chat/DateRangePicker";
 import { HistoricalAnalytics } from "./HistoricalAnalytics";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface AppStoreAnalysisProps {
   initialData: ProcessedAnalytics;
@@ -65,7 +65,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
             {analysisResult && (
               <div className="mt-8">
                 <h3 className="text-lg font-medium text-white mb-3 flex items-center gap-2">
-                  <InfoCircle className="h-5 w-5 text-primary" />
+                  <Info className="h-5 w-5 text-primary" />
                   AI Analysis
                 </h3>
                 <AnalysisResultCard analysisResult={analysisResult} />
