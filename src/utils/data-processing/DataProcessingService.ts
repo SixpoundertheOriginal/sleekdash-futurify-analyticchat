@@ -77,6 +77,10 @@ export function processData<T = any>(
       metrics = extractBaseMetrics(rawData);
     }
     
+    if (options.normalizeValues) {
+      processedData = normalizeDataValues(processedData);
+    }
+    
     return {
       success: true,
       data: processedData as T,
