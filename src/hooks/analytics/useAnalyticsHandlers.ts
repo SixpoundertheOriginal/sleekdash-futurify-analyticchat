@@ -113,14 +113,10 @@ export function useAnalyticsHandlers({
           toast({
             title: "Dashboard Ready",
             description: "Your analytics dashboard is now ready to view",
-            action: (
-              <button 
-                onClick={() => setActiveTab("dashboard")}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1 rounded text-xs"
-              >
-                View Dashboard
-              </button>
-            ),
+            action: {
+              label: "View Dashboard",
+              onClick: () => setActiveTab("dashboard")
+            },
             duration: 7000,
           });
         }, 1000);
