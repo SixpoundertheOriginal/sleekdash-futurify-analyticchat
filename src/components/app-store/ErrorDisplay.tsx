@@ -53,7 +53,7 @@ export function ErrorDisplay({
               variant="outline"
               size="sm"
               onClick={onRetry}
-              className="mt-3 border-rose-500/20 text-rose-400 hover:bg-rose-500/10"
+              className="mt-3 border-rose-500/20 text-red-400 hover:bg-rose-500/10"
             >
               Try Again
             </Button>
