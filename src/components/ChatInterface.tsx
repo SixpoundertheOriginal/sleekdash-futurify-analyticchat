@@ -15,8 +15,14 @@ import { ChatContextProvider } from "@/contexts/ChatContext";
 import { useChatActions } from "@/components/chat/ChatActions";
 import { ChatForm } from "@/components/chat/ChatForm";
 import { DateRange } from "@/components/chat/DateRangePicker";
+import { AssistantType } from "@/utils/thread-management";
 
-export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (message: string) => Promise<any> }) {
+interface ChatInterfaceProps {
+  preprocessDataFn?: (message: string) => Promise<any>;
+  feature?: AssistantType;
+}
+
+export function ChatInterface({ preprocessDataFn, feature = 'general' }: ChatInterfaceProps) {
   
   const { 
     message, 
@@ -29,7 +35,7 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
     fetchThreadMessages
   } = useChat({
     preprocessDataFn,
-    feature: 'general'
+    feature
   });
   
   const { threadId, assistantId, isValidThread } = useThread();
