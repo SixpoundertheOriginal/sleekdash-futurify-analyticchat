@@ -9,7 +9,11 @@ import { MetricType, standardizeMetricNames } from "./offline/metricTypes";
 import { formatMetric } from "./offline/formatters";
 import { detectContentType, formatMessageOffline } from "./offline/contentDetector";
 import { extractKeywordMetrics } from "./offline/keywordExtractor";
-import { extractDirectMetrics, hasValidMetricsForVisualization } from "./offline/directExtraction";
+import { 
+  extractDirectMetrics, 
+  extractBaseMetrics,
+  hasValidMetricsForVisualization
+} from "./offline/directExtraction";
 
 export type { MetricType };
 export { 
@@ -19,6 +23,7 @@ export {
   formatMessageOffline,
   extractKeywordMetrics,
   extractDirectMetrics,
+  extractBaseMetrics,
   hasValidMetricsForVisualization
 };
 
