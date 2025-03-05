@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleError } from './utils.ts';
 import { exportChatHistory } from '../chat-message/thread-operations.ts';
+import { formatChatHistory } from './exportFormatters.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -33,12 +34,17 @@ serve(async (req) => {
     }
 
     // Export the chat history
-    const exportData = await exportChatHistory(threadId, format);
+    const messages = await exportChatHistory(threadId);
+    
+    // Format the messages according to the requested format
+    const { data, mimeType } = formatChatHistory(messages, format || 'json');
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        ...exportData
+        data,
+        mimeType,
+        filename: `chat-export-${threadId}.${format || 'json'}`
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 

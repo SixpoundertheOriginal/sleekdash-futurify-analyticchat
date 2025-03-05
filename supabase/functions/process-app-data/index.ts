@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -6,17 +7,109 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
-// KPI extraction patterns
-const KPI_PATTERNS = {
-  impressions: [/impressions[:\s]+([0-9,.]+)/i, /([0-9,.]+)[\s]*impressions/i],
-  pageViews: [/page views[:\s]+([0-9,.]+)/i, /product page views[:\s]+([0-9,.]+)/i, /([0-9,.]+)[\s]*page views/i],
-  downloads: [/downloads[:\s]+([0-9,.]+)/i, /([0-9,.]+)[\s]*downloads/i, /total downloads[:\s]+([0-9,.]+)/i],
-  conversionRate: [/conversion rate[:\s]+([0-9,.]+)%/i, /([0-9,.]+)%[\s]*conversion/i],
-  proceeds: [/proceeds[:\s]*\$?([0-9,.]+)/i, /revenue[:\s]*\$?([0-9,.]+)/i, /\$([0-9,.]+)[\s]*proceeds/i],
-  crashes: [/crashes?[:\s]+([0-9,.]+)/i, /([0-9,.]+)[\s]*crashes/i, /crash count[:\s]+([0-9,.]+)/i]
+// Define metric schema for structured parsing
+const metricSchema = {
+  impressions: {
+    patterns: [/impressions[:\s]+([0-9,.]+)/i, /([0-9,.]+)[\s]*impressions/i],
+    aliases: ['views', 'app views', 'product views'],
+    unit: 'count',
+    calculateFrom: {
+      inputs: ['pageViews', 'conversionRate'],
+      formula: (pageViews, conversionRate) => pageViews / (conversionRate / 100)
+    }
+  },
+  pageViews: {
+    patterns: [/page views[:\s]+([0-9,.]+)/i, /product page views[:\s]+([0-9,.]+)/i, /([0-9,.]+)[\s]*page views/i],
+    aliases: ['product views', 'listing views', 'store views'],
+    unit: 'count',
+    calculateFrom: {
+      inputs: ['impressions', 'conversionRate'],
+      formula: (impressions, conversionRate) => impressions * (conversionRate / 100)
+    }
+  },
+  downloads: {
+    patterns: [/downloads[:\s]+([0-9,.]+)/i, /([0-9,.]+)[\s]*downloads/i, /total downloads[:\s]+([0-9,.]+)/i],
+    aliases: ['installs', 'app installs', 'total installs'],
+    unit: 'count',
+    calculateFrom: {
+      inputs: ['pageViews', 'conversionRate'],
+      formula: (pageViews, conversionRate) => pageViews * (conversionRate / 100)
+    }
+  },
+  conversionRate: {
+    patterns: [/conversion rate[:\s]+([0-9,.]+)%/i, /([0-9,.]+)%[\s]*conversion/i],
+    aliases: ['conv rate', 'cvr', 'conversion percentage'],
+    unit: 'percentage',
+    calculateFrom: {
+      inputs: ['downloads', 'pageViews'],
+      formula: (downloads, pageViews) => pageViews > 0 ? (downloads / pageViews) * 100 : null
+    }
+  },
+  proceeds: {
+    patterns: [/proceeds[:\s]*\$?([0-9,.]+)/i, /revenue[:\s]*\$?([0-9,.]+)/i, /\$([0-9,.]+)[\s]*proceeds/i],
+    aliases: ['revenue', 'sales', 'income'],
+    unit: 'currency',
+    calculateFrom: {
+      inputs: ['downloads', 'arpu'],
+      formula: (downloads, arpu) => downloads * arpu
+    }
+  },
+  crashes: {
+    patterns: [/crashes?[:\s]+([0-9,.]+)/i, /([0-9,.]+)[\s]*crashes/i, /crash count[:\s]+([0-9,.]+)/i],
+    aliases: ['app crashes', 'error count', 'failures'],
+    unit: 'count',
+    calculateFrom: null
+  }
 };
 
-// Text cleaning function
+// Change patterns for percent changes
+const changeSchema = {
+  impressionsChange: {
+    patternTypes: [
+      { pattern: /impressions.*?\((an? )?(increase|decrease) of\s*([\d.]+)%\)/i, directionGroup: 2, valueGroup: 3 },
+      { pattern: /impressions.*?(increased|decreased) by\s*([\d.]+)%/i, directionGroup: 1, valueGroup: 2 }
+    ],
+    baseMetric: 'impressions'
+  },
+  pageViewsChange: {
+    patternTypes: [
+      { pattern: /page views.*?\((an? )?(increase|decrease) of\s*([\d.]+)%\)/i, directionGroup: 2, valueGroup: 3 },
+      { pattern: /page views.*?(increased|decreased) by\s*([\d.]+)%/i, directionGroup: 1, valueGroup: 2 }
+    ],
+    baseMetric: 'pageViews'
+  },
+  downloadsChange: {
+    patternTypes: [
+      { pattern: /downloads.*?\((an? )?(increase|decrease) of\s*([\d.]+)%\)/i, directionGroup: 2, valueGroup: 3 },
+      { pattern: /downloads.*?(increased|decreased) by\s*([\d.]+)%/i, directionGroup: 1, valueGroup: 2 }
+    ],
+    baseMetric: 'downloads'
+  },
+  conversionRateChange: {
+    patternTypes: [
+      { pattern: /conversion rate.*?\((an? )?(increase|decrease) of\s*([\d.]+)%\)/i, directionGroup: 2, valueGroup: 3 },
+      { pattern: /conversion.*?(increased|decreased) by\s*([\d.]+)%/i, directionGroup: 1, valueGroup: 2 }
+    ],
+    baseMetric: 'conversionRate'
+  },
+  proceedsChange: {
+    patternTypes: [
+      { pattern: /proceeds.*?\((an? )?(increase|decrease) of\s*([\d.]+)%\)/i, directionGroup: 2, valueGroup: 3 },
+      { pattern: /revenue.*?\((an? )?(increase|decrease) of\s*([\d.]+)%\)/i, directionGroup: 2, valueGroup: 3 },
+      { pattern: /proceeds.*?(increased|decreased) by\s*([\d.]+)%/i, directionGroup: 1, valueGroup: 2 }
+    ],
+    baseMetric: 'proceeds'
+  },
+  crashesChange: {
+    patternTypes: [
+      { pattern: /crashes.*?\((an? )?(increase|decrease) of\s*([\d.]+)%\)/i, directionGroup: 2, valueGroup: 3 },
+      { pattern: /crashes.*?(increased|decreased) by\s*([\d.]+)%/i, directionGroup: 1, valueGroup: 2 }
+    ],
+    baseMetric: 'crashes'
+  }
+};
+
+// Structured pattern recognition with fallbacks
 function cleanText(text: string): string {
   // Remove special characters but keep commas and periods for numbers
   let cleaned = text
@@ -28,89 +121,239 @@ function cleanText(text: string): string {
   return cleaned;
 }
 
-// Function to normalize numeric values
-function normalizeNumber(numStr: string): number {
+// Enhanced normalization with unit awareness
+function normalizeNumber(numStr: string, unit: string = 'count'): number {
+  if (!numStr) return NaN;
+  
   // Remove commas and other formatting
-  const normalized = numStr.replace(/,/g, "").trim();
+  let normalized = numStr.replace(/,/g, "").trim();
+  
+  // Handle K/M/B suffix for thousands/millions/billions
+  if (/[kmb]$/i.test(normalized)) {
+    const multiplier = normalized.slice(-1).toLowerCase() === 'k' ? 1000 : 
+                       normalized.slice(-1).toLowerCase() === 'm' ? 1000000 : 
+                       1000000000;
+    normalized = normalized.slice(0, -1).trim();
+    return parseFloat(normalized) * multiplier;
+  }
+  
+  // Handle currency symbols
+  if (unit === 'currency') {
+    normalized = normalized.replace(/^\$/, "");
+  }
+  
+  // Handle percentage
+  if (unit === 'percentage' && normalized.endsWith('%')) {
+    normalized = normalized.slice(0, -1);
+  }
+  
   return parseFloat(normalized);
 }
 
-// Extract KPIs from text
-function extractKPIs(text: string): Record<string, number | null> {
+// Extract metrics with pattern matching and fallbacks
+function extractMetrics(text: string): Record<string, number | null> {
   const cleanedText = cleanText(text);
   const result: Record<string, number | null> = {};
   
-  // Extract each KPI
-  for (const [kpi, patterns] of Object.entries(KPI_PATTERNS)) {
-    for (const pattern of patterns) {
+  // Extract each metric with primary and alias patterns
+  for (const [metricKey, metricConfig] of Object.entries(metricSchema)) {
+    let found = false;
+    
+    // Try all patterns for this metric
+    for (const pattern of metricConfig.patterns) {
       const match = cleanedText.match(pattern);
       if (match && match[1]) {
-        const value = normalizeNumber(match[1]);
+        const value = normalizeNumber(match[1], metricConfig.unit);
         if (!isNaN(value)) {
-          result[kpi] = value;
-          break; // Found a match for this KPI, move to next one
+          result[metricKey] = value;
+          found = true;
+          console.log(`Extracted ${metricKey}: ${value} from pattern ${pattern}`);
+          break;
         }
       }
     }
     
-    // If no match found for this KPI, set to null
-    if (result[kpi] === undefined) {
-      result[kpi] = null;
+    // If not found, try aliases
+    if (!found && metricConfig.aliases && metricConfig.aliases.length > 0) {
+      for (const alias of metricConfig.aliases) {
+        const aliasPatterns = [
+          new RegExp(`${alias}[:\\s]+([0-9,.]+)`, 'i'),
+          new RegExp(`([0-9,.]+)[\\s]*${alias}`, 'i')
+        ];
+        
+        for (const pattern of aliasPatterns) {
+          const match = cleanedText.match(pattern);
+          if (match && match[1]) {
+            const value = normalizeNumber(match[1], metricConfig.unit);
+            if (!isNaN(value)) {
+              result[metricKey] = value;
+              found = true;
+              console.log(`Extracted ${metricKey} from alias ${alias}: ${value}`);
+              break;
+            }
+          }
+        }
+        if (found) break;
+      }
+    }
+    
+    // If still not found, set to null (will be calculated later if possible)
+    if (!found) {
+      result[metricKey] = null;
     }
   }
+  
+  // After initial extraction, try to calculate missing values
+  calculateMissingMetrics(result);
   
   return result;
 }
 
-// Extract change percentages (e.g., +15%, -3.5%)
+// Calculate missing metrics based on relationships
+function calculateMissingMetrics(metrics: Record<string, number | null>): void {
+  let calculatedAtLeastOne = true;
+  const maxIterations = 3; // Prevent infinite loops
+  let iterations = 0;
+  
+  // Iteratively try to fill in missing metrics
+  while (calculatedAtLeastOne && iterations < maxIterations) {
+    calculatedAtLeastOne = false;
+    iterations++;
+    
+    for (const [metricKey, metricConfig] of Object.entries(metricSchema)) {
+      // Skip if already calculated or no calculation method available
+      if (metrics[metricKey] !== null || !metricConfig.calculateFrom) continue;
+      
+      const { inputs, formula } = metricConfig.calculateFrom;
+      const inputValues = inputs.map(input => metrics[input]);
+      
+      // Check if all required inputs are available
+      if (!inputValues.includes(null)) {
+        try {
+          // Apply the formula to calculate the missing metric
+          const calculatedValue = formula(...inputValues as number[]);
+          if (calculatedValue !== null && !isNaN(calculatedValue)) {
+            metrics[metricKey] = calculatedValue;
+            calculatedAtLeastOne = true;
+            console.log(`Calculated missing ${metricKey}: ${calculatedValue} from ${inputs.join(', ')}`);
+          }
+        } catch (error) {
+          console.error(`Error calculating ${metricKey}:`, error);
+        }
+      }
+    }
+  }
+}
+
+// Enhanced change percentage extraction with directional awareness
 function extractChangePercentages(text: string): Record<string, number | null> {
   const cleanedText = cleanText(text);
   const result: Record<string, number | null> = {};
   
-  for (const kpi of Object.keys(KPI_PATTERNS)) {
-    // Look for patterns like "impressions: 1,234 (+15.2%)" or "impressions increased by 15.2%"
-    const patterns = [
-      new RegExp(`${kpi}[^\\(]*\\(([+-]?[0-9.]+)%\\)`, 'i'),
-      new RegExp(`${kpi}[^\\d]+(increased|decreased) by ([0-9.]+)%`, 'i')
-    ];
+  for (const [changeKey, changeConfig] of Object.entries(changeSchema)) {
+    let found = false;
     
-    for (const pattern of patterns) {
-      const match = cleanedText.match(pattern);
+    for (const patternType of changeConfig.patternTypes) {
+      const match = cleanedText.match(patternType.pattern);
+      
       if (match) {
-        if (match[1] === 'increased' || match[1] === 'decreased') {
-          // Handle "increased by X%" or "decreased by X%"
-          const value = parseFloat(match[2]);
-          result[kpi] = match[1] === 'increased' ? value : -value;
-        } else {
-          // Handle "+X%" or "-X%"
-          result[kpi] = parseFloat(match[1]);
+        // Extract direction and value
+        const directionText = match[patternType.directionGroup];
+        const valueText = match[patternType.valueGroup];
+        
+        if (valueText) {
+          let value = parseFloat(valueText);
+          
+          // Handle direction
+          const isNegative = directionText && 
+             (directionText.toLowerCase().includes('decrease') || 
+              directionText.toLowerCase().includes('decreased'));
+          
+          if (isNegative) {
+            value = -value;
+          }
+          
+          result[changeKey] = value;
+          found = true;
+          console.log(`Extracted ${changeKey}: ${value} (${isNegative ? 'negative' : 'positive'})`);
+          break;
         }
-        break;
       }
     }
     
-    // If no match found for this KPI change, set to null
-    if (result[kpi] === undefined) {
-      result[kpi] = null;
+    // If not found, set to null
+    if (!found) {
+      result[changeKey] = null;
     }
   }
   
   return result;
 }
 
-// Validate the extracted data
-function validateData(data: Record<string, number | null>): { 
+// Validate extracted data with heuristics
+function validateData(metrics: Record<string, number | null>, changes: Record<string, number | null>): { 
   isValid: boolean; 
   missingFields: string[];
+  confidence: number;
+  estimatedFields: string[];
 } {
-  const missingFields = Object.entries(data)
+  const missingFields = Object.entries(metrics)
     .filter(([_, value]) => value === null)
     .map(([key, _]) => key);
   
-  // Consider data valid if we have at least 3 KPIs
-  const isValid = Object.values(data).filter(v => v !== null).length >= 3;
+  const estimatedFields = [];
   
-  return { isValid, missingFields };
+  // Consider data valid if we have at least 3 KPIs with at least 1 from each major category
+  const hasAcquisitionMetric = metrics.impressions !== null || metrics.pageViews !== null || metrics.downloads !== null;
+  const hasFinancialMetric = metrics.proceeds !== null;
+  const hasEngagementMetric = metrics.conversionRate !== null;
+  
+  // Count how many critical metrics we have
+  const criticalMetrics = ['impressions', 'pageViews', 'downloads', 'conversionRate', 'proceeds'];
+  const criticalMetricsCount = criticalMetrics.filter(metric => metrics[metric] !== null).length;
+  
+  // Calculate confidence score - weighted by importance
+  const totalMetrics = Object.keys(metrics).length;
+  const presentMetrics = Object.values(metrics).filter(v => v !== null).length;
+  const baseConfidence = (presentMetrics / totalMetrics) * 100;
+  
+  // Weight critical metrics more heavily
+  const criticalWeight = 0.7;
+  const regularWeight = 0.3;
+  const criticalConfidence = (criticalMetricsCount / criticalMetrics.length) * 100;
+  const weightedConfidence = (criticalConfidence * criticalWeight) + (baseConfidence * regularWeight);
+  
+  // Round to nearest whole number
+  const confidence = Math.round(weightedConfidence);
+  
+  // Check for obviously invalid values (negative counts, extreme outliers)
+  const invalidValues = Object.entries(metrics)
+    .filter(([key, value]) => {
+      if (value === null) return false;
+      
+      // Value validation based on metric type
+      if (key === 'conversionRate' && (value < 0 || value > 100)) return true;
+      if (key !== 'conversionRate' && key !== 'crashes' && value < 0) return true;
+      
+      return false;
+    })
+    .map(([key, _]) => key);
+  
+  if (invalidValues.length > 0) {
+    console.warn("Found invalid values:", invalidValues);
+  }
+  
+  // Data is valid if we have the minimum required metrics and no invalid values
+  const isValid = criticalMetricsCount >= 3 && hasAcquisitionMetric && 
+                 (hasFinancialMetric || hasEngagementMetric) && 
+                 invalidValues.length === 0;
+  
+  return { 
+    isValid, 
+    missingFields, 
+    confidence,
+    estimatedFields
+  };
 }
 
 serve(async (req) => {
@@ -138,46 +381,47 @@ serve(async (req) => {
       );
     }
 
-    // Extract and normalize KPIs
-    const extractedKPIs = extractKPIs(rawText);
-    console.log("Extracted KPIs:", extractedKPIs);
+    // Extract and normalize metrics
+    const extractedMetrics = extractMetrics(rawText);
+    console.log("Extracted metrics:", extractedMetrics);
     
     // Extract change percentages
     const extractedChanges = extractChangePercentages(rawText);
     console.log("Extracted changes:", extractedChanges);
 
     // Validate the data
-    const validation = validateData(extractedKPIs);
+    const validation = validateData(extractedMetrics, extractedChanges);
     console.log("Validation result:", validation);
 
     // Create structured data
     const structuredData = {
       metrics: {
         acquisitionMetrics: {
-          impressions: extractedKPIs.impressions,
-          pageViews: extractedKPIs.pageViews,
-          downloads: extractedKPIs.downloads,
-          conversionRate: extractedKPIs.conversionRate
+          impressions: extractedMetrics.impressions,
+          pageViews: extractedMetrics.pageViews,
+          downloads: extractedMetrics.downloads,
+          conversionRate: extractedMetrics.conversionRate
         },
         financialMetrics: {
-          proceeds: extractedKPIs.proceeds
+          proceeds: extractedMetrics.proceeds
         },
         technicalMetrics: {
-          crashes: extractedKPIs.crashes
+          crashes: extractedMetrics.crashes
         }
       },
       changes: {
-        impressionsChange: extractedChanges.impressions,
-        pageViewsChange: extractedChanges.pageViews,
-        downloadsChange: extractedChanges.downloads,
-        conversionRateChange: extractedChanges.conversionRate,
-        proceedsChange: extractedChanges.proceeds,
-        crashesChange: extractedChanges.crashes
+        impressionsChange: extractedChanges.impressionsChange,
+        pageViewsChange: extractedChanges.pageViewsChange,
+        downloadsChange: extractedChanges.downloadsChange,
+        conversionRateChange: extractedChanges.conversionRateChange,
+        proceedsChange: extractedChanges.proceedsChange,
+        crashesChange: extractedChanges.crashesChange
       },
       validation: {
         isValid: validation.isValid,
         missingFields: validation.missingFields,
-        confidence: calculateConfidence(extractedKPIs)
+        confidence: validation.confidence,
+        estimatedFields: validation.estimatedFields
       },
       rawTextLength: rawText.length,
       processedAt: new Date().toISOString()
@@ -224,10 +468,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Calculate confidence score based on how many fields we extracted
-function calculateConfidence(data: Record<string, number | null>): number {
-  const totalFields = Object.keys(data).length;
-  const extractedFields = Object.values(data).filter(v => v !== null).length;
-  return Math.round((extractedFields / totalFields) * 100);
-}
