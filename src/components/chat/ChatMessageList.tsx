@@ -2,14 +2,16 @@
 import { useRef, useEffect } from "react";
 import { Message } from "@/types/chat";
 import { ChatMessage } from "@/components/chat/ChatMessage";
+import { AssistantType } from "@/utils/thread-management";
 
 interface ChatMessageListProps {
   messages: Message[];
   onReply: (content: string) => void;
   onReaction?: (messageId: string, reaction: 'like' | 'dislike') => void;
+  feature?: AssistantType;
 }
 
-export function ChatMessageList({ messages, onReply, onReaction }: ChatMessageListProps) {
+export function ChatMessageList({ messages, onReply, onReaction, feature = 'general' }: ChatMessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const scrollToBottom = () => {

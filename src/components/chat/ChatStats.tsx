@@ -5,14 +5,16 @@ import { PinIcon, Clock, MessageSquare, FilePlus, ChevronRight, User2, Bot } fro
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useChatContext } from "@/contexts/ChatContext";
+import { AssistantType } from "@/utils/thread-management";
 
 interface ChatStatsProps {
   messages: Message[];
   lastFileUpload: Date | null;
   isProcessing: boolean;
+  feature?: AssistantType;
 }
 
-export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsProps) {
+export function ChatStats({ messages, lastFileUpload, isProcessing, feature = 'general' }: ChatStatsProps) {
   const [pinnedInsights, setPinnedInsights] = useState<Message[]>([]);
   const [showAllInsights, setShowAllInsights] = useState(false);
   const { isCheckingForResponses } = useChatContext();
@@ -49,23 +51,58 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
   
   // For demonstration, let's add some sample pinned insights
   useEffect(() => {
-    const sampleInsights = [
-      {
-        role: 'assistant' as const,
-        content: '📊 Your top performing keyword "marketing analytics" has a 23% higher conversion rate than average.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-        id: 'pinned-1'
-      },
-      {
-        role: 'assistant' as const,
-        content: '🔍 Analysis shows your competitors are targeting "SEO tools" with 45% more content than last month.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-        id: 'pinned-2'
-      }
-    ];
+    // Feature-specific sample insights
+    let sampleInsights: Message[] = [];
+    
+    if (feature === 'keywords') {
+      sampleInsights = [
+        {
+          role: 'assistant' as const,
+          content: '📊 Your top performing keyword "marketing analytics" has a 23% higher conversion rate than average.',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+          id: 'pinned-1'
+        },
+        {
+          role: 'assistant' as const,
+          content: '🔍 Analysis shows your competitors are targeting "SEO tools" with 45% more content than last month.',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+          id: 'pinned-2'
+        }
+      ];
+    } else if (feature === 'appStore') {
+      sampleInsights = [
+        {
+          role: 'assistant' as const,
+          content: '📈 Your app downloads increased by 18% compared to last month.',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3), // 3 hours ago
+          id: 'pinned-app-1'
+        },
+        {
+          role: 'assistant' as const,
+          content: '💰 Revenue from in-app purchases has grown 22% in the last quarter.',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48), // 2 days ago
+          id: 'pinned-app-2'
+        }
+      ];
+    } else {
+      sampleInsights = [
+        {
+          role: 'assistant' as const,
+          content: '📊 Analytics show a steady upward trend in user engagement.',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+          id: 'pinned-general-1'
+        },
+        {
+          role: 'assistant' as const,
+          content: '🔍 The data indicates an opportunity to optimize your marketing strategy.',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+          id: 'pinned-general-2'
+        }
+      ];
+    }
     
     setPinnedInsights(sampleInsights);
-  }, []);
+  }, [feature]);
 
   // Convert timestamp to Date if it's a string
   const getDateFromTimestamp = (timestamp: Date | string | undefined): Date => {
@@ -74,10 +111,38 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
     return new Date(timestamp);
   };
 
+  // Get color classes based on feature
+  const getColorClasses = () => {
+    switch (feature) {
+      case 'keywords':
+        return {
+          card: "border-indigo-500/10 bg-indigo-950/5",
+          icon: "text-indigo-400",
+          accent: "text-indigo-300"
+        };
+      case 'appStore':
+        return {
+          card: "border-blue-500/10 bg-blue-950/5",
+          icon: "text-blue-400",
+          accent: "text-blue-300"
+        };
+      default:
+        return {
+          card: "border-white/10 bg-white/5",
+          icon: "text-primary/70",
+          accent: "text-primary/70"
+        };
+    }
+  };
+
+  const colorClasses = getColorClasses();
+
   return (
-    <Card className="w-80 h-full rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg overflow-hidden flex flex-col">
+    <Card className={`w-80 h-full rounded-xl border ${colorClasses.card} backdrop-blur-xl shadow-lg overflow-hidden flex flex-col`}>
       <div className="p-4 border-b border-white/10">
-        <h2 className="text-lg font-medium text-white/90">Analytics Overview</h2>
+        <h2 className="text-lg font-medium text-white/90">
+          {feature === 'keywords' ? 'Keywords Analytics' : 'Analytics Overview'}
+        </h2>
       </div>
       
       <div className="p-4 space-y-5 flex-1 overflow-y-auto">
@@ -87,7 +152,7 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white/5 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
-                <MessageSquare className="h-4 w-4 text-primary/70" />
+                <MessageSquare className={`h-4 w-4 ${colorClasses.icon}`} />
                 <span className="text-xs text-white/60">Messages</span>
               </div>
               <p className="text-xl font-semibold text-white/90">{totalMessages}</p>
@@ -95,7 +160,7 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
             
             <div className="bg-white/5 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
-                <FilePlus className="h-4 w-4 text-primary/70" />
+                <FilePlus className={`h-4 w-4 ${colorClasses.icon}`} />
                 <span className="text-xs text-white/60">Uploads</span>
               </div>
               <p className="text-xl font-semibold text-white/90">{lastFileUpload ? 1 : 0}</p>
@@ -103,7 +168,7 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
             
             <div className="bg-white/5 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
-                <User2 className="h-4 w-4 text-primary/70" />
+                <User2 className={`h-4 w-4 ${colorClasses.icon}`} />
                 <span className="text-xs text-white/60">Your Messages</span>
               </div>
               <p className="text-xl font-semibold text-white/90">{userMessages}</p>
@@ -111,7 +176,7 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
             
             <div className="bg-white/5 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Bot className="h-4 w-4 text-primary/70" />
+                <Bot className={`h-4 w-4 ${colorClasses.icon}`} />
                 <span className="text-xs text-white/60">AI Responses</span>
               </div>
               <p className="text-xl font-semibold text-white/90">{assistantMessages}</p>
@@ -125,13 +190,13 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
           <div className="bg-white/5 rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary/70" />
+                <Clock className={`h-4 w-4 ${colorClasses.icon}`} />
                 <span className="text-sm text-white/80">Last Upload</span>
               </div>
               <span className="text-xs text-white/60">{lastFileUpload ? formatTimeAgo(lastFileUpload) : 'None'}</span>
             </div>
             {lastFileUpload && (isProcessing || isCheckingForResponses) && (
-              <p className="text-xs text-primary/70 mt-1">Processing in progress...</p>
+              <p className={`text-xs ${colorClasses.accent} mt-1`}>Processing in progress...</p>
             )}
           </div>
         </div>
@@ -150,7 +215,7 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
                 <div key={insight.id || index} className="bg-white/5 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
-                      <PinIcon className="h-3.5 w-3.5 text-primary/70" />
+                      <PinIcon className={`h-3.5 w-3.5 ${colorClasses.icon}`} />
                       <span className="text-xs text-white/50">Pinned {formatTimeAgo(getDateFromTimestamp(insight.timestamp))}</span>
                     </div>
                   </div>
@@ -158,7 +223,7 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-1 h-6 px-2 text-xs text-primary/70 hover:text-primary"
+                    className={`mt-1 h-6 px-2 text-xs ${colorClasses.accent} hover:text-primary`}
                   >
                     View Detail
                   </Button>

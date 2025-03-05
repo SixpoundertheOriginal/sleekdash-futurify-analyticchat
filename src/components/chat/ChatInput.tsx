@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Message } from "@/types/chat";
 import { ContextualHelp } from "@/components/ui/contextual-help";
+import { AssistantType } from "@/utils/thread-management";
 
 interface ChatInputProps {
   message: string;
@@ -11,9 +12,10 @@ interface ChatInputProps {
   onMessageChange: (message: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   messages: Message[];
+  feature?: AssistantType;
 }
 
-export function ChatInput({ message, isLoading, onMessageChange, onSubmit, messages }: ChatInputProps) {
+export function ChatInput({ message, isLoading, onMessageChange, onSubmit, messages, feature = 'general' }: ChatInputProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -67,6 +69,20 @@ export function ChatInput({ message, isLoading, onMessageChange, onSubmit, messa
     setShowSuggestions(false);
   };
 
+  // Customize placeholder based on feature
+  const getPlaceholder = () => {
+    if (isLoading) return "Processing...";
+    
+    switch (feature) {
+      case 'keywords':
+        return "Ask about your keyword data...";
+      case 'appStore':
+        return "Ask about your app analytics...";
+      default:
+        return "Type your message here...";
+    }
+  };
+
   return (
     <form onSubmit={onSubmit} className="border-t border-white/10 p-3 bg-white/5">
       <div className="relative">
@@ -76,7 +92,7 @@ export function ChatInput({ message, isLoading, onMessageChange, onSubmit, messa
               type="text"
               value={message}
               onChange={(e) => onMessageChange(e.target.value)}
-              placeholder={isLoading ? "Processing..." : "Ask about your keyword data..."}
+              placeholder={getPlaceholder()}
               disabled={isLoading}
               className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50"
             />
