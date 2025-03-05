@@ -1,5 +1,5 @@
 
-import { Info, Sparkles, Trash2, RefreshCw } from "lucide-react";
+import { Info, Sparkles, Trash2, RefreshCw, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -10,13 +10,15 @@ interface ChatHeaderProps {
   assistantId: string;
   isCreatingThread: boolean;
   onClearConversation: () => void;
+  onToggleStats?: () => void;  // Added this property
 }
 
 export function ChatHeader({ 
   threadId, 
   assistantId, 
   isCreatingThread, 
-  onClearConversation 
+  onClearConversation,
+  onToggleStats
 }: ChatHeaderProps) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-white/10 p-3 bg-primary/10">
@@ -51,20 +53,33 @@ export function ChatHeader({
         </div>
       </div>
       
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onClearConversation}
-        disabled={isCreatingThread}
-        className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs gap-1"
-      >
-        {isCreatingThread ? (
-          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Trash2 className="h-3.5 w-3.5 mr-1" />
+      <div className="flex items-center gap-2">
+        {onToggleStats && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleStats}
+            className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs"
+          >
+            <BarChart2 className="h-3.5 w-3.5" />
+          </Button>
         )}
-        Clear Chat
-      </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearConversation}
+          disabled={isCreatingThread}
+          className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs gap-1"
+        >
+          {isCreatingThread ? (
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+          )}
+          Clear Chat
+        </Button>
+      </div>
     </div>
   );
 }

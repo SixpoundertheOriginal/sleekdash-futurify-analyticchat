@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useChat } from "@/hooks/useChat";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
@@ -12,6 +11,7 @@ import { useMessagePolling } from "@/hooks/useMessagePolling";
 import { ChatStats } from "@/components/chat/ChatStats";
 
 export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (message: string) => Promise<any> }) {
+  
   const { 
     message, 
     setMessage, 

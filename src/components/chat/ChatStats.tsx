@@ -65,6 +65,13 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
     setPinnedInsights(sampleInsights);
   }, []);
 
+  // Convert timestamp to Date if it's a string
+  const getDateFromTimestamp = (timestamp: Date | string | undefined): Date => {
+    if (!timestamp) return new Date();
+    if (timestamp instanceof Date) return timestamp;
+    return new Date(timestamp);
+  };
+
   return (
     <Card className="w-80 h-full rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg overflow-hidden flex flex-col">
       <div className="p-4 border-b border-white/10">
@@ -142,7 +149,7 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <PinIcon className="h-3.5 w-3.5 text-primary/70" />
-                      <span className="text-xs text-white/50">Pinned {formatTimeAgo(insight.timestamp)}</span>
+                      <span className="text-xs text-white/50">Pinned {formatTimeAgo(getDateFromTimestamp(insight.timestamp))}</span>
                     </div>
                   </div>
                   <p className="text-sm text-white/80 line-clamp-2">{insight.content.toString()}</p>
