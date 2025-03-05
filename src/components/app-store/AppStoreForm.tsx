@@ -4,12 +4,12 @@ import { FormHeader } from "./FormHeader";
 import { FormInput } from "./FormInput";
 import { FormButtons } from "./FormButtons";
 import { useAppStoreForm } from "@/hooks/useAppStoreForm";
-import { DateRange, DateRangePicker } from "@/components/chat/DateRangePicker";
+import { DateRange } from "@/components/chat/DateRangePicker";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 import { isAppStoreFormat, processAppStoreText } from "@/utils/file-processing";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
-import { Label } from "@/components/ui/label";
+import { CustomDateRangePicker } from "./CustomDateRangePicker";
 
 interface AppStoreFormProps {
   onProcessSuccess: (data: any) => void;
@@ -111,13 +111,11 @@ export function AppStoreForm({
     <div className="space-y-4 border border-white/10 bg-white/5 backdrop-blur-lg p-6 rounded-xl">
       <FormHeader />
       
-      <div className="space-y-3">
-        <Label htmlFor="date-range" className="text-white font-medium">Select Date Range</Label>
-        <DateRangePicker 
-          dateRange={dateRange}
-          onDateRangeChange={onDateRangeChange}
-        />
-      </div>
+      <CustomDateRangePicker 
+        dateRange={dateRange}
+        onDateRangeChange={onDateRangeChange}
+        label="Select Date Range"
+      />
       
       <FormInput 
         value={appDescription} 
