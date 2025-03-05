@@ -11,7 +11,8 @@ import {
   extractGeographicalData
 } from "./textExtraction";
 
-export { ProcessedAnalytics, formatMetric };
+export { formatMetric };
+export type { ProcessedAnalytics };
 
 /**
  * Process analysis text to extract structured analytics data
