@@ -18,6 +18,8 @@ import { EngagementMetrics } from "./analytics/EngagementMetrics";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { format } from "date-fns";
+import { CollapsibleSection } from "./analytics/CollapsibleSection";
+import { useDevice } from "@/hooks/use-mobile";
 
 interface AnalyticsDashboardProps {
   data: ProcessedAnalytics;
@@ -28,6 +30,8 @@ export function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboardProps)
   const [timeRange, setTimeRange] = useState("30days");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
+  const deviceType = useDevice();
+  const isMobile = deviceType === 'mobile';
   
   // Format the selected date range for display
   const formattedDateRange = dateRange 
@@ -131,7 +135,7 @@ export function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboardProps)
             <RefreshCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
           <Select defaultValue={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
+            <SelectTrigger className={`${isMobile ? 'w-[120px]' : 'w-[180px]'} bg-white/5 border-white/10 text-white`}>
               <SelectValue placeholder="Select time range" />
             </SelectTrigger>
             <SelectContent>
@@ -143,38 +147,44 @@ export function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboardProps)
         </div>
       </div>
 
+      {/* Always show key metrics as they provide the essential overview */}
       <KeyMetricsGrid data={demoData} />
 
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Predictive Analytics</h2>
-        <PredictiveMetrics data={demoData} />
+        <CollapsibleSection title="Predictive Analytics" defaultExpanded={!isMobile}>
+          <PredictiveMetrics data={demoData} />
+        </CollapsibleSection>
       </div>
 
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Acquisition & Revenue</h2>
-        <div className="grid gap-6 md:grid-cols-2">
+      <CollapsibleSection title="Acquisition & Revenue" defaultExpanded={!isMobile}>
+        <div className="grid gap-6 md:grid-cols-2 pt-4">
           <ImpressionAnalytics data={demoData} />
           <ProceedsAnalysis data={demoData} />
         </div>
-      </div>
+      </CollapsibleSection>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <ConversionFunnel data={demoData} />
-        <GeographicalDistribution data={demoData} />
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <TrendAnalysis data={demoData} />
-        <ComparativeAnalysis data={demoData} />
-      </div>
-
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">User Engagement</h2>
-        <div className="grid gap-6 md:grid-cols-2">
-          <EngagementMetrics data={demoData} />
-          <RetentionChart data={demoData} />
+      <CollapsibleSection title="Conversion & Geography" defaultExpanded={false}>
+        <div className="grid gap-6 md:grid-cols-2 pt-4">
+          <ConversionFunnel data={demoData} />
+          <GeographicalDistribution data={demoData} />
         </div>
-      </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Trend & Competitive Analysis" defaultExpanded={false}>
+        <div className="grid gap-6 md:grid-cols-2 pt-4">
+          <TrendAnalysis data={demoData} />
+          <ComparativeAnalysis data={demoData} />
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="User Engagement" defaultExpanded={false}>
+        <div className="pt-4">
+          <div className="grid gap-6 md:grid-cols-2">
+            <EngagementMetrics data={demoData} />
+            <RetentionChart data={demoData} />
+          </div>
+        </div>
+      </CollapsibleSection>
     </div>
   );
 }
