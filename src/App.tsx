@@ -4,13 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { 
-  BrowserRouter, 
-  Routes, 
-  Route, 
   Navigate,
   createBrowserRouter,
   RouterProvider,
-  createRoutesFromElements
+  createRoutesFromElements,
+  Route
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/components/AuthProvider";
 import { ThreadProvider } from "@/contexts/ThreadContext";
@@ -39,7 +37,7 @@ const ProtectedRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
-// Create router with future flags
+// Create router with correct future flags syntax
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
@@ -76,13 +74,7 @@ const router = createBrowserRouter(
       />
       <Route path="*" element={<NotFound />} />
     </>
-  ),
-  {
-    future: {
-      v7_startTransition: true,
-      v7_relativeSplatPath: true
-    }
-  }
+  )
 );
 
 const App = () => (
