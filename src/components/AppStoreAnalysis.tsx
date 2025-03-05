@@ -75,21 +75,23 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart className="h-5 w-5 text-primary" />
+    <div className="space-y-8">
+      <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm shadow-lg transition-all hover:shadow-primary/10">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2 rounded-full bg-primary/20">
+            <BarChart className="h-5 w-5 text-primary" />
+          </div>
           <h2 className="text-lg font-semibold text-white">AI-Powered App Store Analysis</h2>
         </div>
         
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="analysis-input" className="text-white">Paste Your Data</Label>
+        <div className="space-y-5">
+          <div className="space-y-3">
+            <Label htmlFor="analysis-input" className="text-white font-medium">Paste Your App Store Data</Label>
             <Textarea 
               id="analysis-input"
               value={appDescription}
               onChange={(e) => setAppDescription(e.target.value)}
-              className="bg-white/5 border-white/10 text-white min-h-[120px] focus:ring-primary/30 transition-all duration-200"
+              className="bg-white/5 border-white/10 text-white min-h-[150px] focus:ring-primary/30 transition-all duration-200 rounded-lg"
               placeholder="Paste your app store data here to analyze performance metrics, user behavior, and market trends..."
               disabled={analyzing}
             />
@@ -98,13 +100,13 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
           <Button 
             onClick={handleAnalysis}
             disabled={analyzing || !appDescription.trim()}
-            className="w-full md:w-auto bg-primary hover:bg-primary/90 transition-colors duration-200"
+            className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white transition-colors duration-200 rounded-lg shadow-lg hover:shadow-primary/20"
           >
             {analyzing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Your data is being analyzed...
-              </>
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Your data is being analyzed...</span>
+              </div>
             ) : (
               'Analyze Your Data'
             )}
@@ -112,26 +114,32 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         </div>
       </Card>
 
-      <div className="relative">
+      <div className="relative rounded-lg overflow-hidden transition-all duration-300">
         {isProcessing && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-lg z-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-white font-medium">Processing analytics data...</p>
+            </div>
           </div>
         )}
         <AnalyticsDashboard data={processedData || initialData} />
       </div>
 
       {processingError && (
-        <Card className="p-4 bg-rose-500/10 border-rose-500/20">
+        <Card className="p-4 bg-rose-500/10 border-rose-500/20 rounded-lg">
           <p className="text-rose-500">Error processing analysis data: {processingError}</p>
         </Card>
       )}
 
       {analysisResult && (
-        <Card className="p-4 mt-4 bg-white/5 border-white/10 backdrop-blur-sm">
-          <h3 className="text-white font-semibold mb-3">Analysis Report</h3>
+        <Card className="p-5 mt-4 bg-white/5 border-white/10 backdrop-blur-sm rounded-lg shadow-lg">
+          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
+            Analysis Report
+          </h3>
           <div className="prose prose-invert max-w-none">
-            <div className="text-white/90 whitespace-pre-wrap">{analysisResult}</div>
+            <div className="text-white/90 whitespace-pre-wrap leading-relaxed">{analysisResult}</div>
           </div>
         </Card>
       )}
