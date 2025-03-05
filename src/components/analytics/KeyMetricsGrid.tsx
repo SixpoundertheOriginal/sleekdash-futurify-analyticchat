@@ -47,6 +47,11 @@ export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
           ? metric.change < 0 
           : metric.change > 0;
         
+        // For metrics like crash count, a decrease is good, so we show it in green
+        const displayPositiveColor = metric.inverseColor 
+          ? metric.change < 0  // For inverse metrics, negative change is good
+          : metric.change > 0; // For regular metrics, positive change is good
+        
         return (
           <Card 
             key={index} 
@@ -60,19 +65,19 @@ export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
                 </h3>
               </div>
               <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${
-                isPositiveChange ? 'text-emerald-400 bg-emerald-400/10' : 'text-rose-400 bg-rose-400/10'
+                displayPositiveColor ? 'text-emerald-400 bg-emerald-400/10' : 'text-rose-400 bg-rose-400/10'
               }`}>
-                {isPositiveChange ? (
+                {metric.change > 0 ? (
                   <TrendingUp className="h-3 w-3" />
                 ) : (
                   <TrendingDown className="h-3 w-3" />
                 )}
-                <span className="text-xs font-medium">{Math.abs(metric.change)}%</span>
+                <span className="text-xs font-medium max-w-[50px] truncate">{Math.abs(metric.change)}%</span>
               </div>
             </div>
             <div className="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
               <div 
-                className={`h-full ${isPositiveChange ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                className={`h-full ${displayPositiveColor ? 'bg-emerald-400' : 'bg-rose-400'}`}
                 style={{ width: `${Math.min(Math.abs(metric.change), 100)}%` }}
               />
             </div>

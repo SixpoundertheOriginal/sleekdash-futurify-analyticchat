@@ -26,7 +26,8 @@ serve(async (req) => {
     const { 
       appDescription, 
       threadId = DEFAULT_THREAD_ID, 
-      assistantId = DEFAULT_ASSISTANT_ID 
+      assistantId = DEFAULT_ASSISTANT_ID,
+      processedData
     } = requestData;
 
     if (!appDescription) {
@@ -39,18 +40,14 @@ serve(async (req) => {
     console.log(`Using thread ID: ${threadId}`);
     console.log(`Using assistant ID: ${assistantId}`);
     console.log(`Processing app description with length: ${appDescription.length}`);
+    
+    // Log if we received pre-processed data
+    if (processedData) {
+      console.log('Received pre-processed data with validation confidence:', processedData.validation.confidence);
+    }
 
     // 1. Add a message to the thread
-    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
-      body: JSON.stringify({
-        role: 'user',
-        content: `Analyze this app store data: ${appDescription}
+    let prompt = `Analyze this app store data: ${appDescription}
 
 Please provide a structured analysis with the following sections:
 1. Summary
@@ -60,7 +57,36 @@ Please provide a structured analysis with the following sections:
 5. Monetization
 6. Recommendations
 
-Include metrics and percentages where available. Format your response so it can be parsed into sections.`
+Include metrics and percentages where available. Format your response so it can be parsed into sections.`;
+
+    // If we have processed data, include it in the prompt
+    if (processedData) {
+      const extractedMetrics = JSON.stringify(processedData.metrics, null, 2);
+      const extractedChanges = JSON.stringify(processedData.changes, null, 2);
+      
+      prompt += `\n\nI've already extracted the following metrics from the data:
+\`\`\`json
+${extractedMetrics}
+\`\`\`
+
+And the following percentage changes:
+\`\`\`json
+${extractedChanges}
+\`\`\`
+
+Please use these structured values in your analysis where appropriate.`;
+    }
+
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        role: 'user',
+        content: prompt
       }),
     });
 
@@ -166,12 +192,20 @@ Include metrics and percentages where available. Format your response so it can 
       }
     }
 
+    // If we have processed data, store it in Supabase
+    if (processedData && processedData.validation.isValid) {
+      // This is where you would store in Supabase
+      console.log('Would store processed data in Supabase');
+      // TODO: Add Supabase storage logic if needed
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         analysis: analysisContent,
         messageId: latestMessage.id,
-        threadId: threadId
+        threadId: threadId,
+        processedDataIncluded: !!processedData
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
