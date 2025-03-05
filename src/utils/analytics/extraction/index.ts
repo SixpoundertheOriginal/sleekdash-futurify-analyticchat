@@ -1,7 +1,18 @@
 
-export { extractSummaryInfo, extractExecutiveSummary, extractNumberAndChange } from './summaryExtraction';
-export { extractAcquisitionMetrics } from './acquisitionExtraction';
-export { extractFinancialMetrics } from './financialExtraction';
-export { extractEngagementMetrics } from './engagementExtraction';
-export { extractTechnicalMetrics } from './technicalExtraction';
-export { extractGeographicalData } from './geographicalExtraction';
+/**
+ * Re-export all extraction utilities
+ */
+
+// Summary and general extractors
+export { 
+  extractSummaryInfo, 
+  extractExecutiveSummary, 
+  extractNumberAndChange 
+} from './summary';
+
+// Domain-specific extractors
+export { extractAcquisitionMetrics } from './acquisition';
+export { extractFinancialMetrics } from './financial';
+export { extractEngagementMetrics } from './engagement';
+export { extractTechnicalMetrics } from './technical';
+export { extractGeographicalData } from './geographical';
