@@ -9,7 +9,7 @@ import {
   extractEngagementMetrics,
   extractTechnicalMetrics,
   extractGeographicalData
-} from "./textExtraction";
+} from "./extraction";
 
 export { formatMetric };
 export type { ProcessedAnalytics };
