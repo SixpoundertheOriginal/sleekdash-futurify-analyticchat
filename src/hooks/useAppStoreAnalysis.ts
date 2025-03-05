@@ -1,90 +1,174 @@
+import { useState, useCallback, useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+import { parseMetricsFromAnalysis } from "@/utils/analytics/metrics";
+import { extractBaseMetrics } from "@/utils/analytics/offline/directExtraction";
+import { useChat } from "@/hooks/useChat";
+import { useThread } from "@/contexts/thread/ThreadContext";
+import { registerAppStoreMetrics } from '@/utils/metrics/adapters/appStoreAdapter';
+import { useMetrics } from '@/hooks/useMetrics';
 
-import { ProcessedAnalytics } from "@/utils/analytics/types";
-import { useAnalyticsState, UseAnalyticsStateReturn } from "./analytics/useAnalyticsState";
-import { useAnalyticsPersistence, UseAnalyticsPersistenceReturn } from "./analytics/useAnalyticsPersistence";
-import { useAnalyticsHandlers, UseAnalyticsHandlersReturn } from "./analytics/useAnalyticsHandlers";
-import { useChat } from "@/hooks/useChat"; 
-import { useThread as useThreadContext } from "@/contexts/thread/ThreadContext";
-import { findCrossDomainCorrelations, CorrelationResult } from "@/utils/analytics/correlation/dataCorrelation";
-import { useKeywordAnalytics } from "./useKeywordAnalytics";
-import { useState, useEffect } from "react";
-
-export interface UseAppStoreAnalysisParams {
+interface UseAppStoreAnalysisProps {
   initialData?: ProcessedAnalytics;
 }
 
-export interface UseAppStoreAnalysisReturn extends UseAnalyticsStateReturn, UseAnalyticsHandlersReturn {
-  chatThreadId: string;
-  chatAssistantId: string;
-  correlations: CorrelationResult[];
-  hasCorrelationData: boolean;
-}
+export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
+  const [activeTab, setActiveTab] = useState("process");
+  const [extractedData, setExtractedData] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<ProcessedAnalytics | null>(null);
+  const [processedAnalytics, setProcessedAnalytics] = useState<ProcessedAnalytics | null>(null);
+  const [directlyExtractedMetrics, setDirectlyExtractedMetrics] = useState<any | null>(null);
+  const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({
+    from: null,
+    to: null
+  });
+  const [isProcessing, setProcessing] = useState(false);
+  const [isAnalyzing, setAnalyzing] = useState(false);
+  const [processingError, setProcessingError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { threadId, assistantId } = useThread();
+  const { sendMessage } = useChat();
 
-/**
- * Main hook for App Store analytics that composes smaller, focused hooks
- */
-export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams): UseAppStoreAnalysisReturn {
-  // Use smaller hooks for specific concerns
-  const state = useAnalyticsState({ initialData });
-  const [correlations, setCorrelations] = useState<CorrelationResult[]>([]);
-  const [hasCorrelationData, setHasCorrelationData] = useState(false);
-  
-  // Get the thread context to access the feature-specific thread IDs
-  const threadContext = useThreadContext();
-  
-  // Get the App Store-specific thread and assistant IDs
-  const appStoreThreadId = threadContext.getFeatureThreadId('appStore');
-  const appStoreAssistantId = threadContext.getFeatureAssistantId('appStore');
-  
-  // Set up chat with the appStore feature
-  const chat = useChat({ feature: 'appStore' });
-  
-  // Get keyword data to calculate correlations
-  const { keywordData } = useKeywordAnalytics();
-  
-  // Calculate correlations when both data sources are available
+  // Add metrics registry integration
+  const { registerMetrics } = useMetrics('appStore');
+
+  // Register initial data if provided
   useEffect(() => {
-    if (state.processedAnalytics && keywordData && keywordData.length > 0) {
-      try {
-        const correlationResults = findCrossDomainCorrelations(
-          state.processedAnalytics,
-          keywordData
-        );
-        setCorrelations(correlationResults);
-        setHasCorrelationData(true);
-      } catch (error) {
-        console.error("Error calculating correlations:", error);
-        setHasCorrelationData(false);
-      }
-    } else {
-      setHasCorrelationData(false);
+    if (initialData) {
+      registerAppStoreMetrics(initialData, {
+        source: 'initial-data',
+        confidence: 0.9
+      });
     }
-  }, [state.processedAnalytics, keywordData]);
-  
-  const { saveAnalytics } = useAnalyticsPersistence({
-    processedAnalytics: state.processedAnalytics,
-    setProcessedAnalytics: state.setProcessedAnalytics,
-    setActiveTab: state.setActiveTab
-  });
-  
-  const handlers = useAnalyticsHandlers({
-    setExtractedData: state.setExtractedData,
-    setAnalysisResult: state.setAnalysisResult,
-    setActiveTab: state.setActiveTab,
-    setProcessedAnalytics: state.setProcessedAnalytics,
-    setDirectlyExtractedMetrics: state.setDirectlyExtractedMetrics,
-    dateRange: state.dateRange,
-    setProcessingError: state.setProcessingError,
-    saveAnalytics
-  });
+  }, [initialData]);
 
-  // Return all the state and handlers needed by components
+  const handleProcessSuccess = useCallback((extractedData: any) => {
+    setProcessing(false);
+    setExtractedData(extractedData);
+    setProcessingError(null);
+    setActiveTab("analysis");
+
+    // Extract base metrics directly from the extracted data
+    const baseMetrics = extractBaseMetrics(extractedData);
+    setDirectlyExtractedMetrics(baseMetrics);
+
+    // If baseMetrics were extracted, set the processedAnalytics state
+    if (baseMetrics) {
+      setProcessedAnalytics(baseMetrics);
+    }
+
+    // Register metrics if we have processed analytics
+    if (processedAnalytics) {
+      registerAppStoreMetrics(processedAnalytics, {
+        source: 'direct-extraction',
+        confidence: 0.8
+      });
+    }
+
+    toast({
+      title: "Data Processed",
+      description: "Successfully processed the data and extracted base metrics."
+    });
+  }, [processedAnalytics, setExtractedData, setProcessing, setProcessingError, setActiveTab, setDirectlyExtractedMetrics, setProcessedAnalytics, toast]);
+
+  const handleAnalysisSuccess = useCallback((result: any) => {
+    setAnalyzing(false);
+    setAnalysisResult(result);
+
+    // Register metrics from AI analysis
+    if (result) {
+      registerAppStoreMetrics(result, {
+        source: 'ai-analysis',
+        confidence: 0.95
+      });
+    }
+
+    toast({
+      title: "Analysis Complete",
+      description: "Successfully analyzed the data and extracted insights."
+    });
+  }, [setAnalyzing, setAnalysisResult, toast]);
+
+  const handleDirectExtractionSuccess = useCallback((analysisText: string) => {
+    try {
+      const extractedMetrics = parseMetricsFromAnalysis(analysisText);
+      setAnalysisResult(extractedMetrics as any);
+      toast({
+        title: "Direct Extraction Complete",
+        description: "Successfully extracted metrics directly from the analysis text."
+      });
+    } catch (error: any) {
+      console.error("Error during direct metric extraction:", error);
+      setProcessingError(error.message || "Failed to extract metrics.");
+      toast({
+        variant: "destructive",
+        title: "Extraction Failed",
+        description: "Failed to extract metrics directly from the analysis."
+      });
+    }
+  }, [setAnalysisResult, toast]);
+
+  const handleProcessError = (error: string) => {
+    setProcessing(false);
+    setProcessingError(error);
+    toast({
+      variant: "destructive",
+      title: "Processing Error",
+      description: error
+    });
+  };
+
+  const handleAnalysisError = (error: string) => {
+    setAnalyzing(false);
+    setProcessingError(error);
+    toast({
+      variant: "destructive",
+      title: "Analysis Error",
+      description: error
+    });
+  };
+
+  const analyzeExtractedData = useCallback(async (analysisPrompt: string) => {
+    if (!extractedData) {
+      handleAnalysisError("No extracted data to analyze.");
+      return;
+    }
+
+    setAnalyzing(true);
+    try {
+      const analysisText = await sendMessage(analysisPrompt, threadId, assistantId);
+      if (analysisText) {
+        handleDirectExtractionSuccess(analysisText);
+      } else {
+        handleAnalysisError("Analysis failed to return any results.");
+      }
+    } catch (error: any) {
+      console.error("Analysis failed:", error);
+      handleAnalysisError(error.message || "Analysis failed.");
+    }
+  }, [extractedData, handleAnalysisError, handleDirectExtractionSuccess, sendMessage, threadId, assistantId]);
+
   return {
-    ...state,
-    ...handlers,
-    chatThreadId: appStoreThreadId,
-    chatAssistantId: appStoreAssistantId,
-    correlations,
-    hasCorrelationData
+    activeTab,
+    setActiveTab,
+    extractedData,
+    isProcessing,
+    isAnalyzing,
+    analysisResult,
+    processedAnalytics,
+    directlyExtractedMetrics,
+    dateRange,
+    setDateRange,
+    processingError,
+    setProcessing,
+    setAnalyzing,
+    handleProcessSuccess,
+    handleAnalysisSuccess,
+    handleDirectExtractionSuccess,
+    handleProcessError,
+    handleAnalysisError,
+    analyzeExtractedData,
+    chatThreadId: threadId,
+    chatAssistantId: assistantId
   };
 }
