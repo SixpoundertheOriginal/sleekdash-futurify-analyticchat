@@ -12,6 +12,7 @@ import { SourcesBreakdown } from "../metrics/SourcesBreakdown";
 import { GeographicalDistribution } from "../metrics/GeographicalDistribution";
 import { DeviceDistribution } from "../metrics/DeviceDistribution";
 import { LongTermTrends } from "../metrics/LongTermTrends";
+import { useDevice } from "@/hooks/use-mobile";
 
 interface DashboardTabsProps {
   activeTab: string;
@@ -20,14 +21,18 @@ interface DashboardTabsProps {
 }
 
 export function DashboardTabs({ activeTab, setActiveTab, data }: DashboardTabsProps) {
+  const deviceType = useDevice();
+  const isMobile = deviceType === 'mobile';
+  
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid grid-cols-5 bg-white/5 p-1 w-full">
+      <TabsList className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} bg-white/5 p-1 w-full overflow-x-auto`}>
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="acquisition">Acquisition</TabsTrigger>
         <TabsTrigger value="revenue">Revenue</TabsTrigger>
-        <TabsTrigger value="engagement">Engagement</TabsTrigger>
-        <TabsTrigger value="performance">Performance</TabsTrigger>
+        {!isMobile && <TabsTrigger value="engagement">Engagement</TabsTrigger>}
+        {!isMobile && <TabsTrigger value="performance">Performance</TabsTrigger>}
+        {isMobile && <TabsTrigger value="more">More</TabsTrigger>}
       </TabsList>
       
       <TabsContent value="overview" className="pt-4 space-y-6">
@@ -84,6 +89,15 @@ export function DashboardTabs({ activeTab, setActiveTab, data }: DashboardTabsPr
           <LongTermTrends data={data} metric="crashes" />
         </div>
       </TabsContent>
+      
+      {isMobile && (
+        <TabsContent value="more" className="pt-4 space-y-6">
+          <div className="grid grid-cols-1 gap-6">
+            <UserRetentionPanel data={data} />
+            <PerformancePanel data={data} />
+          </div>
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

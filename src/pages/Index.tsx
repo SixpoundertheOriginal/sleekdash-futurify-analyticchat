@@ -6,6 +6,7 @@ import { AppStoreAnalysis } from "@/components/app-store/AppStoreAnalysis";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { getAnalyticsFromStorage } from "@/utils/analytics/storage";
 import { useEffect, useState } from "react";
+import { useDevice } from "@/hooks/use-mobile";
 
 // Enhanced initial data for demonstration purposes
 const demoData: ProcessedAnalytics = {
@@ -71,6 +72,8 @@ const demoData: ProcessedAnalytics = {
 
 const Index = () => {
   const [initialData, setInitialData] = useState<ProcessedAnalytics>(demoData);
+  const deviceType = useDevice();
+  const isMobile = deviceType === 'mobile';
 
   // Check for stored analytics data on page load
   useEffect(() => {
@@ -84,18 +87,18 @@ const Index = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-[#1A1F2C] to-[#2d3748]">
         <AppSidebar />
-        <main className="flex-1 p-6 animate-fade-up">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <header className="text-white space-y-2">
-              <h1 className="text-2xl font-bold tracking-tight">
+        <main className="flex-1 p-3 sm:p-6 animate-fade-up overflow-x-hidden">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+            <header className="text-white space-y-1 sm:space-y-2">
+              <h1 className="responsive-text-2xl font-bold tracking-tight">
                 App Store Analytics Dashboard
               </h1>
-              <p className="text-white/60">
+              <p className="responsive-text-base text-white/60">
                 Monitor your app's performance and optimize your marketing strategy
               </p>
             </header>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <AppStoreAnalysis initialData={initialData} />
             </div>
           </div>

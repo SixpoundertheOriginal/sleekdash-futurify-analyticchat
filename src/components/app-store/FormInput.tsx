@@ -1,24 +1,32 @@
 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useDevice } from "@/hooks/use-mobile";
 
 interface FormInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   disabled: boolean;
-  placeholder?: string; // Added placeholder as an optional prop
+  placeholder?: string;
 }
 
 export function FormInput({ value, onChange, disabled, placeholder }: FormInputProps) {
+  const deviceType = useDevice();
+  const isMobile = deviceType === 'mobile';
+  
   return (
     <div className="space-y-3">
-      <Label htmlFor="analysis-input" className="text-white font-medium">Paste Your App Store Data</Label>
+      <Label htmlFor="analysis-input" className="text-white font-medium">
+        {isMobile ? "App Store Data" : "Paste Your App Store Data"}
+      </Label>
       <Textarea 
         id="analysis-input"
         value={value}
         onChange={onChange}
-        className="bg-white/5 border-white/10 text-white min-h-[150px] focus:ring-primary/30 transition-all duration-200 rounded-lg"
-        placeholder={placeholder || "Paste your app store data here to analyze performance metrics, user behavior, and market trends..."}
+        className="bg-white/5 border-white/10 text-white min-h-[100px] sm:min-h-[150px] focus:ring-primary/30 transition-all duration-200 rounded-lg"
+        placeholder={placeholder || (isMobile ? 
+          "Paste app store data here..." : 
+          "Paste your app store data here to analyze performance metrics, user behavior, and market trends...")}
         disabled={disabled}
       />
     </div>

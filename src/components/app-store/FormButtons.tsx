@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { BarChart, Loader2, FileText } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface FormButtonsProps {
   isProcessing: boolean;
@@ -19,6 +20,7 @@ export function FormButtons({
 }: FormButtonsProps) {
   const hasContent = Boolean(appDescription.trim());
   const isDisabled = isProcessing || isAnalyzing || !hasContent;
+  const isMobile = useIsMobile();
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">
@@ -30,12 +32,12 @@ export function FormButtons({
         {isProcessing ? (
           <div className="flex items-center justify-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Processing data...</span>
+            <span>{isMobile ? "Processing..." : "Processing data..."}</span>
           </div>
         ) : (
           <div className="flex items-center justify-center gap-2">
             <FileText className="h-4 w-4" />
-            <span>Process & Analyze</span>
+            <span>{isMobile ? "Process" : "Process & Analyze"}</span>
           </div>
         )}
       </Button>
@@ -49,12 +51,12 @@ export function FormButtons({
         {isAnalyzing ? (
           <div className="flex items-center justify-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Analyzing...</span>
+            <span>{isMobile ? "Analyzing..." : "Analyzing..."}</span>
           </div>
         ) : (
           <div className="flex items-center justify-center gap-2">
             <BarChart className="h-4 w-4" />
-            <span>Analyze Only</span>
+            <span>{isMobile ? "Analyze" : "Analyze Only"}</span>
           </div>
         )}
       </Button>
