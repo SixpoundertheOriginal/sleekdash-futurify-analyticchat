@@ -80,3 +80,80 @@ export const clearAnalyticsStorage = (): void => {
     console.error('Error clearing analytics data from localStorage:', error);
   }
 };
+
+/**
+ * Merge direct extraction with partial data
+ */
+export const mergeAnalyticsData = (
+  base: Partial<ProcessedAnalytics>, 
+  overlay: Partial<ProcessedAnalytics>
+): ProcessedAnalytics => {
+  // Start with base data
+  const result = { ...base } as ProcessedAnalytics;
+  
+  // Merge summary
+  if (overlay.summary) {
+    result.summary = {
+      ...result.summary,
+      ...overlay.summary
+    };
+  }
+  
+  // Merge acquisition data 
+  if (overlay.acquisition) {
+    result.acquisition = {
+      ...result.acquisition,
+      ...overlay.acquisition,
+      funnelMetrics: {
+        ...result.acquisition?.funnelMetrics,
+        ...overlay.acquisition.funnelMetrics
+      }
+    };
+  }
+  
+  // Merge financial data
+  if (overlay.financial) {
+    result.financial = {
+      ...result.financial,
+      ...overlay.financial,
+      derivedMetrics: {
+        ...result.financial?.derivedMetrics,
+        ...overlay.financial.derivedMetrics
+      }
+    };
+  }
+  
+  // Merge engagement data
+  if (overlay.engagement) {
+    result.engagement = {
+      ...result.engagement,
+      ...overlay.engagement,
+      retention: {
+        ...result.engagement?.retention,
+        ...overlay.engagement.retention
+      }
+    };
+  }
+  
+  // Merge technical data
+  if (overlay.technical) {
+    result.technical = {
+      ...result.technical,
+      ...overlay.technical
+    };
+  }
+  
+  // Merge geographical data
+  if (overlay.geographical) {
+    result.geographical = {
+      markets: overlay.geographical.markets?.length ? 
+        overlay.geographical.markets : 
+        result.geographical?.markets || [],
+      devices: overlay.geographical.devices?.length ? 
+        overlay.geographical.devices : 
+        result.geographical?.devices || []
+    };
+  }
+  
+  return result;
+};

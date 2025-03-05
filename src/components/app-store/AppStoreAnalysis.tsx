@@ -14,6 +14,7 @@ import { DateRange } from "@/components/chat/DateRangePicker";
 import { processAnalysisText, ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { saveAnalyticsToStorage, getAnalyticsFromStorage } from "@/utils/analytics/storage";
 import { useToast } from "@/components/ui/use-toast";
+import { hasValidMetricsForVisualization } from "@/utils/analytics/offline/directExtraction";
 
 interface AppStoreAnalysisProps {
   initialData?: ProcessedAnalytics;
@@ -26,6 +27,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
   const [isAnalyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [processedAnalytics, setProcessedAnalytics] = useState<ProcessedAnalytics | null>(initialData || null);
+  const [directlyExtractedMetrics, setDirectlyExtractedMetrics] = useState<Partial<ProcessedAnalytics> | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
   const [processingError, setProcessingError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -103,6 +105,32 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
     }
   };
 
+  // Handle direct metric extraction results
+  const handleDirectExtractionSuccess = (metrics: Partial<ProcessedAnalytics>) => {
+    console.log("Direct extraction successful:", metrics);
+    setDirectlyExtractedMetrics(metrics);
+    
+    // If we have valid metrics, show a notification that the dashboard is ready
+    if (hasValidMetricsForVisualization(metrics)) {
+      toast({
+        title: "Dashboard Preview Ready",
+        description: "Initial metrics have been extracted. You can view the dashboard while waiting for the full analysis.",
+        variant: "default"
+      });
+      
+      // Auto-switch to dashboard tab if we're still on input tab
+      if (activeTab === "input" && !isProcessing && !isAnalyzing) {
+        setTimeout(() => {
+          setActiveTab("dashboard");
+        }, 1000);
+      }
+    }
+  };
+
+  // Create a combined data object that uses the full processed analytics if available,
+  // or falls back to directly extracted metrics
+  const dashboardData = processedAnalytics || directlyExtractedMetrics as ProcessedAnalytics || initialData;
+
   return (
     <div className="space-y-6 relative">
       {(isProcessing || isAnalyzing) && <LoadingOverlay />}
@@ -118,6 +146,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
           <AppStoreForm 
             onProcessSuccess={handleProcessSuccess}
             onAnalysisSuccess={handleAnalysisSuccess}
+            onDirectExtractionSuccess={handleDirectExtractionSuccess}
             isProcessing={isProcessing}
             isAnalyzing={isAnalyzing}
             setProcessing={setProcessing}
@@ -151,9 +180,9 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         </TabsContent>
         
         <TabsContent value="dashboard" className="pt-4">
-          {processedAnalytics ? (
+          {dashboardData ? (
             <AdvancedDashboard 
-              data={processedAnalytics} 
+              data={dashboardData} 
               dateRange={dateRange}
               isLoading={isProcessing || isAnalyzing}
             />

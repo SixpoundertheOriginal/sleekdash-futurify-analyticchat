@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { FormHeader } from "./FormHeader";
 import { FormInput } from "./FormInput";
@@ -8,10 +7,12 @@ import { DateRange } from "@/components/chat/DateRangePicker";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 import { isAppStoreFormat, processAppStoreText } from "@/utils/file-processing";
+import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 
 interface AppStoreFormProps {
   onProcessSuccess: (data: any) => void;
   onAnalysisSuccess: (analysisResult: string) => void;
+  onDirectExtractionSuccess?: (metrics: Partial<ProcessedAnalytics>) => void;
   isProcessing: boolean;
   isAnalyzing: boolean;
   setProcessing: (processing: boolean) => void;
@@ -22,6 +23,7 @@ interface AppStoreFormProps {
 export function AppStoreForm({
   onProcessSuccess,
   onAnalysisSuccess,
+  onDirectExtractionSuccess,
   isProcessing,
   isAnalyzing,
   setProcessing,
@@ -34,12 +36,13 @@ export function AppStoreForm({
     setAppDescription,
     handleTextCleaningAndProcessing,
     handleAnalysis
-  } = useAppStoreForm(
+  } = useAppStoreForm({
     onProcessSuccess,
     onAnalysisSuccess,
+    onDirectExtractionSuccess,
     setProcessing,
     setAnalyzing
-  );
+  });
 
   const handleProcessAndAnalyze = () => {
     if (!dateRange && !isAppStoreFormat(appDescription)) {
