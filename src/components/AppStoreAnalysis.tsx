@@ -11,6 +11,7 @@ import { useAnalysisData } from "@/hooks/useAnalysisData";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { useThread } from "@/contexts/ThreadContext";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface AppStoreAnalysisProps {
   initialData: ProcessedAnalytics;
@@ -63,8 +64,9 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
 
       // If confidence is low, show a warning but continue
       if (data.data.validation.confidence < 70) {
+        // Using default variant instead of "warning" which is not supported
         toast({
-          variant: "warning",
+          variant: "default", // Changed from "warning" to "default"
           title: "Low Confidence",
           description: `We're ${data.data.validation.confidence}% confident in the extracted data. Please verify the results.`
         });
