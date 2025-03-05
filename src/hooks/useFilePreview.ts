@@ -36,7 +36,7 @@ export function useFilePreview(): UseFilePreviewReturn {
   };
 
   // Simulate progress for UX
-  const simulateProgress = () => {
+  const simulateProgress = (): NodeJS.Timeout => {
     setUploadProgress(0);
     const interval = setInterval(() => {
       setUploadProgress(prev => {

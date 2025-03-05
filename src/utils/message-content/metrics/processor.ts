@@ -12,6 +12,11 @@ export const processContentWithFallback = async (
   content: string, 
   openAiProcessor: (content: string) => Promise<Record<string, any>>
 ): Promise<Record<string, any>> => {
+  if (!content) {
+    console.warn('[MessageContentUtils] Empty content provided for processing');
+    return {};
+  }
+  
   // Generate cache key from content
   const cacheKey = generateCacheKey(content);
   
@@ -27,8 +32,14 @@ export const processContentWithFallback = async (
     console.log('[MessageContentUtils] Attempting to process with OpenAI');
     const metrics = await openAiProcessor(content);
     
-    // Cache the result for future use
-    cacheMetrics(cacheKey, metrics);
+    // Only cache valid results
+    if (metrics && Object.keys(metrics).length > 0) {
+      // Cache the result for future use
+      cacheMetrics(cacheKey, metrics);
+    } else {
+      console.warn('[MessageContentUtils] OpenAI returned empty metrics, falling back to local extraction');
+      return extractMetricsLocally(content);
+    }
     
     return metrics;
   } catch (error) {
@@ -38,9 +49,10 @@ export const processContentWithFallback = async (
     const localMetrics = extractMetricsLocally(content);
     
     // Cache the locally extracted metrics with a shorter TTL
-    cacheMetrics(cacheKey, localMetrics, FALLBACK_CACHE_TTL);
+    if (localMetrics && Object.keys(localMetrics).length > 0) {
+      cacheMetrics(cacheKey, localMetrics, FALLBACK_CACHE_TTL);
+    }
     
     return localMetrics;
   }
 };
-

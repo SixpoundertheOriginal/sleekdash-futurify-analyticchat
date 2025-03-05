@@ -1,8 +1,23 @@
+
 import { corsHeaders } from './utils.ts';
 import { getMessagesFromThread, runAssistantOnThread, sendMessageToThread } from './thread-operations.ts';
 
 // Get messages from a thread
 export async function handleGetMessages(threadId: string) {
+  if (!threadId) {
+    console.error('[chat-message:actions] No thread ID provided');
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: { message: 'No thread ID provided' }
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 400 
+      }
+    );
+  }
+
   try {
     console.log('[chat-message:actions] Getting messages from thread:', threadId);
     const messages = await getMessagesFromThread(threadId);
@@ -21,7 +36,7 @@ export async function handleGetMessages(threadId: string) {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: { message: `Error getting messages: ${error.message}` }
+        error: { message: `Error getting messages: ${error.message || 'Unknown error'}` }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
@@ -33,6 +48,35 @@ export async function handleGetMessages(threadId: string) {
 
 // Send a message to a thread and run the assistant
 export async function handleSendMessage(threadId: string, assistantId: string, message: string, preprocessedData?: any) {
+  // Validate inputs
+  if (!threadId) {
+    console.error('[chat-message:actions] No thread ID provided');
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: { message: 'No thread ID provided' }
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 400 
+      }
+    );
+  }
+
+  if (!assistantId) {
+    console.error('[chat-message:actions] No assistant ID provided');
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: { message: 'No assistant ID provided' }
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 400 
+      }
+    );
+  }
+
   if (!message) {
     console.error('[chat-message:actions] No message provided');
     return new Response(
@@ -127,7 +171,7 @@ export async function handleSendMessage(threadId: string, assistantId: string, m
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: { message: `Error processing message: ${error.message}` }
+        error: { message: `Error processing message: ${error instanceof Error ? error.message : 'Unknown error'}` }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 

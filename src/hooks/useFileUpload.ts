@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { processExcelFile, validateFileContent, validateFileType } from "@/utils/file-processing";
@@ -22,7 +22,7 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleDrag = (e: React.DragEvent) => {
+  const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -30,10 +30,28 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
     } else if (e.type === "dragleave") {
       setDragActive(false);
     }
-  };
+  }, []);
+
+  const validateParameters = useCallback((): boolean => {
+    if (!threadId || !assistantId) {
+      const errorMsg = "Thread or assistant ID is missing. Cannot process file.";
+      setError(errorMsg);
+      toast({
+        variant: "destructive",
+        title: "Missing Parameters",
+        description: errorMsg
+      });
+      return false;
+    }
+    return true;
+  }, [threadId, assistantId, toast]);
 
   const processFile = async (file: File) => {
     setError(null);
+    
+    if (!validateParameters()) {
+      return;
+    }
     
     if (!await validateFileType(file, toast)) {
       setError(`Invalid file type: ${file.name}. Please upload an Excel or CSV file.`);
@@ -52,10 +70,6 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
       console.log(`[FileUpload] Processing file: ${file.name}`);
       console.log(`[FileUpload] Using thread ID for file processing: ${threadId}`);
       console.log(`[FileUpload] Using assistant ID for file processing: ${assistantId}`);
-
-      if (!threadId || !assistantId) {
-        throw new Error("Thread or assistant ID is missing. Cannot process file.");
-      }
 
       let fileContent = '';
       setProgress(20);
@@ -154,11 +168,11 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
 
     } catch (error) {
       console.error('[FileUpload] Error processing file:', error);
-      setError(error.message || "Failed to process the file. Please try again.");
+      setError(error instanceof Error ? error.message : "Failed to process the file. Please try again.");
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to process the file. Please try again."
+        description: error instanceof Error ? error.message : "Failed to process the file. Please try again."
       });
     } finally {
       setUploading(false);
@@ -166,12 +180,12 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
     }
   };
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setDragActive(false);
     setUploading(false);
     setProgress(0);
     setError(null);
-  };
+  }, []);
 
   return {
     dragActive,

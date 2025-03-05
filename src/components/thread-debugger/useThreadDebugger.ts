@@ -2,7 +2,7 @@
 import { useThreadState, UseThreadStateReturn } from "./hooks/useThreadState";
 import { useTestResult, UseTestResultReturn } from "./hooks/useTestResult";
 import { useSavedThreads, UseSavedThreadsReturn } from "./hooks/useSavedThreads";
-import { useThreadActions, UseThreadActionsReturn } from "./hooks/useThreadActions";
+import { useThreadOperations } from "./hooks/useThreadOperations";
 
 export interface UseThreadDebuggerReturn extends Omit<
   UseThreadStateReturn & 
@@ -46,7 +46,7 @@ export function useThreadDebugger(): UseThreadDebuggerReturn {
     removeThread
   } = useSavedThreads();
 
-  const { copyToClipboard, createNewThread: originalCreateNewThread, testThread: originalTestThread } = useThreadActions();
+  const { copyToClipboard, createNewThread: originalCreateNewThread, testThread: originalTestThread } = useThreadOperations();
 
   const handleCreateNewThread = async () => {
     await originalCreateNewThread(setIsCreatingThread, setTestResult, setNewThreadId);
