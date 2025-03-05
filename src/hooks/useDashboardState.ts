@@ -4,12 +4,18 @@ import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { format } from "date-fns";
 
-interface UseDashboardStateProps {
+export interface UseDashboardStateProps {
   data: ProcessedAnalytics;
   dateRange: DateRange | null;
 }
 
-export function useDashboardState({ data, dateRange }: UseDashboardStateProps) {
+export interface UseDashboardStateReturn {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  formattedDateRange: string;
+}
+
+export function useDashboardState({ data, dateRange }: UseDashboardStateProps): UseDashboardStateReturn {
   const [activeTab, setActiveTab] = useState("overview");
   
   // Format date range for display

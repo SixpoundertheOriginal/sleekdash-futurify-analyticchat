@@ -1,10 +1,23 @@
 
-import { useThreadState } from "./hooks/useThreadState";
-import { useTestResult } from "./hooks/useTestResult";
-import { useSavedThreads } from "./hooks/useSavedThreads";
-import { useThreadActions } from "./hooks/useThreadActions";
+import { useThreadState, UseThreadStateReturn } from "./hooks/useThreadState";
+import { useTestResult, UseTestResultReturn } from "./hooks/useTestResult";
+import { useSavedThreads, UseSavedThreadsReturn } from "./hooks/useSavedThreads";
+import { useThreadActions, UseThreadActionsReturn } from "./hooks/useThreadActions";
 
-export function useThreadDebugger() {
+export interface UseThreadDebuggerReturn extends Omit<
+  UseThreadStateReturn & 
+  UseTestResultReturn & 
+  Pick<UseSavedThreadsReturn, 'savedThreads' | 'threadName' | 'setThreadName'>, 
+  'saveThread' | 'removeThread'
+> {
+  saveThread: () => void;
+  removeThread: (id: string) => void;
+  createNewThread: () => Promise<void>;
+  testThread: () => Promise<void>;
+  copyToClipboard: (text: string) => void;
+}
+
+export function useThreadDebugger(): UseThreadDebuggerReturn {
   const {
     newThreadId,
     newAssistantId,
@@ -27,22 +40,22 @@ export function useThreadDebugger() {
     savedThreads,
     threadName,
     setThreadName,
-    saveThread,
+    saveThread: originalSaveThread,
     removeThread
   } = useSavedThreads();
 
-  const { copyToClipboard, createNewThread, testThread } = useThreadActions();
+  const { copyToClipboard, createNewThread: originalCreateNewThread, testThread: originalTestThread } = useThreadActions();
 
   const handleCreateNewThread = async () => {
-    await createNewThread(setIsCreatingThread, setTestResult, setNewThreadId);
+    await originalCreateNewThread(setIsCreatingThread, setTestResult, setNewThreadId);
   };
 
   const handleTestThread = async () => {
-    await testThread(newThreadId, newAssistantId, setIsTestingThread, setTestResult);
+    await originalTestThread(newThreadId, newAssistantId, setIsTestingThread, setTestResult);
   };
 
   const handleSaveThread = () => {
-    saveThread(newThreadId);
+    originalSaveThread(newThreadId);
   };
 
   return {
@@ -65,6 +78,8 @@ export function useThreadDebugger() {
     createNewThread: handleCreateNewThread,
     resetToDefaults,
     applyChanges,
-    testThread: handleTestThread
+    testThread: handleTestThread,
+    setTestResult,
+    clearTestResult
   };
 }

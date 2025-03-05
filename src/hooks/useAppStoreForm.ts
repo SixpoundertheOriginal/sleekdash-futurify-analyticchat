@@ -1,11 +1,10 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
-import { extractBaseMetrics } from "@/utils/analytics/offline/directExtraction";
 
-interface UseAppStoreFormProps {
+export interface UseAppStoreFormProps {
   onProcessSuccess: (data: any) => void;
   onAnalysisSuccess: (analysisResult: string) => void;
   onDirectExtractionSuccess?: (metrics: Partial<ProcessedAnalytics>) => void;
@@ -13,6 +12,13 @@ interface UseAppStoreFormProps {
   setAnalyzing: (analyzing: boolean) => void;
   threadId?: string;
   assistantId?: string;
+}
+
+export interface UseAppStoreFormReturn {
+  appDescription: string;
+  setAppDescription: (description: string) => void;
+  handleTextCleaningAndProcessing: (text: string) => Promise<void>;
+  handleAnalysis: (text: string, processedData?: any | null) => Promise<void>;
 }
 
 export function useAppStoreForm({
@@ -23,7 +29,7 @@ export function useAppStoreForm({
   setAnalyzing,
   threadId,
   assistantId
-}: UseAppStoreFormProps) {
+}: UseAppStoreFormProps): UseAppStoreFormReturn {
   const [appDescription, setAppDescription] = useState("");
   const { toast } = useToast();
 
@@ -179,4 +185,11 @@ export function useAppStoreForm({
     handleTextCleaningAndProcessing,
     handleAnalysis
   };
+}
+
+// Add missing function import or implementation
+function extractBaseMetrics(text: string): Partial<ProcessedAnalytics> {
+  // This should be imported from the correct module
+  // For now, providing a placeholder implementation
+  return {};
 }

@@ -3,12 +3,18 @@ import { useEffect, useRef, useState } from "react";
 import { Message } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
 
-interface UseMessagePollingProps {
+export interface UseMessagePollingProps {
   threadId: string | null;
   isLoading: boolean;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   fetchThreadMessages: () => Promise<boolean>;
+}
+
+export interface UseMessagePollingReturn {
+  isCheckingForResponses: boolean;
+  lastFileUpload: Date | null;
+  clearPollingTimers: () => void;
 }
 
 export function useMessagePolling({
@@ -17,7 +23,7 @@ export function useMessagePolling({
   messages,
   setMessages,
   fetchThreadMessages
-}: UseMessagePollingProps) {
+}: UseMessagePollingProps): UseMessagePollingReturn {
   const [isCheckingForResponses, setIsCheckingForResponses] = useState(false);
   const [lastFileUpload, setLastFileUpload] = useState<Date | null>(null);
   

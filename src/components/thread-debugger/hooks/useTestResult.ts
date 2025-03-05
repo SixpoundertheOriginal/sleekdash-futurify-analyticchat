@@ -2,7 +2,13 @@
 import { useState } from "react";
 import { TestResult } from "../types";
 
-export function useTestResult() {
+export interface UseTestResultReturn {
+  testResult: TestResult;
+  setTestResult: (result: TestResult) => void;
+  clearTestResult: () => void;
+}
+
+export function useTestResult(): UseTestResultReturn {
   const [testResult, setTestResult] = useState<TestResult>({ status: null, details: null });
   
   const clearTestResult = () => {

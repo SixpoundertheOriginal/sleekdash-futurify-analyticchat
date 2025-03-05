@@ -1,7 +1,13 @@
 
 import { useState } from "react";
 
-export function useDragAndDrop() {
+export interface UseDragAndDropReturn {
+  dragActive: boolean;
+  setDragActive: (active: boolean) => void;
+  handleDrag: (e: React.DragEvent) => void;
+}
+
+export function useDragAndDrop(): UseDragAndDropReturn {
   const [dragActive, setDragActive] = useState(false);
 
   const handleDrag = (e: React.DragEvent) => {

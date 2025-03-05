@@ -3,7 +3,15 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SavedThread } from "../types";
 
-export function useSavedThreads() {
+export interface UseSavedThreadsReturn {
+  savedThreads: SavedThread[];
+  threadName: string;
+  setThreadName: (name: string) => void;
+  saveThread: (threadId: string) => void;
+  removeThread: (id: string) => void;
+}
+
+export function useSavedThreads(): UseSavedThreadsReturn {
   const [savedThreads, setSavedThreads] = useState<SavedThread[]>([]);
   const [threadName, setThreadName] = useState('');
   const { toast } = useToast();

@@ -3,14 +3,35 @@ import { useState } from "react";
 import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { DateRange } from "@/components/chat/DateRangePicker";
 
-interface UseAnalyticsStateParams {
+export interface UseAnalyticsStateParams {
   initialData?: ProcessedAnalytics;
+}
+
+export interface UseAnalyticsStateReturn {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  extractedData: any;
+  setExtractedData: React.Dispatch<React.SetStateAction<any>>;
+  isProcessing: boolean;
+  setProcessing: React.Dispatch<React.SetStateAction<boolean>>;
+  isAnalyzing: boolean;
+  setAnalyzing: React.Dispatch<React.SetStateAction<boolean>>;
+  analysisResult: string | null;
+  setAnalysisResult: React.Dispatch<React.SetStateAction<string | null>>;
+  processedAnalytics: ProcessedAnalytics | null;
+  setProcessedAnalytics: React.Dispatch<React.SetStateAction<ProcessedAnalytics | null>>;
+  directlyExtractedMetrics: Partial<ProcessedAnalytics> | null;
+  setDirectlyExtractedMetrics: React.Dispatch<React.SetStateAction<Partial<ProcessedAnalytics> | null>>;
+  dateRange: DateRange | null;
+  setDateRange: React.Dispatch<React.SetStateAction<DateRange | null>>;
+  processingError: string | null;
+  setProcessingError: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 /**
  * Hook to manage the state of analytics data
  */
-export function useAnalyticsState({ initialData }: UseAnalyticsStateParams) {
+export function useAnalyticsState({ initialData }: UseAnalyticsStateParams): UseAnalyticsStateReturn {
   const [activeTab, setActiveTab] = useState("input");
   const [extractedData, setExtractedData] = useState<any>(null);
   const [isProcessing, setProcessing] = useState(false);

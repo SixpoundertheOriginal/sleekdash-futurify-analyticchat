@@ -3,10 +3,14 @@ import { useEffect } from "react";
 import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { saveAnalyticsToStorage, getAnalyticsFromStorage } from "@/utils/analytics/storage";
 
-interface UseAnalyticsPersistenceParams {
+export interface UseAnalyticsPersistenceParams {
   processedAnalytics: ProcessedAnalytics | null;
   setProcessedAnalytics: (data: ProcessedAnalytics | null) => void;
   setActiveTab: (tab: string) => void;
+}
+
+export interface UseAnalyticsPersistenceReturn {
+  saveAnalytics: (data: ProcessedAnalytics) => void;
 }
 
 /**
@@ -16,7 +20,7 @@ export function useAnalyticsPersistence({
   processedAnalytics,
   setProcessedAnalytics,
   setActiveTab
-}: UseAnalyticsPersistenceParams) {
+}: UseAnalyticsPersistenceParams): UseAnalyticsPersistenceReturn {
   
   // Load data from localStorage on component mount
   useEffect(() => {

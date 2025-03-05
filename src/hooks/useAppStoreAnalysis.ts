@@ -1,19 +1,24 @@
 
 import { ProcessedAnalytics } from "@/utils/analytics/types";
-import { useAnalyticsState } from "./analytics/useAnalyticsState";
-import { useAnalyticsPersistence } from "./analytics/useAnalyticsPersistence";
-import { useAnalyticsHandlers } from "./analytics/useAnalyticsHandlers";
-import { useChat } from "@/hooks/useChat"; // Changed import to use useChat directly
+import { useAnalyticsState, UseAnalyticsStateReturn } from "./analytics/useAnalyticsState";
+import { useAnalyticsPersistence, UseAnalyticsPersistenceReturn } from "./analytics/useAnalyticsPersistence";
+import { useAnalyticsHandlers, UseAnalyticsHandlersReturn } from "./analytics/useAnalyticsHandlers";
+import { useChat } from "@/hooks/useChat"; 
 import { useThread as useThreadContext } from "@/contexts/ThreadContext";
 
-interface UseAppStoreAnalysisParams {
+export interface UseAppStoreAnalysisParams {
   initialData?: ProcessedAnalytics;
+}
+
+export interface UseAppStoreAnalysisReturn extends UseAnalyticsStateReturn, UseAnalyticsHandlersReturn {
+  chatThreadId: string;
+  chatAssistantId: string;
 }
 
 /**
  * Main hook for App Store analytics that composes smaller, focused hooks
  */
-export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) {
+export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams): UseAppStoreAnalysisReturn {
   // Use smaller hooks for specific concerns
   const state = useAnalyticsState({ initialData });
   

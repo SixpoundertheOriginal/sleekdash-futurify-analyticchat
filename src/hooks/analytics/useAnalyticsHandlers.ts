@@ -6,7 +6,7 @@ import { storeAnalyticsData } from "@/utils/message-content/metrics/persistence"
 import { hasValidMetricsForVisualization } from "@/utils/analytics/offline/directExtraction";
 import { DateRange } from "@/components/chat/DateRangePicker";
 
-interface UseAnalyticsHandlersParams {
+export interface UseAnalyticsHandlersParams {
   setExtractedData: (data: any) => void;
   setAnalysisResult: (result: string) => void;
   setActiveTab: (tab: string) => void;
@@ -15,6 +15,12 @@ interface UseAnalyticsHandlersParams {
   dateRange: DateRange | null;
   setProcessingError: (error: string | null) => void;
   saveAnalytics: (data: ProcessedAnalytics) => void;
+}
+
+export interface UseAnalyticsHandlersReturn {
+  handleProcessSuccess: (data: any) => void;
+  handleAnalysisSuccess: (analysisText: string) => Promise<void>;
+  handleDirectExtractionSuccess: (metrics: Partial<ProcessedAnalytics>) => void;
 }
 
 /**
@@ -29,7 +35,7 @@ export function useAnalyticsHandlers({
   dateRange,
   setProcessingError,
   saveAnalytics
-}: UseAnalyticsHandlersParams) {
+}: UseAnalyticsHandlersParams): UseAnalyticsHandlersReturn {
   const { toast } = useToast();
 
   const handleProcessSuccess = (data: any) => {

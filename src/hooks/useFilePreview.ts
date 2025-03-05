@@ -1,13 +1,26 @@
 
 import { useState, useRef } from "react";
 
-interface FilePreviewProps {
+export interface FilePreviewProps {
   name: string;
   size: number;
   type: string;
 }
 
-export function useFilePreview() {
+export interface UseFilePreviewReturn {
+  filePreview: FilePreviewProps | null;
+  setFilePreview: (preview: FilePreviewProps | null) => void;
+  uploadProgress: number;
+  setUploadProgress: (progress: number) => void;
+  fileError: string | null;
+  setFileError: (error: string | null) => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  clearFilePreview: () => void;
+  simulateProgress: () => number;
+  formatFileSize: (bytes: number) => string;
+}
+
+export function useFilePreview(): UseFilePreviewReturn {
   const [filePreview, setFilePreview] = useState<FilePreviewProps | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState<string | null>(null);

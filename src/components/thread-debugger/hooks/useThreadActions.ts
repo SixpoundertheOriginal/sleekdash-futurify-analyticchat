@@ -3,7 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TestResult } from "../types";
 
-export function useThreadActions() {
+export interface UseThreadActionsReturn {
+  copyToClipboard: (text: string) => void;
+  createNewThread: (
+    setIsCreatingThread: (value: boolean) => void,
+    setTestResult: (result: TestResult) => void,
+    setNewThreadId: (id: string) => void
+  ) => Promise<string | null>;
+  testThread: (
+    threadId: string,
+    assistantId: string,
+    setIsTestingThread: (value: boolean) => void,
+    setTestResult: (result: TestResult) => void
+  ) => Promise<boolean>;
+}
+
+export function useThreadActions(): UseThreadActionsReturn {
   const { toast } = useToast();
 
   const copyToClipboard = (text: string) => {
@@ -18,7 +33,7 @@ export function useThreadActions() {
     setIsCreatingThread: (value: boolean) => void,
     setTestResult: (result: TestResult) => void,
     setNewThreadId: (id: string) => void
-  ) => {
+  ): Promise<string | null> => {
     setIsCreatingThread(true);
     setTestResult({ status: null, details: null });
     
@@ -75,7 +90,7 @@ export function useThreadActions() {
     newAssistantId: string,
     setIsTestingThread: (value: boolean) => void,
     setTestResult: (result: TestResult) => void
-  ) => {
+  ): Promise<boolean> => {
     setIsTestingThread(true);
     setTestResult({ status: null, details: null });
     

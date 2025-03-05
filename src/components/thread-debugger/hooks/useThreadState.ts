@@ -3,7 +3,23 @@ import { useState } from "react";
 import { useThread, DEFAULT_THREAD_ID, DEFAULT_ASSISTANT_ID } from "@/contexts/ThreadContext";
 import { useToast } from "@/hooks/use-toast";
 
-export function useThreadState() {
+export interface UseThreadStateReturn {
+  newThreadId: string;
+  newAssistantId: string;
+  isCreatingThread: boolean;
+  isTestingThread: boolean;
+  showAdvanced: boolean;
+  isValidThread: boolean;
+  setNewThreadId: (id: string) => void;
+  setNewAssistantId: (id: string) => void;
+  setIsCreatingThread: (isCreating: boolean) => void;
+  setIsTestingThread: (isTesting: boolean) => void;
+  setShowAdvanced: (show: boolean) => void;
+  resetToDefaults: () => void;
+  applyChanges: () => void;
+}
+
+export function useThreadState(): UseThreadStateReturn {
   const { threadId, assistantId, setThreadId, setAssistantId, isValidThread } = useThread();
   const [newThreadId, setNewThreadId] = useState(threadId);
   const [newAssistantId, setNewAssistantId] = useState(assistantId);

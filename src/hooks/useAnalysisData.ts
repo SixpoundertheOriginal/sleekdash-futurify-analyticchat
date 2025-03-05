@@ -2,7 +2,13 @@
 import { useState, useEffect } from 'react';
 import { ProcessedAnalytics, processAnalysisText } from '@/utils/analytics/processAnalysis';
 
-export function useAnalysisData(analysisText: string | null) {
+export interface UseAnalysisDataReturn {
+  data: ProcessedAnalytics | null;
+  error: string | null;
+  isProcessing: boolean;
+}
+
+export function useAnalysisData(analysisText: string | null): UseAnalysisDataReturn {
   const [processedData, setProcessedData] = useState<ProcessedAnalytics | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);

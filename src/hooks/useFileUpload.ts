@@ -4,7 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { processExcelFile, validateFileContent, validateFileType } from "@/utils/file-processing";
 
-export function useFileUpload(threadId: string | null, assistantId: string | null) {
+export interface UseFileUploadReturn {
+  dragActive: boolean;
+  uploading: boolean;
+  progress: number;
+  error: string | null;
+  handleDrag: (e: React.DragEvent) => void;
+  processFile: (file: File) => Promise<void>;
+  setDragActive: (active: boolean) => void;
+  resetState: () => void;
+}
+
+export function useFileUpload(threadId: string | null, assistantId: string | null): UseFileUploadReturn {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
