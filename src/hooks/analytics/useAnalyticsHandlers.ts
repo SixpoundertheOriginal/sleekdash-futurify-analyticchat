@@ -42,7 +42,11 @@ export function useAnalyticsHandlers({
   };
 
   const handleAnalysisSuccess = async (analysisText: string) => {
+    // First, set the raw analysis text immediately so it displays
     setAnalysisResult(analysisText);
+    console.log("Analysis result set:", analysisText.substring(0, 100) + "...");
+
+    // Switch to analysis tab to show the content
     setActiveTab("analysis");
     
     try {

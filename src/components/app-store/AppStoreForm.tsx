@@ -121,6 +121,7 @@ export function AppStoreForm({
         value={appDescription} 
         onChange={(e) => setAppDescription(e.target.value)} 
         disabled={isProcessing || isAnalyzing}
+        placeholder="Paste your App Store Connect data here or enter a description of your app..."
       />
       
       <FormButtons 

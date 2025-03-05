@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
@@ -63,6 +64,9 @@ export const useAppStoreForm = ({
         title: "Data Extracted",
         description: "App store data has been successfully extracted."
       });
+      
+      // Automatically trigger analysis for better UX
+      handleAnalysis(text);
     } catch (error) {
       console.error("Error during text cleaning and processing:", error);
       toast({
@@ -85,19 +89,46 @@ export const useAppStoreForm = ({
       // Simulate analysis delay
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Simulate analysis result
+      // Create a comprehensive analysis result with sections that our processing will expect
       const analysisResult = `
-        App Store Analysis Report:
+App Store Analysis Report
 
-        Key Metrics:
-        - Downloads: Increased by 15%
-        - Revenue: Increased by 20%
-        - User Engagement: Improved by 10%
+Summary:
+The app has shown significant growth during this period with key metrics trending positively.
 
-        Executive Summary:
-        The app has shown significant growth in downloads and revenue. User engagement has also improved, indicating a positive trend.
+Acquisition:
+- Downloads: 7,910 (+15%)
+- Impressions: 120,500 (+23%)
+- Product Page Views: 24,300 (+18%)
+- Conversion Rate: 2.84% (+10%)
+
+Engagement:
+- Sessions per Active Device: 4.2 (+8%)
+- Average Session Duration: 5.3 minutes (+12%)
+- Retention D1: 45% (+5%)
+- Retention D7: 28% (+3%)
+
+Monetization:
+- Proceeds: $4,740 (+20%)
+- Average Revenue Per User: $0.60 (+15%)
+- In-App Purchases: 1,850 (+25%)
+- Subscription Conversions: 320 (+18%)
+
+Technical Performance:
+- Crashes: 116 (-25%)
+- App Store Rating: 4.5 (+0.3)
+- App Size: 45MB (unchanged)
+
+Recommendations:
+1. Continue optimization of App Store listing to maintain conversion rate improvements
+2. Focus on D7 retention with targeted push notifications
+3. Investigate opportunities to increase revenue per active user
+4. Maintain technical performance improvements to keep crash rates low
       `;
+      
+      console.log("Analysis result generated:", analysisResult.length, "characters");
       onAnalysisSuccess(analysisResult);
+      
       toast({
         title: "Analysis Complete",
         description: "App store data has been successfully analyzed."
