@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useThread } from "@/contexts/ThreadContext";
-import { storeAnalyticsData } from "@/utils/message-content";
+import { storeAnalyticsData } from "@/utils/message-content/metrics/persistence";
 
 export function useAppStoreForm(
   onProcessSuccess: (data: any) => void,

@@ -12,6 +12,6 @@ export {
   storeAnalyticsData,
   getHistoricalAnalytics,
   getLatestAnalytics
-} from './metrics-extraction';
+} from './metrics/index';
 export { getSuggestedReplies, extractKeywords } from './suggestions';
 export { formatTimestamp } from './time-utils';
