@@ -22,15 +22,18 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Analyze app store function called");
     const requestData = await req.json();
     const { 
       appDescription, 
       threadId = DEFAULT_THREAD_ID, 
       assistantId = DEFAULT_ASSISTANT_ID,
-      processedData
+      processedData,
+      dateRange
     } = requestData;
 
     if (!appDescription) {
+      console.error("No app description provided");
       return new Response(
         JSON.stringify({ error: 'App description is required' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -40,6 +43,11 @@ serve(async (req) => {
     console.log(`Using thread ID: ${threadId}`);
     console.log(`Using assistant ID: ${assistantId}`);
     console.log(`Processing app description with length: ${appDescription.length}`);
+    
+    // Log date range if provided
+    if (dateRange) {
+      console.log(`Analyzing data for date range: ${dateRange.from} to ${dateRange.to}`);
+    }
     
     // Log if we received pre-processed data
     if (processedData) {
@@ -59,10 +67,24 @@ Please provide a structured analysis with the following sections:
 
 Include metrics and percentages where available. Format your response so it can be parsed into sections.`;
 
+    // If we have date range, include it in the prompt
+    if (dateRange && dateRange.from && dateRange.to) {
+      prompt += `\n\nThis data covers the period from ${dateRange.from} to ${dateRange.to}. Please reference this timeframe in your analysis.`;
+    }
+
     // If we have processed data, include it in the prompt
     if (processedData) {
-      const extractedMetrics = JSON.stringify(processedData.metrics, null, 2);
-      const extractedChanges = JSON.stringify(processedData.changes, null, 2);
+      let extractedMetrics;
+      let extractedChanges;
+      
+      try {
+        extractedMetrics = JSON.stringify(processedData.metrics, null, 2);
+        extractedChanges = JSON.stringify(processedData.changes, null, 2);
+      } catch (error) {
+        console.error("Error stringifying processed data:", error);
+        extractedMetrics = "Error processing metrics data";
+        extractedChanges = "Error processing changes data";
+      }
       
       prompt += `\n\nI've already extracted the following metrics from the data:
 \`\`\`json
@@ -75,6 +97,11 @@ ${extractedChanges}
 \`\`\`
 
 Please use these structured values in your analysis where appropriate.`;
+
+      // If we have a date range from processed data, include that too
+      if (processedData.dateRange) {
+        prompt += `\n\nThe data indicates it covers the period: ${processedData.dateRange}`;
+      }
     }
 
     const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
@@ -205,6 +232,7 @@ Please use these structured values in your analysis where appropriate.`;
         analysis: analysisContent,
         messageId: latestMessage.id,
         threadId: threadId,
+        dateRange: dateRange,
         processedDataIncluded: !!processedData
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
