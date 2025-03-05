@@ -18,4 +18,3 @@ export interface MetricsCacheEntry {
 export type MetricsCache = {
   [key: string]: MetricsCacheEntry;
 };
-

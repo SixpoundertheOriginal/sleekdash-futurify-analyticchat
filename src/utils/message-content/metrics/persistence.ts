@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { MetricsCacheEntry } from "../types";
 import type { Json } from "@/integrations/supabase/types";
+import type { MetricsCacheEntry } from "./types";
 
 /**
  * Store processed analytics data in Supabase for historical tracking
