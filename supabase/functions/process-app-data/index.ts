@@ -18,7 +18,11 @@ serve(async (req) => {
 
   try {
     console.log("Process app data function called");
-    const { rawText, threadId, assistantId } = await req.json();
+    const requestData = await req.json();
+    
+    // Handle either rawText or appDescription for backward compatibility
+    const rawText = requestData.rawText || requestData.appDescription;
+    const { threadId, assistantId } = requestData;
     
     if (!rawText) {
       console.error("No text provided for processing");

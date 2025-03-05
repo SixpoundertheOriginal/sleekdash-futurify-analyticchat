@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -23,8 +24,11 @@ serve(async (req) => {
   try {
     console.log("Analyze app store function called");
     const requestData = await req.json();
+    
+    // Handle either appDescription or rawText for backward compatibility
+    const appDescription = requestData.appDescription || requestData.rawText;
+    
     const { 
-      appDescription, 
       threadId = DEFAULT_THREAD_ID, 
       assistantId = DEFAULT_ASSISTANT_ID,
       processedData,

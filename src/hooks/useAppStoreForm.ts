@@ -61,7 +61,11 @@ export function useAppStoreForm({
       
       // Process data through Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('process-app-data', {
-        body: { appDescription: text }
+        body: { 
+          rawText: text, // Use rawText parameter as this is what the edge function expects
+          threadId,
+          assistantId
+        }
       });
       
       if (error) {
@@ -113,7 +117,7 @@ export function useAppStoreForm({
       
       // Prepare the request body
       const requestBody: any = { 
-        appDescription: text
+        rawText: text // Use rawText parameter for consistency
       };
       
       // Add specific thread and assistant IDs if provided
