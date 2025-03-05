@@ -81,7 +81,7 @@ export function useAnalyticsHandlers({
         if (dateRange && dateRange.from && dateRange.to) {
           dateRangeStr = `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}`;
           // Correctly assign to processedData with the updated type
-          processedData.dateRange = dateRangeStr;
+          processedData.summary.dateRange = dateRangeStr;
           
           // Store data in Supabase
           try {
@@ -94,20 +94,36 @@ export function useAnalyticsHandlers({
           }
         }
         
+        // Set the processed analytics so it can be used in the dashboard
         setProcessedAnalytics(processedData);
+        
         // Save to localStorage
         saveAnalytics(processedData);
+        
         toast({
           title: "Data Processed Successfully",
           description: "Your app analytics have been processed and saved. You can view them in the Dashboard.",
           variant: "default"
         });
+        
         console.log("Analysis processed to structured data and saved:", processedData);
         
-        // Automatically switch to dashboard tab after a short delay
+        // Add a button to view the dashboard in the toast
         setTimeout(() => {
-          setActiveTab("dashboard");
-        }, 2000);
+          toast({
+            title: "Dashboard Ready",
+            description: "Your analytics dashboard is now ready to view",
+            action: (
+              <button 
+                onClick={() => setActiveTab("dashboard")}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1 rounded text-xs"
+              >
+                View Dashboard
+              </button>
+            ),
+            duration: 7000,
+          });
+        }, 1000);
       }
     } catch (error) {
       console.error("Error processing analysis text:", error);

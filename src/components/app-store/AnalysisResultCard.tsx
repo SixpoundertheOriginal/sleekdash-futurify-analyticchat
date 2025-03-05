@@ -1,6 +1,6 @@
 
 import { Card } from "@/components/ui/card";
-import { Loader2, Sparkles, ChevronDown, ChevronUp, Download, Share2 } from "lucide-react";
+import { Loader2, Sparkles, ChevronDown, ChevronUp, Download, Share2, BarChart } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageContent } from "@/components/chat/MessageContent";
@@ -11,9 +11,15 @@ interface AnalysisResultCardProps {
   analysisResult: string | null;
   isLoading?: boolean;
   title?: string;
+  onViewDashboard?: () => void;
 }
 
-export function AnalysisResultCard({ analysisResult, isLoading = false, title = "Analysis Report" }: AnalysisResultCardProps) {
+export function AnalysisResultCard({ 
+  analysisResult, 
+  isLoading = false, 
+  title = "Analysis Report",
+  onViewDashboard 
+}: AnalysisResultCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   
   const handleExportAnalysis = () => {
@@ -71,6 +77,18 @@ export function AnalysisResultCard({ analysisResult, isLoading = false, title = 
           {extractedTitle}
         </h3>
         <div className="flex items-center gap-2">
+          {onViewDashboard && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={onViewDashboard}
+              className="text-white/70 hover:text-primary hover:bg-white/5 transition-colors rounded-full gap-1.5"
+              title="View Dashboard"
+            >
+              <BarChart className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="icon"
@@ -117,6 +135,20 @@ export function AnalysisResultCard({ analysisResult, isLoading = false, title = 
         >
           <ChevronDown className="h-4 w-4 text-primary/70" />
           <span>Expand analysis to view insights</span>
+        </div>
+      )}
+      
+      {!isExpanded && onViewDashboard && (
+        <div className="flex justify-center p-3 border-t border-white/5">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onViewDashboard}
+            className="bg-white/5 border-white/10 text-white hover:bg-white/10 flex items-center gap-2"
+          >
+            <BarChart className="h-4 w-4" />
+            View Dashboard
+          </Button>
         </div>
       )}
     </Card>

@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppStoreForm } from "../AppStoreForm";
 import { AnalysisResultCard } from "../AnalysisResultCard";
@@ -60,6 +61,11 @@ export function AppStoreTabs({
   // Combine both processing states to determine if we're loading analysis
   const isLoadingAnalysis = isProcessing || isAnalyzing;
 
+  // Handler to switch to dashboard tab
+  const handleViewDashboard = () => {
+    setActiveTab("dashboard");
+  };
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid grid-cols-3 w-full bg-white/5 p-1">
@@ -101,7 +107,8 @@ export function AppStoreTabs({
       <TabsContent value="analysis" className="pt-4">
         <AnalysisResultCard 
           analysisResult={analysisResult} 
-          isLoading={isLoadingAnalysis} 
+          isLoading={isLoadingAnalysis}
+          onViewDashboard={handleViewDashboard}
         />
       </TabsContent>
       
@@ -115,7 +122,7 @@ export function AppStoreTabs({
         ) : (
           <AnalyticsDashboardWrapper 
             initialData={initialData || {} as ProcessedAnalytics}
-            processedData={null}
+            processedData={processedAnalytics}
             isProcessing={isProcessing}
             processingError={processingError}
             dateRange={dateRange}
