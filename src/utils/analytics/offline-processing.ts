@@ -1,4 +1,3 @@
-
 /**
  * Offline processing utilities to reduce dependency on OpenAI API
  * Provides local metric extraction and message formatting capabilities
