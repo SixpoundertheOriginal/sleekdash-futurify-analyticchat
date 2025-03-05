@@ -80,13 +80,14 @@ export function AppStoreForm({
       <FormInput 
         value={appDescription} 
         onChange={(e) => setAppDescription(e.target.value)} 
+        disabled={isProcessing || isAnalyzing}
       />
       <FormButtons 
-        disabled={!appDescription.trim()}
         isProcessing={isProcessing}
         isAnalyzing={isAnalyzing}
-        onProcessAndAnalyze={handleProcessAndAnalyze}
-        onAnalyzeOnly={handleAnalyzeOnly}
+        appDescription={appDescription}
+        onProcessClick={handleProcessAndAnalyze}
+        onAnalyzeClick={handleAnalyzeOnly}
       />
     </div>
   );
