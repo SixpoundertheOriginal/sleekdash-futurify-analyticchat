@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Message } from "@/types/chat";
 import { useToast } from "@/components/ui/use-toast";
@@ -26,29 +25,23 @@ export const useChat = (options: UseChatOptions = {}) => {
   const [preprocessedData, setPreprocessedData] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Use the thread context with feature-specific handling
   const threadContext = useThread();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Set the active feature when the component mounts
   useEffect(() => {
     threadContext.setActiveFeature(feature);
   }, [feature]);
 
-  // Get the current thread and assistant IDs based on the active feature
   const threadId = threadContext.getFeatureThreadId(feature);
   const assistantId = threadContext.getFeatureAssistantId(feature);
 
-  // Using a ref for processed message IDs to persist across renders
   const processedMessageIdsRef = useRef<Set<string>>(new Set());
 
-  // Log thread information on mount
   useEffect(() => {
     logThreadInfo();
   }, [threadId, assistantId]);
 
-  // Log thread ID and assistant ID
   const logThreadInfo = () => {
     console.log(`[useChat] Using thread ID for ${feature}: ${threadId}`);
     console.log(`[useChat] Using assistant ID for ${feature}: ${assistantId}`);
@@ -58,7 +51,6 @@ export const useChat = (options: UseChatOptions = {}) => {
     }
   };
 
-  // Function to fetch messages from OpenAI thread
   const fetchThreadMessagesHandler = useCallback(async (): Promise<boolean> => {
     const result = await processThreadMessages(
       threadId,
@@ -74,7 +66,6 @@ export const useChat = (options: UseChatOptions = {}) => {
     return false;
   }, [threadId, assistantId]);
 
-  // Process message data if a preprocessor is provided
   const preprocess = async (messageText: string) => {
     if (!preprocessDataFn) return null;
     
@@ -98,27 +89,20 @@ export const useChat = (options: UseChatOptions = {}) => {
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isLoading) return;
 
-    // Use the feature-specific thread ID
     const currentThreadId = threadId;
     
-    // Store the message before clearing the input
     const userMessage = message.trim();
     setMessage("");
     
-    // Preprocess the message if needed
     let processedData = null;
     if (preprocessDataFn) {
       processedData = await preprocess(userMessage);
-      // If preprocessing fails and is required, we might want to stop here
-      // But for now, we'll continue with the raw message
     }
     
-    // Send the message to the thread
     const messageId = await sendThreadMessage(
       userMessage,
       currentThreadId,
@@ -131,9 +115,53 @@ export const useChat = (options: UseChatOptions = {}) => {
       processedData
     );
     
-    // Add the message ID to the set of processed message IDs
     if (messageId) {
       processedMessageIdsRef.current.add(messageId);
+    }
+  };
+
+  const sendMessage = async (
+    userMessage: string, 
+    currentThreadId?: string, 
+    currentAssistantId?: string
+  ): Promise<string> => {
+    if (!userMessage.trim()) return "";
+    
+    const threadToUse = currentThreadId || threadId;
+    const assistantToUse = currentAssistantId || assistantId;
+    
+    try {
+      let processedData = null;
+      if (preprocessDataFn) {
+        processedData = await preprocess(userMessage);
+      }
+      
+      const messageId = await sendThreadMessage(
+        userMessage,
+        threadToUse,
+        assistantToUse,
+        setIsLoading,
+        setMessages,
+        toast,
+        addUserMessage,
+        addAssistantMessage,
+        processedData
+      );
+      
+      if (messageId) {
+        processedMessageIdsRef.current.add(messageId);
+      }
+      
+      const lastMessage = messages[messages.length - 1];
+      return lastMessage.role === 'assistant' ? lastMessage.content : "";
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send message"
+      });
+      return "";
     }
   };
 
@@ -146,6 +174,7 @@ export const useChat = (options: UseChatOptions = {}) => {
     isProcessing,
     preprocessedData,
     handleSubmit,
+    sendMessage,
     threadId,
     assistantId,
     feature,

@@ -16,7 +16,7 @@ interface UseAppStoreAnalysisProps {
 export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
   const [activeTab, setActiveTab] = useState("process");
   const [extractedData, setExtractedData] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<ProcessedAnalytics | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [processedAnalytics, setProcessedAnalytics] = useState<ProcessedAnalytics | null>(null);
   const [directlyExtractedMetrics, setDirectlyExtractedMetrics] = useState<any | null>(null);
   const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({
@@ -28,8 +28,9 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
   const [processingError, setProcessingError] = useState<string | null>(null);
   const { toast } = useToast();
   const { threadId, assistantId } = useThread();
-  // Fix: Destructure the actual sendMessage function from useChat
-  const { sendMessage: chatSendMessage } = useChat();
+  // Fix: Get the actual sendMessage function
+  const chatApi = useChat();
+  const sendMessage = chatApi.sendMessage || chatApi.handleSubmit;
 
   // Add metrics registry integration
   const { registerMetrics } = useMetrics('appStore');
@@ -75,75 +76,93 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
     });
   }, [processedAnalytics, setExtractedData, setProcessing, setProcessingError, setActiveTab, setDirectlyExtractedMetrics, setProcessedAnalytics, toast]);
 
-  const handleAnalysisSuccess = useCallback((result: ProcessedAnalytics) => {
+  const handleAnalysisSuccess = useCallback((result: string) => {
     setAnalyzing(false);
     setAnalysisResult(result);
-
-    // Register metrics from AI analysis
-    if (result) {
-      registerAppStoreMetrics(result, {
-        source: 'ai-analysis',
-        confidence: 0.95
-      });
+    
+    try {
+      // Try to parse the analysis text and create processed analytics
+      const extractedMetrics = parseMetricsFromAnalysis(result);
+      if (extractedMetrics) {
+        // Create a properly structured ProcessedAnalytics object
+        const processedResult = createDefaultProcessedAnalytics();
+        
+        // Update the processed result with metrics extracted from analysis
+        if (Array.isArray(extractedMetrics)) {
+          extractedMetrics.forEach(metric => {
+            // Map extracted metrics to the appropriate fields
+            if (metric.metric === "Downloads") {
+              processedResult.acquisition.downloads = { 
+                value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
+                change: metric.change 
+              };
+            } else if (metric.metric === "Total Proceeds") {
+              processedResult.financial.proceeds = { 
+                value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
+                change: metric.change 
+              };
+            } else if (metric.metric === "Active Users") {
+              processedResult.engagement.sessionsPerDevice = { 
+                value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
+                change: metric.change 
+              };
+            } else if (metric.metric === "Crash Count") {
+              processedResult.technical.crashes = { 
+                value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
+                change: metric.change 
+              };
+            }
+          });
+        }
+        
+        // Update state with the processed analytics
+        setProcessedAnalytics(processedResult);
+        
+        // Register metrics from AI analysis
+        registerAppStoreMetrics(processedResult, {
+          source: 'ai-analysis',
+          confidence: 0.95
+        });
+      }
+    } catch (error) {
+      console.error("Error processing analysis result:", error);
     }
-
+    
     toast({
       title: "Analysis Complete",
       description: "Successfully analyzed the data and extracted insights."
     });
-  }, [setAnalyzing, setAnalysisResult, toast]);
+  }, [setAnalyzing, setAnalysisResult, toast, registerAppStoreMetrics]);
 
-  // Fix: Update the parameter type to match expected usage
-  const handleDirectExtractionSuccess = useCallback((analysisText: string) => {
+  // Update the parameter type to match expected usage
+  const handleDirectExtractionSuccess = useCallback((metrics: Partial<ProcessedAnalytics>) => {
     try {
-      const extractedMetrics = parseMetricsFromAnalysis(analysisText);
       // Create default analytics object to ensure we have required properties
       const defaultAnalytics = createDefaultProcessedAnalytics();
       
-      // Add extracted metrics to a properly structured ProcessedAnalytics object
-      if (extractedMetrics && Array.isArray(extractedMetrics)) {
-        const processedResult: ProcessedAnalytics = {
-          ...defaultAnalytics,
-          summary: {
-            ...defaultAnalytics.summary,
-            executiveSummary: "Metrics extracted from analysis text"
-          }
-        };
-        
-        // Attempt to map the metrics to the appropriate categories
-        extractedMetrics.forEach(metric => {
-          if (metric.metric === "Downloads") {
-            processedResult.acquisition.downloads = { 
-              value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
-              change: metric.change 
-            };
-          } else if (metric.metric === "Total Proceeds") {
-            processedResult.financial.proceeds = { 
-              value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
-              change: metric.change 
-            };
-          } else if (metric.metric === "Active Users") {
-            processedResult.engagement.sessionsPerDevice = { 
-              value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
-              change: metric.change 
-            };
-          } else if (metric.metric === "Crash Count") {
-            processedResult.technical.crashes = { 
-              value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
-              change: metric.change 
-            };
-          }
-        });
-        
-        setAnalysisResult(processedResult);
-      } else {
-        // Fallback if extraction returns unexpected format
-        setAnalysisResult(defaultAnalytics);
-      }
+      // Merge the extracted metrics with the default structure
+      const processedResult: ProcessedAnalytics = {
+        ...defaultAnalytics,
+        ...metrics,
+        summary: {
+          ...defaultAnalytics.summary,
+          ...(metrics.summary || {}),
+          executiveSummary: metrics.summary?.executiveSummary || "Metrics extracted directly"
+        }
+      };
+      
+      setAnalysisResult(JSON.stringify(processedResult));
+      setProcessedAnalytics(processedResult);
+      
+      // Register the metrics
+      registerAppStoreMetrics(processedResult, {
+        source: 'direct-extraction',
+        confidence: 0.8
+      });
       
       toast({
         title: "Direct Extraction Complete",
-        description: "Successfully extracted metrics directly from the analysis text."
+        description: "Successfully extracted metrics directly from the data."
       });
     } catch (error: any) {
       console.error("Error during direct metric extraction:", error);
@@ -151,10 +170,10 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
       toast({
         variant: "destructive",
         title: "Extraction Failed",
-        description: "Failed to extract metrics directly from the analysis."
+        description: "Failed to extract metrics directly from the data."
       });
     }
-  }, [setAnalysisResult, toast]);
+  }, [setAnalysisResult, setProcessedAnalytics, toast, registerAppStoreMetrics]);
 
   const handleProcessError = (error: string) => {
     setProcessing(false);
@@ -184,10 +203,11 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
 
     setAnalyzing(true);
     try {
-      // Fix: Use the renamed chatSendMessage function
-      const analysisText = await chatSendMessage(analysisPrompt, threadId, assistantId);
+      // Fix: Use the properly accessed sendMessage function
+      const analysisText = await sendMessage(analysisPrompt, threadId, assistantId);
       if (analysisText) {
-        handleDirectExtractionSuccess(analysisText);
+        // Pass the analysis text to handleAnalysisSuccess which will process it
+        handleAnalysisSuccess(analysisText);
       } else {
         handleAnalysisError("Analysis failed to return any results.");
       }
@@ -195,7 +215,7 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
       console.error("Analysis failed:", error);
       handleAnalysisError(error.message || "Analysis failed.");
     }
-  }, [extractedData, handleAnalysisError, handleDirectExtractionSuccess, chatSendMessage, threadId, assistantId]);
+  }, [extractedData, handleAnalysisError, handleAnalysisSuccess, sendMessage, threadId, assistantId]);
 
   // Helper function to create a default ProcessedAnalytics object
   const createDefaultProcessedAnalytics = (): ProcessedAnalytics => {
