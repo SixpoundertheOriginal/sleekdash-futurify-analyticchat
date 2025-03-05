@@ -1,4 +1,3 @@
-
 export interface ProcessedAnalytics {
   summary: {
     title: string;
@@ -48,6 +47,11 @@ export interface ProcessedAnalytics {
       type: string;
       percentage: number;
       count: number;
+    }>;
+    sources?: Array<{
+      source: string;
+      percentage: number;
+      downloads: number;
     }>;
   };
 }

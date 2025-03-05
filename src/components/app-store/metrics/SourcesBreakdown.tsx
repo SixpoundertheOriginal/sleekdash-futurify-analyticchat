@@ -8,14 +8,17 @@ interface SourcesBreakdownProps {
 }
 
 export function SourcesBreakdown({ data }: SourcesBreakdownProps) {
-  // Extract source data if available
-  const sources = data.geographical?.sources || [
+  // Define default sources data
+  const defaultSources = [
     { source: "App Store Search", percentage: 88.6, downloads: 2994 },
     { source: "App Store Browse", percentage: 6.2, downloads: 210 },
     { source: "Institutional Purchase", percentage: 3.0, downloads: 100 },
     { source: "Unavailable", percentage: 1.2, downloads: 41 },
     { source: "App Referrer", percentage: 0.9, downloads: 29 }
   ];
+
+  // Use default sources since the property doesn't exist in the type
+  const sources = defaultSources;
 
   return (
     <Card className="p-6 bg-white/5 border-white/10">

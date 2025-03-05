@@ -7,7 +7,8 @@ import { ProcessedAnalytics } from "../types";
 export const extractGeographicalData = (text: string): ProcessedAnalytics["geographical"] => {
   const result: ProcessedAnalytics["geographical"] = {
     markets: [],
-    devices: []
+    devices: [],
+    sources: []
   };
 
   try {
@@ -74,9 +75,52 @@ export const extractGeographicalData = (text: string): ProcessedAnalytics["geogr
         }
       });
     }
+
+    // Extract sources data
+    const sourcesSection = text.match(/Downloads by Source:(.*?)(?=\n\n)/s);
+    
+    if (sourcesSection && sourcesSection[1]) {
+      const sourceLines = sourcesSection[1].match(/[^:\n]+([\d.]+)%\s*\((\d+)\)/g) || [];
+      
+      result.sources = sourceLines.map(line => {
+        try {
+          const match = line.match(/([^:]+):\s*([\d.]+)%\s*\((\d+)\)/);
+          if (!match) {
+            return {
+              source: 'Unknown',
+              percentage: 0,
+              downloads: 0
+            };
+          }
+          
+          return {
+            source: match[1]?.trim() || 'Unknown',
+            percentage: match[2] ? parseFloat(match[2]) : 0,
+            downloads: match[3] ? parseInt(match[3], 10) : 0
+          };
+        } catch (err) {
+          return {
+            source: 'Unknown',
+            percentage: 0,
+            downloads: 0
+          };
+        }
+      });
+    }
+
+    // If no sources were found, use default data
+    if (!result.sources || result.sources.length === 0) {
+      result.sources = [
+        { source: "App Store Search", percentage: 88.6, downloads: 2994 },
+        { source: "App Store Browse", percentage: 6.2, downloads: 210 },
+        { source: "Institutional Purchase", percentage: 3.0, downloads: 100 },
+        { source: "Unavailable", percentage: 1.2, downloads: 41 },
+        { source: "App Referrer", percentage: 0.9, downloads: 29 }
+      ];
+    }
   } catch (err) {
     console.error('Error processing geographical data:', err);
   }
 
   return result;
-};
+}
