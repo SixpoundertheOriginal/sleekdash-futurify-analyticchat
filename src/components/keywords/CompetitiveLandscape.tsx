@@ -8,7 +8,14 @@ interface CompetitiveLandscapeProps {
 }
 
 export function CompetitiveLandscape({ data }: CompetitiveLandscapeProps) {
+  // Make sure we have data
+  if (!data || data.length === 0) {
+    console.error("No data provided to CompetitiveLandscape");
+    return <div className="text-center py-10 text-white/60">No keyword data available</div>;
+  }
+
   const sortedData = [...data].sort((a, b) => b.volume - a.volume).slice(0, 8);
+  console.log("CompetitiveLandscape data:", sortedData.length, "items");
 
   return (
     <div>
@@ -25,7 +32,12 @@ export function CompetitiveLandscape({ data }: CompetitiveLandscapeProps) {
           >
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={false} />
             <XAxis type="number" domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
-            <YAxis type="category" dataKey="keyword" width={140} tick={{ fill: '#9ca3af' }} />
+            <YAxis 
+              type="category" 
+              dataKey="keyword" 
+              width={140} 
+              tick={{ fill: '#9ca3af' }}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="difficulty" name="Difficulty Score" fill="#f87171" barSize={12} />
             <Bar dataKey="chance" name="Ranking Chance %" fill="#4ade80" barSize={12} />

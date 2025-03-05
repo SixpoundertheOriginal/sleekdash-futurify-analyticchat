@@ -9,6 +9,14 @@ interface OpportunityMatrixProps {
 }
 
 export function OpportunityMatrix({ data, getColor }: OpportunityMatrixProps) {
+  // Make sure we have data
+  if (!data || data.length === 0) {
+    console.error("No data provided to OpportunityMatrix");
+    return <div className="text-center py-10 text-white/60">No keyword data available</div>;
+  }
+
+  console.log("OpportunityMatrix data:", data.length, "items");
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -31,7 +39,7 @@ export function OpportunityMatrix({ data, getColor }: OpportunityMatrixProps) {
               type="number" 
               dataKey="volume" 
               name="Search Volume" 
-              domain={[0, 70]}
+              domain={[0, 'dataMax']}
               label={{ value: 'Search Volume', angle: -90, position: 'insideLeft', offset: -5, fill: '#9ca3af' }}
               tick={{ fill: '#9ca3af' }}
             />

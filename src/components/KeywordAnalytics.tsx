@@ -43,10 +43,18 @@ export function KeywordAnalytics() {
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-up">
-        <div className="h-48 rounded-lg bg-white/5 animate-pulse" />
+        <div className="h-48 rounded-lg bg-indigo-800/5 animate-pulse" />
+        <div className="grid gap-4 grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 rounded-lg bg-indigo-800/5 animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
+
+  console.log("Rendering KeywordAnalytics with data:", keywordData?.length);
+  console.log("Top opportunity:", topOpportunity);
 
   return (
     <div className="space-y-6 animate-fade-up">
