@@ -1,6 +1,8 @@
+
 import { Card } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { ProcessedAnalytics, formatMetric } from "@/utils/analytics/processAnalysis";
+import { ProcessedAnalytics } from "@/utils/analytics/types";
+import { formatMetric } from "@/utils/analytics/formatting";
 
 interface ImpressionAnalyticsProps {
   data: ProcessedAnalytics;
