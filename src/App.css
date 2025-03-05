@@ -238,3 +238,51 @@
     font-size: 1.75rem;
   }
 }
+
+/* Accessibility-specific styles */
+.focus-visible:focus-visible {
+  outline: 2px solid #9b87f5;
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #9b87f5;
+  color: white;
+  padding: 8px;
+  z-index: 100;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* High contrast mode overrides */
+@media (forced-colors: active) {
+  .border-white\/10 {
+    border-color: CanvasText;
+  }
+  
+  .bg-white\/5 {
+    background-color: Canvas;
+  }
+  
+  .text-white\/60,
+  .text-white\/70,
+  .text-white\/80 {
+    color: CanvasText;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
