@@ -150,11 +150,9 @@ export function useAnalyticsHandlers({
       });
       
       // Auto-switch to dashboard tab if we're still on input tab
-      if (setActiveTab) {
-        setTimeout(() => {
-          setActiveTab("dashboard");
-        }, 1000);
-      }
+      setTimeout(() => {
+        setActiveTab("dashboard");
+      }, 1000);
     }
   };
 
