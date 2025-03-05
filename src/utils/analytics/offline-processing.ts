@@ -1,9 +1,10 @@
+
 /**
  * Offline processing utilities to reduce dependency on OpenAI API
  * Provides local metric extraction and message formatting capabilities
  */
 
-import { extractMetricsLocally, processContentWithFallback } from "@/utils/message-content-utils";
+import { extractMetricsLocally, processContentWithFallback } from "@/utils/message-content";
 import { MetricType, standardizeMetricNames } from "./offline/metricTypes";
 import { formatMetric } from "./offline/formatters";
 import { detectContentType, formatMessageOffline } from "./offline/contentDetector";

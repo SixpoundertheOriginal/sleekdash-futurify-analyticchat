@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { getSuggestedReplies, extractKeywords } from "@/utils/message-content-utils";
+import { getSuggestedReplies, extractKeywords } from "@/utils/message-content";
 import { useState, useEffect } from "react";
 import { detectContentType } from "@/utils/analytics/offline-processing";
 

@@ -1,4 +1,3 @@
-
 import { Bot, User } from "lucide-react";
 import { Message } from "@/types/chat";
 import { Card } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { useEffect, useState } from "react";
 import { MessageContent } from "./MessageContent";
 import { MessageActions } from "./MessageActions";
 import { QuickReplySuggestions } from "./QuickReplySuggestions";
-import { processMessageContent, formatTimestamp } from "@/utils/message-content-utils";
+import { processMessageContent, formatTimestamp } from "@/utils/message-content";
 
 interface ChatMessageProps {
   message: Message;
@@ -19,11 +18,9 @@ export function ChatMessage({ message, onReply, onReaction }: ChatMessageProps) 
   const [showActions, setShowActions] = useState(false);
   
   useEffect(() => {
-    // Process the message content when the message changes
     setProcessedContent(processMessageContent(message.content));
   }, [message]);
   
-  // Format timestamp
   const formattedTime = formatTimestamp(message.timestamp);
 
   return (
@@ -59,7 +56,6 @@ export function ChatMessage({ message, onReply, onReaction }: ChatMessageProps) 
         }`}>
           <MessageContent content={processedContent} />
           
-          {/* Message Actions (like, dislike, copy, etc.) */}
           <MessageActions 
             showActions={showActions}
             messageId={message.id}
@@ -69,7 +65,6 @@ export function ChatMessage({ message, onReply, onReaction }: ChatMessageProps) 
             onReaction={onReaction}
           />
           
-          {/* Quick Reply Suggestions */}
           <QuickReplySuggestions 
             content={processedContent}
             role={message.role}
