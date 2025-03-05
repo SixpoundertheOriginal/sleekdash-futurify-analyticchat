@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
+import { AssistantType } from "@/utils/thread-management";
 
 interface ChatHeaderProps {
   threadId: string;
@@ -23,6 +24,7 @@ interface ChatHeaderProps {
   onClearConversation: () => void;
   onToggleStats?: () => void;
   onExportChat?: (format: 'json' | 'csv' | 'pdf') => void;
+  feature?: AssistantType;
 }
 
 export function ChatHeader({ 
@@ -31,17 +33,42 @@ export function ChatHeader({
   isCreatingThread, 
   onClearConversation,
   onToggleStats,
-  onExportChat
+  onExportChat,
+  feature = 'general'
 }: ChatHeaderProps) {
+
+  // Customize title and description based on feature
+  const getTitleAndDescription = () => {
+    switch (feature) {
+      case 'keywords':
+        return {
+          title: "Keywords Research Assistant",
+          description: "AI-Powered Keyword Discovery & Analysis"
+        };
+      case 'appStore':
+        return {
+          title: "App Store Analytics Assistant",
+          description: "AI-Powered App Performance Analysis"
+        };
+      default:
+        return {
+          title: "AI Analysis Assistant",
+          description: "AI-Powered Data Analysis"
+        };
+    }
+  };
+
+  const { title, description } = getTitleAndDescription();
+
   return (
     <div className="flex items-center justify-between gap-2 border-b border-white/10 p-3 bg-primary/10">
       <div className="flex items-center gap-2">
-        <div className="bg-primary/20 h-8 w-8 rounded-full flex items-center justify-center">
-          <Sparkles className="h-4 w-4 text-primary" />
+        <div className={`${feature === 'keywords' ? 'bg-indigo-600/30' : 'bg-primary/20'} h-8 w-8 rounded-full flex items-center justify-center`}>
+          <Sparkles className={`h-4 w-4 ${feature === 'keywords' ? 'text-indigo-400' : 'text-primary'}`} />
         </div>
         <div>
           <h2 className="font-semibold text-white flex items-center">
-            AI Analysis Assistant
+            {title}
             {threadId && (
               <TooltipProvider>
                 <Tooltip>
@@ -62,7 +89,7 @@ export function ChatHeader({
               </TooltipProvider>
             )}
           </h2>
-          <p className="text-xs text-white/60">AI-Powered Keyword Analysis</p>
+          <p className="text-xs text-white/60">{description}</p>
         </div>
       </div>
       
@@ -72,7 +99,7 @@ export function ChatHeader({
             variant="outline"
             size="sm"
             onClick={onToggleStats}
-            className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs"
+            className={`${feature === 'keywords' ? 'bg-indigo-600/20 border-indigo-500/30 hover:bg-indigo-600/30' : 'bg-primary/20 border-primary/30 hover:bg-primary/30'} text-white text-xs`}
           >
             <BarChart2 className="h-3.5 w-3.5" />
           </Button>
@@ -84,19 +111,19 @@ export function ChatHeader({
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs"
+                className={`${feature === 'keywords' ? 'bg-indigo-600/20 border-indigo-500/30 hover:bg-indigo-600/30' : 'bg-primary/20 border-primary/30 hover:bg-primary/30'} text-white text-xs`}
               >
                 <Download className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-primary-foreground/5 backdrop-blur-xl border border-white/10 text-white">
-              <DropdownMenuItem onClick={() => onExportChat('json')} className="cursor-pointer hover:bg-primary/20">
+              <DropdownMenuItem onClick={() => onExportChat('json')} className={`cursor-pointer ${feature === 'keywords' ? 'hover:bg-indigo-600/20' : 'hover:bg-primary/20'}`}>
                 Export as JSON
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onExportChat('csv')} className="cursor-pointer hover:bg-primary/20">
+              <DropdownMenuItem onClick={() => onExportChat('csv')} className={`cursor-pointer ${feature === 'keywords' ? 'hover:bg-indigo-600/20' : 'hover:bg-primary/20'}`}>
                 Export as CSV
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onExportChat('pdf')} className="cursor-pointer hover:bg-primary/20">
+              <DropdownMenuItem onClick={() => onExportChat('pdf')} className={`cursor-pointer ${feature === 'keywords' ? 'hover:bg-indigo-600/20' : 'hover:bg-primary/20'}`}>
                 Export as PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -108,7 +135,7 @@ export function ChatHeader({
           size="sm"
           onClick={onClearConversation}
           disabled={isCreatingThread}
-          className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs gap-1"
+          className={`${feature === 'keywords' ? 'bg-indigo-600/20 border-indigo-500/30 hover:bg-indigo-600/30' : 'bg-primary/20 border-primary/30 hover:bg-primary/30'} text-white text-xs gap-1`}
         >
           {isCreatingThread ? (
             <RefreshCw className="h-3.5 w-3.5 animate-spin" />

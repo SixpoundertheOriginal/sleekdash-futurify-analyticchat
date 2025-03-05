@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useChat } from "@/hooks/useChat";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
@@ -106,7 +105,7 @@ export function ChatInterface({ preprocessDataFn, feature = 'general' }: ChatInt
       isCheckingForResponses
     }}>
       <div className="flex flex-col md:flex-row gap-4 h-[60vh] min-h-[400px] max-h-[800px]">
-        <Card className="flex flex-1 flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg overflow-hidden">
+        <Card className={`flex flex-1 flex-col rounded-xl border ${feature === 'keywords' ? 'border-indigo-500/10' : 'border-white/10'} ${feature === 'keywords' ? 'bg-indigo-950/5' : 'bg-white/5'} backdrop-blur-xl shadow-lg overflow-hidden`}>
           <ChatHeader 
             threadId={threadId || ""}
             assistantId={assistantId}
@@ -114,6 +113,7 @@ export function ChatInterface({ preprocessDataFn, feature = 'general' }: ChatInt
             onClearConversation={handleClearConversation}
             onToggleStats={() => setShowStats(prev => !prev)}
             onExportChat={handleExportChat}
+            feature={feature}
           />
           
           <ChatError error={error} onDismiss={dismissError} />
@@ -124,12 +124,14 @@ export function ChatInterface({ preprocessDataFn, feature = 'general' }: ChatInt
             lastFileUpload={lastFileUpload}
             isCheckingForResponses={isCheckingForResponses}
             isProcessing={isProcessing}
+            feature={feature}
           />
           
           <ChatMessageList 
             messages={messages} 
             onReply={handleReply}
             onReaction={handleReaction}
+            feature={feature}
           />
 
           <ChatInput
@@ -138,6 +140,7 @@ export function ChatInterface({ preprocessDataFn, feature = 'general' }: ChatInt
             onMessageChange={setMessage}
             onSubmit={handleSubmitWithDateCheck}
             messages={messages}
+            feature={feature}
           />
         </Card>
         
@@ -147,6 +150,7 @@ export function ChatInterface({ preprocessDataFn, feature = 'general' }: ChatInt
               messages={messages} 
               lastFileUpload={lastFileUpload} 
               isProcessing={isProcessing}
+              feature={feature}
             />
           </div>
         )}
