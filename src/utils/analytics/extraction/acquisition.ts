@@ -16,45 +16,94 @@ export const extractAcquisitionMetrics = (text: string): ProcessedAnalytics["acq
     },
   };
 
-  const acquisitionSection = text.match(/User Acquisition Metrics(.*?)(?=###)/s);
-  if (!acquisitionSection) return result;
-  
-  const metrics = acquisitionSection[1];
+  // Looking for Acquisition section
+  console.log('Searching for acquisition section...');
+  const acquisitionSection = text.match(/(?:Acquisition|User Acquisition Metrics)(.*?)(?=###|Engagement|Monetization|Retention|Financial|Recommendations)/s);
+  if (!acquisitionSection) {
+    console.log('Acquisition section not found, using whole text');
+    // If no specific section, search the whole text
+    // Impressions
+    const impressionsMatch = text.match(/Impressions:?\s*([\d,]+)\s*\(([+-]\d+)%\)/i);
+    if (impressionsMatch) {
+      result.impressions = {
+        value: parseInt(impressionsMatch[1].replace(/,/g, '')),
+        change: parseInt(impressionsMatch[2])
+      };
+      console.log('Found impressions:', result.impressions);
+    }
 
-  // Extract impressions
-  const impressionsMatch = metrics.match(/Impressions:\s*([\d,]+)\s*\(([+-]\d+)%\)/);
-  if (impressionsMatch) {
-    result.impressions = {
-      value: parseInt(impressionsMatch[1].replace(/,/g, '')),
-      change: parseInt(impressionsMatch[2])
-    };
-  }
+    // Page Views
+    const pageViewsMatch = text.match(/(?:Product Page Views|Page Views):?\s*([\d,]+)\s*\(([+-]\d+)%\)/i);
+    if (pageViewsMatch) {
+      result.pageViews = {
+        value: parseInt(pageViewsMatch[1].replace(/,/g, '')),
+        change: parseInt(pageViewsMatch[2])
+      };
+      console.log('Found page views:', result.pageViews);
+    }
 
-  // Extract page views
-  const pageViewsMatch = metrics.match(/Product Page Views:\s*([\d,]+)\s*\(([+-]\d+)%\)/);
-  if (pageViewsMatch) {
-    result.pageViews = {
-      value: parseInt(pageViewsMatch[1].replace(/,/g, '')),
-      change: parseInt(pageViewsMatch[2])
-    };
-  }
+    // Conversion Rate
+    const conversionMatch = text.match(/Conversion Rate:?\s*([\d.]+)%\s*\(([+-]\d+)%\)/i);
+    if (conversionMatch) {
+      result.conversionRate = {
+        value: parseFloat(conversionMatch[1]),
+        change: parseInt(conversionMatch[2])
+      };
+      console.log('Found conversion rate:', result.conversionRate);
+    }
 
-  // Extract conversion rate
-  const conversionMatch = metrics.match(/Conversion Rate:\s*([\d.]+)%\s*\(([+-]\d+)%\)/);
-  if (conversionMatch) {
-    result.conversionRate = {
-      value: parseFloat(conversionMatch[1]),
-      change: parseInt(conversionMatch[2])
-    };
-  }
+    // Downloads
+    const downloadsMatch = text.match(/(?:Total Downloads|Downloads):?\s*([\d,]+)\s*\(([+-]\d+)%\)/i);
+    if (downloadsMatch) {
+      result.downloads = {
+        value: parseInt(downloadsMatch[1].replace(/,/g, '')),
+        change: parseInt(downloadsMatch[2])
+      };
+      console.log('Found downloads:', result.downloads);
+    }
+  } else {
+    console.log('Found acquisition section');
+    const metrics = acquisitionSection[1];
 
-  // Extract downloads
-  const downloadsMatch = metrics.match(/Total Downloads:\s*([\d,]+)\s*\(([+-]\d+)%\)/);
-  if (downloadsMatch) {
-    result.downloads = {
-      value: parseInt(downloadsMatch[1].replace(/,/g, '')),
-      change: parseInt(downloadsMatch[2])
-    };
+    // Impressions
+    const impressionsMatch = metrics.match(/Impressions:?\s*([\d,]+)\s*\(([+-]\d+)%\)/i);
+    if (impressionsMatch) {
+      result.impressions = {
+        value: parseInt(impressionsMatch[1].replace(/,/g, '')),
+        change: parseInt(impressionsMatch[2])
+      };
+      console.log('Found impressions:', result.impressions);
+    }
+
+    // Page Views
+    const pageViewsMatch = metrics.match(/(?:Product Page Views|Page Views):?\s*([\d,]+)\s*\(([+-]\d+)%\)/i);
+    if (pageViewsMatch) {
+      result.pageViews = {
+        value: parseInt(pageViewsMatch[1].replace(/,/g, '')),
+        change: parseInt(pageViewsMatch[2])
+      };
+      console.log('Found page views:', result.pageViews);
+    }
+
+    // Conversion Rate
+    const conversionMatch = metrics.match(/Conversion Rate:?\s*([\d.]+)%\s*\(([+-]\d+)%\)/i);
+    if (conversionMatch) {
+      result.conversionRate = {
+        value: parseFloat(conversionMatch[1]),
+        change: parseInt(conversionMatch[2])
+      };
+      console.log('Found conversion rate:', result.conversionRate);
+    }
+
+    // Downloads
+    const downloadsMatch = metrics.match(/(?:Total Downloads|Downloads):?\s*([\d,]+)\s*\(([+-]\d+)%\)/i);
+    if (downloadsMatch) {
+      result.downloads = {
+        value: parseInt(downloadsMatch[1].replace(/,/g, '')),
+        change: parseInt(downloadsMatch[2])
+      };
+      console.log('Found downloads:', result.downloads);
+    }
   }
 
   // Calculate funnel metrics if we have the necessary data
@@ -63,6 +112,7 @@ export const extractAcquisitionMetrics = (text: string): ProcessedAnalytics["acq
       impressionsToViews: (result.pageViews.value / result.impressions.value) * 100,
       viewsToDownloads: (result.downloads.value / result.pageViews.value) * 100
     };
+    console.log('Calculated funnel metrics:', result.funnelMetrics);
   }
 
   return result;

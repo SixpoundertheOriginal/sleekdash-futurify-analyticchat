@@ -41,23 +41,32 @@ export const processAnalysisText = (text: string): ProcessedAnalytics => {
     const acquisition = extractAcquisitionMetrics(text);
 
     // Process financial metrics
+    console.log('Processing financial metrics...');
     const financial = extractFinancialMetrics(text);
 
     // Process engagement metrics
+    console.log('Processing engagement metrics...');
     const engagement = extractEngagementMetrics(text);
 
     // Process technical metrics
+    console.log('Processing technical metrics...');
     const technical = extractTechnicalMetrics(text);
 
     // Process geographical data
     console.log('Processing geographical data...');
     const geographical = extractGeographicalData(text);
 
+    // Log the extracted metrics for debugging
+    console.log('Extracted acquisition metrics:', acquisition);
+    console.log('Extracted financial metrics:', financial);
+    console.log('Extracted engagement metrics:', engagement);
+    console.log('Extracted technical metrics:', technical);
+
     // Assemble the complete result
     const result: ProcessedAnalytics = {
       summary: {
-        title: summaryInfo.title,
-        dateRange: summaryInfo.dateRange,
+        title: summaryInfo.title || "App Analytics Report",
+        dateRange: summaryInfo.dateRange || "Not specified",
         executiveSummary
       },
       acquisition,

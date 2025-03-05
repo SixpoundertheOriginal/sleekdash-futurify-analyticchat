@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { AlertCircle, ChevronDown, ChevronUp, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 
 interface ExecutiveSummaryProps {
@@ -14,21 +14,42 @@ interface ExecutiveSummaryProps {
 
 export function ExecutiveSummary({ title, summary, dateRange, data }: ExecutiveSummaryProps) {
   const [expanded, setExpanded] = useState(false);
+  const [hasSummary, setHasSummary] = useState(false);
+  
+  useEffect(() => {
+    // Check if we have a real summary
+    setHasSummary(!!summary && summary.length > 10);
+  }, [summary]);
   
   // Determine overall trend direction from metrics
   // Make sure to handle cases where metrics might be 0
   const metrics = [
-    data.acquisition.downloads.change || 0,
-    data.financial.proceeds.change || 0,
-    data.acquisition.pageViews.change || 0,
-    data.acquisition.impressions.change || 0
+    data?.acquisition?.downloads?.change || 0,
+    data?.financial?.proceeds?.change || 0,
+    data?.acquisition?.pageViews?.change || 0,
+    data?.acquisition?.impressions?.change || 0
   ];
   
-  const averageChange = metrics.reduce((sum, val) => sum + val, 0) / metrics.length;
+  const validMetricsCount = metrics.filter(m => m !== 0).length;
+  const averageChange = validMetricsCount > 0 
+    ? metrics.reduce((sum, val) => sum + val, 0) / validMetricsCount 
+    : 0;
   const isPositive = averageChange > 0;
 
   // Check if all metrics are zero, which indicates potentially missing data
-  const hasNoData = metrics.every(metric => metric === 0);
+  const hasNoData = validMetricsCount === 0;
+  
+  // Generate automatic summary if none provided
+  const autoSummary = hasNoData 
+    ? `No performance data available for this period. Please analyze your app data to see insights.`
+    : `During this period, your app ${isPositive ? 'showed positive growth' : 'faced some challenges'}. 
+      ${data?.acquisition?.downloads?.value ? `Downloads ${data.acquisition.downloads.change > 0 ? 'increased' : 'decreased'} by ${Math.abs(data.acquisition.downloads.change)}%` : ''}
+      ${data?.financial?.proceeds?.value && data?.acquisition?.downloads?.value ? ' and ' : ''}
+      ${data?.financial?.proceeds?.value ? `revenue ${data.financial.proceeds.change > 0 ? 'grew' : 'declined'} by ${Math.abs(data.financial.proceeds.change)}%` : ''}.
+      ${data?.technical?.crashes?.value && data?.technical?.crashes?.change > 50 ? `There was a significant increase in crashes (${data.technical.crashes.change}%) which may require attention.` : ''}`;
+      
+  // Use the provided summary or auto-generated one
+  const displaySummary = hasSummary ? summary : autoSummary;
   
   return (
     <Card className={`p-5 border ${
@@ -58,16 +79,10 @@ export function ExecutiveSummary({ title, summary, dateRange, data }: ExecutiveS
             <p className="text-sm text-white/60">{dateRange}</p>
             
             <div className={`mt-2 ${expanded ? '' : 'line-clamp-2'}`}>
-              {summary || (
-                hasNoData 
-                  ? `No performance data available for this period. Please analyze your app data to see insights.`
-                  : `During this period, your app ${isPositive ? 'showed positive growth' : 'faced some challenges'}. 
-                    Downloads ${data.acquisition.downloads.change > 0 ? 'increased' : 'decreased'} by ${Math.abs(data.acquisition.downloads.change)}% 
-                    and revenue ${data.financial.proceeds.change > 0 ? 'grew' : 'declined'} by ${Math.abs(data.financial.proceeds.change)}%.`
-              )}
+              {displaySummary}
             </div>
             
-            {summary && summary.length > 120 && (
+            {displaySummary && displaySummary.length > 120 && (
               <Button 
                 variant="ghost" 
                 size="sm" 

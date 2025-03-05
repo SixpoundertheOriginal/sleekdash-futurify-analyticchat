@@ -13,6 +13,7 @@ import { Info } from "lucide-react";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { processAnalysisText, ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { saveAnalyticsToStorage, getAnalyticsFromStorage } from "@/utils/analytics/storage";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AppStoreAnalysisProps {
   initialData?: ProcessedAnalytics;
@@ -27,12 +28,14 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
   const [processedAnalytics, setProcessedAnalytics] = useState<ProcessedAnalytics | null>(initialData || null);
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
   const [processingError, setProcessingError] = useState<string | null>(null);
+  const { toast } = useToast();
   
   // Load data from localStorage on component mount
   useEffect(() => {
     if (!processedAnalytics) {
       const storedData = getAnalyticsFromStorage();
       if (storedData) {
+        console.log("Loaded analytics data from storage:", storedData);
         setProcessedAnalytics(storedData);
         // If we have data, switch to the dashboard tab
         setActiveTab("dashboard");
@@ -55,16 +58,48 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
     
     try {
       // Process analysis text to structured data
+      console.log("Processing analysis text to structured data...");
       const processedData = processAnalysisText(analysisText);
-      setProcessedAnalytics(processedData);
+      console.log("Processed data:", processedData);
       
-      // Save to localStorage
-      saveAnalyticsToStorage(processedData);
+      // Check if we have valid metrics
+      const hasValidMetrics = 
+        processedData.acquisition.downloads.value > 0 || 
+        processedData.financial.proceeds.value > 0 ||
+        processedData.engagement.sessionsPerDevice.value > 0 ||
+        processedData.technical.crashes.value > 0;
       
-      console.log("Analysis processed to structured data:", processedData);
+      if (!hasValidMetrics) {
+        console.warn("Warning: No valid metrics found in processed data");
+        toast({
+          title: "Limited Data Extracted",
+          description: "We couldn't extract all metrics from the analysis. The dashboard might show limited information.",
+          variant: "destructive"
+        });
+      } else {
+        setProcessedAnalytics(processedData);
+        // Save to localStorage
+        saveAnalyticsToStorage(processedData);
+        toast({
+          title: "Data Processed Successfully",
+          description: "Your app analytics have been processed and saved. You can view them in the Dashboard.",
+          variant: "default"
+        });
+        console.log("Analysis processed to structured data and saved:", processedData);
+        
+        // Automatically switch to dashboard tab after a short delay
+        setTimeout(() => {
+          setActiveTab("dashboard");
+        }, 2000);
+      }
     } catch (error) {
       console.error("Error processing analysis text:", error);
       setProcessingError(error instanceof Error ? error.message : "Error processing analysis text");
+      toast({
+        title: "Processing Error",
+        description: "There was an error processing the analysis. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -120,6 +155,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
             <AdvancedDashboard 
               data={processedAnalytics} 
               dateRange={dateRange}
+              isLoading={isProcessing || isAnalyzing}
             />
           ) : (
             <AnalyticsDashboardWrapper 
