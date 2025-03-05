@@ -3,7 +3,8 @@ import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { useAnalyticsState } from "./analytics/useAnalyticsState";
 import { useAnalyticsPersistence } from "./analytics/useAnalyticsPersistence";
 import { useAnalyticsHandlers } from "./analytics/useAnalyticsHandlers";
-import { useChat } from "@/hooks/useChat";
+import { useThread } from "@/hooks/useChat";
+import { useThread as useThreadContext } from "@/contexts/ThreadContext";
 
 interface UseAppStoreAnalysisParams {
   initialData?: ProcessedAnalytics;
@@ -16,8 +17,15 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) 
   // Use smaller hooks for specific concerns
   const state = useAnalyticsState({ initialData });
   
+  // Get the thread context to access the feature-specific thread IDs
+  const threadContext = useThreadContext();
+  
+  // Get the App Store-specific thread and assistant IDs
+  const appStoreThreadId = threadContext.getFeatureThreadId('appStore');
+  const appStoreAssistantId = threadContext.getFeatureAssistantId('appStore');
+  
   // Set up chat with the appStore feature
-  const chat = useChat({ feature: 'appStore' });
+  const chat = useThread({ feature: 'appStore' });
   
   const { saveAnalytics } = useAnalyticsPersistence({
     processedAnalytics: state.processedAnalytics,
@@ -40,7 +48,7 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) 
   return {
     ...state,
     ...handlers,
-    chatThreadId: chat.threadId,
-    chatAssistantId: chat.assistantId
+    chatThreadId: appStoreThreadId, // Use the App Store specific thread ID
+    chatAssistantId: appStoreAssistantId // Use the App Store specific assistant ID
   };
 }

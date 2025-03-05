@@ -1,144 +1,168 @@
 
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
-import { extractDirectMetrics, hasValidMetricsForVisualization } from '@/utils/analytics/offline/directExtraction';
+import { extractBaseMetrics } from "@/utils/analytics/offline/directExtraction";
 
-interface UseAppStoreFormParams {
+interface UseAppStoreFormProps {
   onProcessSuccess: (data: any) => void;
   onAnalysisSuccess: (analysisResult: string) => void;
   onDirectExtractionSuccess?: (metrics: Partial<ProcessedAnalytics>) => void;
   setProcessing: (processing: boolean) => void;
   setAnalyzing: (analyzing: boolean) => void;
+  threadId?: string;
+  assistantId?: string;
 }
 
-export const useAppStoreForm = ({
+export function useAppStoreForm({
   onProcessSuccess,
   onAnalysisSuccess,
   onDirectExtractionSuccess,
   setProcessing,
-  setAnalyzing
-}: UseAppStoreFormParams) => {
+  setAnalyzing,
+  threadId,
+  assistantId
+}: UseAppStoreFormProps) {
   const [appDescription, setAppDescription] = useState("");
   const { toast } = useToast();
 
-  // Function to perform direct extraction of metrics
-  const performDirectExtraction = (text: string) => {
-    try {
-      console.log('Performing direct extraction before OpenAI processing');
-      const extractedMetrics = extractDirectMetrics(text);
-      
-      if (hasValidMetricsForVisualization(extractedMetrics)) {
-        console.log('Direct extraction found valid metrics');
-        onDirectExtractionSuccess?.(extractedMetrics);
-      } else {
-        console.log('Direct extraction did not find enough valid metrics');
+  // Handle direct extraction of metrics from the input text
+  const extractMetricsFromText = (text: string) => {
+    if (onDirectExtractionSuccess) {
+      try {
+        const extractedMetrics = extractBaseMetrics(text);
+        if (extractedMetrics && Object.keys(extractedMetrics).length > 0) {
+          console.log('Extracted metrics directly from text:', extractedMetrics);
+          onDirectExtractionSuccess(extractedMetrics);
+        }
+      } catch (error) {
+        console.error('Error extracting metrics directly:', error);
       }
-    } catch (error) {
-      console.error('Error during direct extraction:', error);
     }
   };
 
+  // Process text for analytics
   const handleTextCleaningAndProcessing = async (text: string) => {
-    // First perform direct extraction to get immediate metrics
-    performDirectExtraction(text);
-    
-    // Then continue with regular processing
-    setProcessing(true);
-    try {
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Simulate data extraction
-      const extractedData = {
-        success: true,
-        message: "Data extracted successfully",
-        metrics: {
-          downloads: 1234,
-          revenue: "$5,678",
-          activeUsers: 500
-        }
-      };
-      onProcessSuccess(extractedData);
-      toast({
-        title: "Data Extracted",
-        description: "App store data has been successfully extracted."
-      });
-      
-      // Automatically trigger analysis for better UX
-      handleAnalysis(text);
-    } catch (error) {
-      console.error("Error during text cleaning and processing:", error);
+    if (!text.trim()) {
       toast({
         variant: "destructive",
-        title: "Processing Error",
-        description: "Failed to process app store data."
+        title: "Empty Input",
+        description: "Please enter App Store data to process"
+      });
+      return;
+    }
+    
+    setProcessing(true);
+    
+    try {
+      // Try to extract metrics directly from the text first
+      extractMetricsFromText(text);
+      
+      // Process data through Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('process-app-data', {
+        body: { appDescription: text }
+      });
+      
+      if (error) {
+        throw new Error(`Processing failed: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error("No data returned from processing");
+      }
+      
+      // Log the processed data
+      console.log("Data processed successfully:", data);
+      
+      // Call onProcessSuccess with the processed data
+      onProcessSuccess(data);
+      
+      // Now also run analysis since we have processed data
+      await handleAnalysis(text, data);
+    } catch (error) {
+      console.error("Error processing app data:", error);
+      toast({
+        variant: "destructive",
+        title: "Processing Failed",
+        description: error instanceof Error ? error.message : "Failed to process App Store data"
       });
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleAnalysis = async (text: string) => {
-    // First perform direct extraction to get immediate metrics
-    performDirectExtraction(text);
+  // Analyze the app data
+  const handleAnalysis = async (text: string, processedData = null) => {
+    if (!text.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Empty Input",
+        description: "Please enter App Store data to analyze"
+      });
+      return;
+    }
     
-    // Then continue with regular analysis
     setAnalyzing(true);
+    
     try {
-      // Simulate analysis delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Create a comprehensive analysis result with sections that our processing will expect
-      const analysisResult = `
-App Store Analysis Report
-
-Summary:
-The app has shown significant growth during this period with key metrics trending positively.
-
-Acquisition:
-- Downloads: 7,910 (+15%)
-- Impressions: 120,500 (+23%)
-- Product Page Views: 24,300 (+18%)
-- Conversion Rate: 2.84% (+10%)
-
-Engagement:
-- Sessions per Active Device: 4.2 (+8%)
-- Average Session Duration: 5.3 minutes (+12%)
-- Retention D1: 45% (+5%)
-- Retention D7: 28% (+3%)
-
-Monetization:
-- Proceeds: $4,740 (+20%)
-- Average Revenue Per User: $0.60 (+15%)
-- In-App Purchases: 1,850 (+25%)
-- Subscription Conversions: 320 (+18%)
-
-Technical Performance:
-- Crashes: 116 (-25%)
-- App Store Rating: 4.5 (+0.3)
-- App Size: 45MB (unchanged)
-
-Recommendations:
-1. Continue optimization of App Store listing to maintain conversion rate improvements
-2. Focus on D7 retention with targeted push notifications
-3. Investigate opportunities to increase revenue per active user
-4. Maintain technical performance improvements to keep crash rates low
-      `;
+      // Try to extract metrics directly from the text first
+      if (!processedData) {
+        extractMetricsFromText(text);
+      }
       
-      console.log("Analysis result generated:", analysisResult.length, "characters");
-      onAnalysisSuccess(analysisResult);
+      // Prepare the request body
+      const requestBody: any = { 
+        appDescription: text
+      };
+      
+      // Add specific thread and assistant IDs if provided
+      if (threadId) {
+        requestBody.threadId = threadId;
+        console.log(`[useAppStoreForm] Using specified thread ID: ${threadId}`);
+      }
+      
+      if (assistantId) {
+        requestBody.assistantId = assistantId;
+        console.log(`[useAppStoreForm] Using specified assistant ID: ${assistantId}`);
+      }
+      
+      // Add processed data if available
+      if (processedData) {
+        requestBody.processedData = processedData;
+        console.log(`[useAppStoreForm] Including processed data in analysis request`);
+      }
+      
+      // Call the analyze-app-store function
+      const { data, error } = await supabase.functions.invoke('analyze-app-store', {
+        body: requestBody
+      });
+      
+      if (error) {
+        throw new Error(`Analysis failed: ${error.message}`);
+      }
+      
+      if (!data || !data.analysis) {
+        throw new Error("No analysis returned");
+      }
+      
+      // Log the analysis details
+      console.log("Analysis successful. Thread ID:", data.threadId);
+      console.log("Analysis content length:", data.analysis.length);
+      
+      // Call onAnalysisSuccess with the analysis result
+      onAnalysisSuccess(data.analysis);
       
       toast({
         title: "Analysis Complete",
-        description: "App store data has been successfully analyzed."
+        description: "App Store data has been analyzed successfully"
       });
     } catch (error) {
-      console.error("Error during analysis:", error);
+      console.error("Error analyzing app data:", error);
       toast({
         variant: "destructive",
-        title: "Analysis Error",
-        description: "Failed to analyze app store data."
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Failed to analyze App Store data"
       });
     } finally {
       setAnalyzing(false);
@@ -151,4 +175,4 @@ Recommendations:
     handleTextCleaningAndProcessing,
     handleAnalysis
   };
-};
+}

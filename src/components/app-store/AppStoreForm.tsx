@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { FormHeader } from "./FormHeader";
 import { FormInput } from "./FormInput";
 import { FormButtons } from "./FormButtons";
@@ -39,7 +40,7 @@ export function AppStoreForm({
   assistantId
 }: AppStoreFormProps) {
   const { toast } = useToast();
-  const { setActiveFeature, getFeatureAssistantId } = useThread();
+  const { setActiveFeature, getFeatureThreadId, getFeatureAssistantId } = useThread();
   const appStoreAssistantId = getFeatureAssistantId('appStore');
   
   const {
@@ -52,17 +53,19 @@ export function AppStoreForm({
     onAnalysisSuccess,
     onDirectExtractionSuccess,
     setProcessing,
-    setAnalyzing
+    setAnalyzing,
+    threadId,
+    assistantId
   });
 
   // Set the active feature to appStore when this component mounts
-  useState(() => {
+  useEffect(() => {
     setActiveFeature('appStore');
     console.log('[AppStoreForm] Set active feature to appStore');
     console.log('[AppStoreForm] Using App Store assistant ID:', appStoreAssistantId);
     console.log('[AppStoreForm] Thread ID from props:', threadId);
     console.log('[AppStoreForm] Assistant ID from props:', assistantId);
-  });
+  }, []);
 
   const handleProcessAndAnalyze = () => {
     if (!dateRange && !isAppStoreFormat(appDescription)) {

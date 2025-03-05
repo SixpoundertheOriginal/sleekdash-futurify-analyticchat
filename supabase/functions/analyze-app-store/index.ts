@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -9,8 +8,8 @@ const corsHeaders = {
 };
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-const DEFAULT_THREAD_ID = 'thread_d5BLFmp47v8EbWacFTjs6sgh';
-const DEFAULT_ASSISTANT_ID = 'asst_TfGVD0dcL2vsnPCihybxorC7';
+const DEFAULT_THREAD_ID = 'thread_d5BLFmp47v8EbWacFTjs6sgh'; // App Store thread ID
+const DEFAULT_ASSISTANT_ID = 'asst_TfGVD0dcL2vsnPCihybxorC7'; // App Store assistant ID
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -232,6 +231,7 @@ Please use these structured values in your analysis where appropriate.`;
         analysis: analysisContent,
         messageId: latestMessage.id,
         threadId: threadId,
+        assistantId: assistantId, // Include the assistant ID in the response
         dateRange: dateRange,
         processedDataIncluded: !!processedData
       }),
