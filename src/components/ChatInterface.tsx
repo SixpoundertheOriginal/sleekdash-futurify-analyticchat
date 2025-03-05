@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useChat } from "@/hooks/useChat";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
@@ -14,6 +13,7 @@ import { ChatError } from "@/components/chat/ChatError";
 import { ChatContextProvider } from "@/contexts/ChatContext";
 import { useChatActions } from "@/components/chat/ChatActions";
 import { ChatForm } from "@/components/chat/ChatForm";
+import { DateRange } from "@/components/chat/DateRangePicker";
 
 export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (message: string) => Promise<any> }) {
   
@@ -64,7 +64,6 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
 
   const dismissError = () => setError(null);
 
-  // Get the ChatForm utilities
   const { handleSubmitWithDateCheck } = ChatForm({
     message,
     dateRange,
@@ -79,13 +78,19 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
       message,
       setMessage,
       messages,
+      setMessages,
       isLoading,
       isProcessing,
       isCreatingThread,
+      setIsCreatingThread,
       showStats,
+      setShowStats,
       error,
+      setError,
       dateRange,
+      setDateRange,
       isDateRangeSelected,
+      setIsDateRangeSelected,
       lastFileUpload,
       isCheckingForResponses
     }}>

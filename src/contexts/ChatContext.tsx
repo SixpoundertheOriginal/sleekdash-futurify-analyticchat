@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction } from "react";
 import { Message } from "@/types/chat";
 import { DateRange } from "@/components/chat/DateRangePicker";
 
@@ -46,6 +46,9 @@ export function ChatContextProvider({ children, initialState }: {
   const [lastFileUpload, setLastFileUpload] = useState<Date | null>(initialState?.lastFileUpload || null);
   const [isCheckingForResponses, setIsCheckingForResponses] = useState(initialState?.isCheckingForResponses || false);
 
+  // Create a wrapper for setShowStats that matches the expected function signature
+  const setShowStatsWrapper = (show: boolean) => setShowStats(show);
+
   return (
     <ChatContext.Provider value={{
       message,
@@ -57,7 +60,7 @@ export function ChatContextProvider({ children, initialState }: {
       isCreatingThread,
       setIsCreatingThread,
       showStats,
-      setShowStats,
+      setShowStats: setShowStatsWrapper,
       error,
       setError,
       dateRange,
