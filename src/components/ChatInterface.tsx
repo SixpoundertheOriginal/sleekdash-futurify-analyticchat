@@ -13,6 +13,7 @@ import { ChatStats } from "@/components/chat/ChatStats";
 import { exportChatHistory } from "@/services/export-service";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { X } from "lucide-react";
+import { DateRangePicker, DateRange } from "@/components/chat/DateRangePicker";
 
 export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (message: string) => Promise<any> }) {
   
@@ -32,6 +33,8 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
   const [isCreatingThread, setIsCreatingThread] = useState(false);
   const [showStats, setShowStats] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | null>(null);
+  const [isDateRangeSelected, setIsDateRangeSelected] = useState(false);
   
   const { isCheckingForResponses, lastFileUpload, clearPollingTimers } = useMessagePolling({
     threadId,
@@ -138,6 +141,39 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
     }
   };
 
+  const handleDateRangeChange = (range: DateRange | null) => {
+    setDateRange(range);
+    if (range) {
+      setIsDateRangeSelected(true);
+    }
+  };
+
+  const handleSubmitWithDateCheck = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isDateRangeSelected && !message.trim().startsWith('/')) {
+      setError('Please select a date range before sending your message.');
+      toast({
+        variant: "destructive",
+        title: "Date Range Required",
+        description: "Please select a date range to continue with your analysis."
+      });
+      return;
+    }
+    
+    // Append date range info to the message if needed
+    if (isDateRangeSelected && dateRange && !message.trim().startsWith('/')) {
+      const originalMessage = message;
+      const dateInfo = `Date range: ${format(dateRange.from, "yyyy-MM-dd")} to ${format(dateRange.to, "yyyy-MM-dd")}.\n\n`;
+      setMessage(dateInfo + originalMessage);
+      handleSubmit(e);
+      // Reset to original message to avoid showing the date prefix in the input
+      setTimeout(() => setMessage(""), 100);
+    } else {
+      handleSubmit(e);
+    }
+  };
+
   const dismissError = () => setError(null);
 
   return (
@@ -163,6 +199,13 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
           </Alert>
         )}
         
+        <div className="mx-3 my-2">
+          <DateRangePicker 
+            dateRange={dateRange}
+            onDateRangeChange={handleDateRangeChange}
+          />
+        </div>
+        
         <ChatNotifications
           isValidThread={isValidThread}
           onCreateNewThread={handleCreateNewThread}
@@ -181,7 +224,7 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
           message={message}
           isLoading={isLoading || isCheckingForResponses || isProcessing}
           onMessageChange={setMessage}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitWithDateCheck}
           messages={messages}
         />
       </Card>

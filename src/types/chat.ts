@@ -13,6 +13,10 @@ export interface Message {
     sentiment?: 'positive' | 'negative' | 'neutral';
     keywords?: string[];
     relevanceScore?: number;
+    dateRange?: {
+      from: string | Date;
+      to: string | Date;
+    };
   };
 }
 
