@@ -3,7 +3,7 @@ import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { useAnalyticsState } from "./analytics/useAnalyticsState";
 import { useAnalyticsPersistence } from "./analytics/useAnalyticsPersistence";
 import { useAnalyticsHandlers } from "./analytics/useAnalyticsHandlers";
-import { useThread } from "@/hooks/useChat";
+import { useChat } from "@/hooks/useChat"; // Changed import to use useChat directly
 import { useThread as useThreadContext } from "@/contexts/ThreadContext";
 
 interface UseAppStoreAnalysisParams {
@@ -25,7 +25,7 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) 
   const appStoreAssistantId = threadContext.getFeatureAssistantId('appStore');
   
   // Set up chat with the appStore feature
-  const chat = useThread({ feature: 'appStore' });
+  const chat = useChat({ feature: 'appStore' }); // Using useChat instead of useThread
   
   const { saveAnalytics } = useAnalyticsPersistence({
     processedAnalytics: state.processedAnalytics,

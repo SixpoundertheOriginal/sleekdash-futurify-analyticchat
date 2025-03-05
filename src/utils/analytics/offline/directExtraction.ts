@@ -1,4 +1,3 @@
-
 /**
  * Direct extraction utilities for getting KPIs from raw app store data
  * without relying on OpenAI analysis
@@ -6,6 +5,14 @@
 
 import { ProcessedAnalytics } from "../types";
 import { normalizeValue } from "../metricTypes";
+
+/**
+ * Extract basic metrics from text input
+ * This is used for immediate extraction of metrics from user input
+ */
+export const extractBaseMetrics = (rawInput: string): Partial<ProcessedAnalytics> => {
+  return extractDirectMetrics(rawInput);
+};
 
 /**
  * Extract key metrics directly from raw App Store data input
