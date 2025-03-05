@@ -74,6 +74,7 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) 
         let dateRangeStr = "";
         if (dateRange && dateRange.from && dateRange.to) {
           dateRangeStr = `${dateRange.from.toISOString().split('T')[0]} to ${dateRange.to.toISOString().split('T')[0]}`;
+          // Correctly assign to processedData with the updated type
           processedData.dateRange = dateRangeStr;
           
           // Store data in Supabase

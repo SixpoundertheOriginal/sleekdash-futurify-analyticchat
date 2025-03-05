@@ -1,3 +1,4 @@
+
 export interface ProcessedAnalytics {
   summary: {
     title: string;
@@ -54,4 +55,5 @@ export interface ProcessedAnalytics {
       downloads: number;
     }>;
   };
+  dateRange?: string; // Added dateRange as optional property at the root level
 }
