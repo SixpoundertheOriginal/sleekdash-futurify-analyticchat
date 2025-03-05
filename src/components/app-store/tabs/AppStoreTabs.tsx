@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppStoreForm } from "../AppStoreForm";
 import { AnalysisResultCard } from "../AnalysisResultCard";
@@ -29,6 +28,8 @@ interface AppStoreTabsProps {
   onDirectExtractionSuccess: (metrics: Partial<ProcessedAnalytics>) => void;
   setProcessing: (processing: boolean) => void;
   setAnalyzing: (analyzing: boolean) => void;
+  threadId?: string;
+  assistantId?: string;
 }
 
 export function AppStoreTabs({
@@ -48,7 +49,9 @@ export function AppStoreTabs({
   onAnalysisSuccess,
   onDirectExtractionSuccess,
   setProcessing,
-  setAnalyzing
+  setAnalyzing,
+  threadId,
+  assistantId
 }: AppStoreTabsProps) {
   // Create a combined data object that uses the full processed analytics if available,
   // or falls back to directly extracted metrics
@@ -76,6 +79,8 @@ export function AppStoreTabs({
           setAnalyzing={setAnalyzing}
           dateRange={dateRange}
           onDateRangeChange={onDateRangeChange}
+          threadId={threadId}
+          assistantId={assistantId}
         />
         
         {extractedData && (
