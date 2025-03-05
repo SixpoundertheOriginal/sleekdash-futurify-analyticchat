@@ -11,10 +11,10 @@ export const saveAnalyticsToStorage = (data: ProcessedAnalytics): void => {
   try {
     // Ensure the data has non-zero values for at least one key metric
     const hasValidData = 
-      data.acquisition.downloads.value > 0 ||
-      data.financial.proceeds.value > 0 ||
-      data.acquisition.conversionRate.value > 0 ||
-      data.technical.crashes.value > 0;
+      data.acquisition?.downloads?.value > 0 ||
+      data.financial?.proceeds?.value > 0 ||
+      data.acquisition?.conversionRate?.value > 0 ||
+      data.technical?.crashes?.value > 0;
     
     if (!hasValidData) {
       console.warn('Cannot save analytics data: No valid metrics found');
@@ -27,8 +27,27 @@ export const saveAnalyticsToStorage = (data: ProcessedAnalytics): void => {
       _savedAt: new Date().toISOString()
     };
     
+    // Log detailed statistics about what's being saved
+    console.log('Saving analytics data to localStorage:', {
+      summary: data.summary,
+      acquisition: {
+        downloads: data.acquisition?.downloads,
+        impressions: data.acquisition?.impressions,
+        conversionRate: data.acquisition?.conversionRate
+      },
+      financial: {
+        proceeds: data.financial?.proceeds
+      },
+      engagement: {
+        sessionsPerDevice: data.engagement?.sessionsPerDevice
+      },
+      technical: {
+        crashes: data.technical?.crashes
+      }
+    });
+    
     localStorage.setItem(ANALYTICS_STORAGE_KEY, JSON.stringify(dataWithTimestamp));
-    console.log('Analytics data saved to localStorage');
+    console.log('Analytics data saved to localStorage successfully');
   } catch (error) {
     console.error('Error saving analytics data to localStorage:', error);
   }
@@ -50,10 +69,10 @@ export const getAnalyticsFromStorage = (): ProcessedAnalytics | null => {
     
     // Check if we have at least one valid metric
     const hasValidData = 
-      parsedData.acquisition.downloads.value > 0 ||
-      parsedData.financial.proceeds.value > 0 ||
-      parsedData.acquisition.conversionRate.value > 0 ||
-      parsedData.technical.crashes.value > 0;
+      parsedData.acquisition?.downloads?.value > 0 ||
+      parsedData.financial?.proceeds?.value > 0 ||
+      parsedData.acquisition?.conversionRate?.value > 0 ||
+      parsedData.technical?.crashes?.value > 0;
     
     if (!hasValidData) {
       console.warn('Retrieved data has no valid metrics');
@@ -62,6 +81,17 @@ export const getAnalyticsFromStorage = (): ProcessedAnalytics | null => {
     
     // Remove the timestamp before returning
     const { _savedAt, ...cleanData } = parsedData;
+    
+    // Log statistics about what's being retrieved for debugging
+    console.log('Retrieved data statistics:', {
+      hasAcquisition: !!cleanData.acquisition,
+      hasFinancial: !!cleanData.financial,
+      hasEngagement: !!cleanData.engagement,
+      hasTechnical: !!cleanData.technical,
+      downloads: cleanData.acquisition?.downloads?.value,
+      proceeds: cleanData.financial?.proceeds?.value
+    });
+    
     return cleanData as ProcessedAnalytics;
   } catch (error) {
     console.error('Error retrieving analytics data from localStorage:', error);
@@ -155,5 +185,6 @@ export const mergeAnalyticsData = (
     };
   }
   
+  console.log('Merged analytics data:', result);
   return result;
 };

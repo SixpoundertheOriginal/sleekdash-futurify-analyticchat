@@ -10,6 +10,7 @@ import { Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { DateRange } from "@/components/chat/DateRangePicker";
+import { useEffect } from "react";
 
 interface AppStoreTabsProps {
   activeTab: string;
@@ -60,6 +61,24 @@ export function AppStoreTabs({
   
   // Combine both processing states to determine if we're loading analysis
   const isLoadingAnalysis = isProcessing || isAnalyzing;
+
+  // Add effect to log data changes for debugging
+  useEffect(() => {
+    console.log("AppStoreTabs - Current tab:", activeTab);
+    console.log("AppStoreTabs - Analysis result available:", !!analysisResult);
+    console.log("AppStoreTabs - Processed analytics available:", !!processedAnalytics);
+    console.log("AppStoreTabs - Directly extracted metrics available:", !!directlyExtractedMetrics);
+    console.log("AppStoreTabs - Dashboard data:", dashboardData);
+  }, [activeTab, analysisResult, processedAnalytics, directlyExtractedMetrics, dashboardData]);
+
+  // Add effect to ensure dashboard data is available when switching to dashboard tab
+  useEffect(() => {
+    if (activeTab === "dashboard" && analysisResult && !processedAnalytics) {
+      console.log("Dashboard tab active but processed analytics not available. Attempting to process analysis...");
+      // Try to process the analysis again
+      onAnalysisSuccess(analysisResult);
+    }
+  }, [activeTab, analysisResult, processedAnalytics, onAnalysisSuccess]);
 
   // Handler to switch to dashboard tab
   const handleViewDashboard = () => {
@@ -126,6 +145,7 @@ export function AppStoreTabs({
             isProcessing={isProcessing}
             processingError={processingError}
             dateRange={dateRange}
+            onRetry={() => setActiveTab("input")}
           />
         )}
         
