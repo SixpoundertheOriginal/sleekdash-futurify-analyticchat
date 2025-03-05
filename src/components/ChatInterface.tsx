@@ -10,16 +10,17 @@ import { ChatNotifications } from "@/components/chat/ChatNotifications";
 import { ChatMessageList } from "@/components/chat/ChatMessageList";
 import { useMessagePolling } from "@/hooks/useMessagePolling";
 
-export function ChatInterface() {
+export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (message: string) => Promise<any> }) {
   const { 
     message, 
     setMessage, 
     messages, 
     setMessages, 
-    isLoading, 
+    isLoading,
+    isProcessing,
     handleSubmit,
     fetchThreadMessages
-  } = useChat();
+  } = useChat(preprocessDataFn);
   
   const { threadId, assistantId, createNewThread, isValidThread } = useThread();
   const { toast } = useToast();
@@ -90,13 +91,14 @@ export function ChatInterface() {
         onCreateNewThread={handleCreateNewThread}
         lastFileUpload={lastFileUpload}
         isCheckingForResponses={isCheckingForResponses}
+        isProcessing={isProcessing}
       />
       
       <ChatMessageList messages={messages} />
 
       <ChatInput
         message={message}
-        isLoading={isLoading || isCheckingForResponses}
+        isLoading={isLoading || isCheckingForResponses || isProcessing}
         onMessageChange={setMessage}
         onSubmit={handleSubmit}
       />

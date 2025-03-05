@@ -26,17 +26,21 @@ serve(async (req) => {
     const threadId = body.threadId || DEFAULT_THREAD_ID;
     const assistantId = body.assistantId || DEFAULT_ASSISTANT_ID;
     const action = body.action || 'send_message';
+    const preprocessedData = body.preprocessedData || null;
 
     console.log(`[chat-message] Using thread ID: ${threadId}`);
     console.log(`[chat-message] Using assistant ID: ${assistantId}`);
     console.log(`[chat-message] Requested action: ${action}`);
+    if (preprocessedData) {
+      console.log('[chat-message] Preprocessed data included in request');
+    }
 
     // Handle different actions
     if (action === 'get_messages') {
       return await handleGetMessages(threadId);
     } 
     else if (action === 'send_message') {
-      return await handleSendMessage(threadId, assistantId, body.message);
+      return await handleSendMessage(threadId, assistantId, body.message, preprocessedData);
     } else {
       // Unknown action
       console.error('[chat-message] Unknown action requested:', action);

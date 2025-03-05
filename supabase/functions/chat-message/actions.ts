@@ -1,4 +1,3 @@
-
 import { corsHeaders } from './utils.ts';
 import { getMessagesFromThread, runAssistantOnThread, sendMessageToThread } from './thread-operations.ts';
 
@@ -33,7 +32,7 @@ export async function handleGetMessages(threadId: string) {
 }
 
 // Send a message to a thread and run the assistant
-export async function handleSendMessage(threadId: string, assistantId: string, message: string) {
+export async function handleSendMessage(threadId: string, assistantId: string, message: string, preprocessedData?: any) {
   if (!message) {
     console.error('[chat-message:actions] No message provided');
     return new Response(
@@ -53,8 +52,22 @@ export async function handleSendMessage(threadId: string, assistantId: string, m
     console.log(`[chat-message:actions] Using assistant: ${assistantId}`);
     console.log(`[chat-message:actions] Message content: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`);
     
+    // If preprocessed data is available, log it
+    if (preprocessedData) {
+      console.log('[chat-message:actions] Using preprocessed data with the message');
+    }
+    
     // 1. Send the user message to the thread
-    const userMessageId = await sendMessageToThread(threadId, message);
+    // Depending on the type of preprocessing, you might want to modify the message
+    // or add it as additional context
+    let userMessageWithContext = message;
+    if (preprocessedData) {
+      // You could append preprocessed data to the message if needed
+      // or handle it differently based on the assistant's purpose
+      userMessageWithContext = `${message}\n\nPreprocessed data: ${JSON.stringify(preprocessedData)}`;
+    }
+    
+    const userMessageId = await sendMessageToThread(threadId, userMessageWithContext);
     console.log(`[chat-message:actions] User message sent with ID: ${userMessageId}`);
     
     // 2. Run the assistant on the thread

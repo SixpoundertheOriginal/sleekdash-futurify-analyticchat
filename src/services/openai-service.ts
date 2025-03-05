@@ -116,19 +116,29 @@ export const fetchThreadMessages = async (
 export const sendMessageToThread = async (
   message: string,
   threadId: string,
-  assistantId: string
+  assistantId: string,
+  preprocessedData?: any
 ) => {
   console.log("[openai-service] Sending message to thread:", { threadId, message: message.substring(0, 50) });
   
+  // Prepare the request body with optional preprocessed data
+  const requestBody: any = { 
+    message,
+    threadId,
+    assistantId,
+    action: 'send_message'
+  };
+  
+  // Add preprocessed data if available
+  if (preprocessedData) {
+    requestBody.preprocessedData = preprocessedData;
+    console.log("[openai-service] Including preprocessed data in request");
+  }
+
   const { data: functionData, error: functionError } = await supabase.functions.invoke(
     'chat-message',
     {
-      body: { 
-        message,
-        threadId,
-        assistantId,
-        action: 'send_message'
-      }
+      body: requestBody
     }
   );
 

@@ -7,7 +7,7 @@ import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 import { addUserMessage, addAssistantMessage, updateMessagesWithResponse } from "@/utils/message-utils";
 import { processThreadMessages, sendThreadMessage } from "@/utils/thread-utils";
 
-export const useChat = () => {
+export const useChat = (preprocessDataFn?: (message: string) => Promise<any>) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([{
     role: 'assistant',
@@ -15,6 +15,8 @@ export const useChat = () => {
     timestamp: new Date()
   }]);
   const [isLoading, setIsLoading] = useState(false);
+  const [preprocessedData, setPreprocessedData] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Use the thread context
   const { threadId, assistantId } = useThread();
@@ -65,6 +67,30 @@ export const useChat = () => {
     return false;
   }, [threadId, assistantId]);
 
+  // Process message data if a preprocessor is provided
+  const preprocess = async (messageText: string) => {
+    if (!preprocessDataFn) return null;
+    
+    try {
+      setIsProcessing(true);
+      console.log('[useChat] Preprocessing message data');
+      const data = await preprocessDataFn(messageText);
+      setPreprocessedData(data);
+      console.log('[useChat] Data preprocessing completed');
+      return data;
+    } catch (error) {
+      console.error('[useChat] Error preprocessing data:', error);
+      toast({
+        variant: "destructive",
+        title: "Processing Error",
+        description: error instanceof Error ? error.message : "Failed to process message data"
+      });
+      return null;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +103,14 @@ export const useChat = () => {
     const userMessage = message.trim();
     setMessage("");
     
+    // Preprocess the message if needed
+    let processedData = null;
+    if (preprocessDataFn) {
+      processedData = await preprocess(userMessage);
+      // If preprocessing fails and is required, we might want to stop here
+      // But for now, we'll continue with the raw message
+    }
+    
     // Send the message to the thread
     const messageId = await sendThreadMessage(
       userMessage,
@@ -86,7 +120,8 @@ export const useChat = () => {
       setMessages,
       toast,
       addUserMessage,
-      addAssistantMessage
+      addAssistantMessage,
+      processedData
     );
     
     // Add the message ID to the set of processed message IDs
@@ -101,8 +136,11 @@ export const useChat = () => {
     messages,
     setMessages,
     isLoading,
+    isProcessing,
+    preprocessedData,
     handleSubmit,
     threadId,
-    fetchThreadMessages: fetchThreadMessagesHandler
+    fetchThreadMessages: fetchThreadMessagesHandler,
+    preprocess
   };
 };

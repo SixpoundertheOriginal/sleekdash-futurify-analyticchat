@@ -29,7 +29,8 @@ export const sendThreadMessage = async (
   setMessages: (updater: (prev: Message[]) => Message[]) => void,
   showToast: (props: any) => void,
   addUserMessage: (messages: Message[], content: string) => Message[],
-  addAssistantMessage: (messages: Message[], content: string, messageId?: string) => Message[]
+  addAssistantMessage: (messages: Message[], content: string, messageId?: string) => Message[],
+  preprocessData?: any
 ): Promise<string | null> => {
   const userMessage = message.trim();
   
@@ -39,7 +40,8 @@ export const sendThreadMessage = async (
   setMessages(prev => addUserMessage(prev, userMessage));
 
   try {
-    const functionData = await sendMessageToThread(userMessage, threadId, assistantId);
+    // Pass the preprocessed data if it exists
+    const functionData = await sendMessageToThread(userMessage, threadId, assistantId, preprocessData);
 
     // Check if there's an OpenAI error in the response
     if (functionData.error) {
