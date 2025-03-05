@@ -24,18 +24,19 @@ export function CollapsibleSection({
   // Generate a unique ID for ARIA attributes
   const sectionId = `section-${title.toLowerCase().replace(/\s+/g, '-')}`;
   const contentId = `content-${sectionId}`;
+  const headerId = `header-${sectionId}`;
 
   return (
     <div 
       className="border border-white/10 rounded-lg bg-white/5 overflow-hidden transition-all duration-200"
       role="region"
-      aria-labelledby={sectionId}
+      aria-labelledby={headerId}
     >
       <div 
         className="flex items-center justify-between p-3 sm:p-4 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
         role="button"
-        id={sectionId}
+        id={headerId}
         aria-expanded={isExpanded}
         aria-controls={contentId}
         tabIndex={0}
@@ -56,6 +57,7 @@ export function CollapsibleSection({
             setIsExpanded(!isExpanded);
           }}
           aria-label={isExpanded ? `Collapse ${title}` : `Expand ${title}`}
+          aria-pressed={isExpanded}
         >
           {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </Button>
