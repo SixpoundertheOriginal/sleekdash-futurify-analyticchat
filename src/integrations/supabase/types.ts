@@ -39,6 +39,48 @@ export type Database = {
         }
         Relationships: []
       }
+      app_analytics: {
+        Row: {
+          conversion_rate: number | null
+          crashes: number | null
+          date_range: string
+          downloads: number | null
+          growth_metrics: Json | null
+          id: string
+          impressions: number | null
+          page_views: number | null
+          proceeds: number | null
+          raw_metrics: Json | null
+          timestamp: string
+        }
+        Insert: {
+          conversion_rate?: number | null
+          crashes?: number | null
+          date_range: string
+          downloads?: number | null
+          growth_metrics?: Json | null
+          id?: string
+          impressions?: number | null
+          page_views?: number | null
+          proceeds?: number | null
+          raw_metrics?: Json | null
+          timestamp?: string
+        }
+        Update: {
+          conversion_rate?: number | null
+          crashes?: number | null
+          date_range?: string
+          downloads?: number | null
+          growth_metrics?: Json | null
+          id?: string
+          impressions?: number | null
+          page_views?: number | null
+          proceeds?: number | null
+          raw_metrics?: Json | null
+          timestamp?: string
+        }
+        Relationships: []
+      }
       keyword_analyses: {
         Row: {
           app_performance: string | null
