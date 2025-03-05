@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -12,25 +11,15 @@ import NotFound from './pages/NotFound';
 import { AuthProvider } from './components/AuthProvider';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      onSuccess: (data) => {
-        // Optional success handling
-      },
-      onError: (error) => {
-        console.error('Query error:', error);
-      }
+      staleTime: 5 * 60 * 1000,
     },
     mutations: {
       retry: 1,
-      onError: (error) => {
-        console.error('Mutation error:', error);
-      }
     }
   }
 });
