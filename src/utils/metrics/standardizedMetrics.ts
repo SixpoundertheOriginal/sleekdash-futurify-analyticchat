@@ -156,3 +156,76 @@ export function getStandardChartOptions(category: MetricCategory) {
       return baseOptions;
   }
 }
+
+/**
+ * Generate a consistent color scale for opportunity scores
+ * @param score Opportunity score value (typically 0-100)
+ * @returns Tailwind CSS color class
+ */
+export function getOpportunityColor(score: number): string {
+  if (score >= 75) return "text-green-400";
+  if (score >= 50) return "text-emerald-400";
+  if (score >= 35) return "text-yellow-400";
+  if (score >= 25) return "text-amber-400";
+  return "text-red-400";
+}
+
+/**
+ * Format metrics based on their category
+ * @param value The metric value to format
+ * @param category The category of the metric
+ * @returns Formatted string representation of the metric
+ */
+export function formatMetricByCategory(value: number, category: MetricCategory): string {
+  switch (category) {
+    case MetricCategory.FINANCIAL:
+      return formatCurrency(value);
+    case MetricCategory.OPPORTUNITY:
+    case MetricCategory.PERFORMANCE:
+      return formatPercentage(value);
+    case MetricCategory.ACQUISITION:
+      return formatMetricValue(value, { compact: true });
+    default:
+      return formatMetricValue(value);
+  }
+}
+
+/**
+ * Get standardized threshold values for different metric categories
+ * @param category The metric category
+ * @returns Object with low and medium threshold values
+ */
+export function getCategoryThresholds(category: MetricCategory): {low: number, medium: number} {
+  switch (category) {
+    case MetricCategory.OPPORTUNITY:
+      return { low: 30, medium: 60 };
+    case MetricCategory.PERFORMANCE:
+      return { low: 40, medium: 70 };
+    case MetricCategory.ENGAGEMENT:
+      return { low: 20, medium: 50 };
+    case MetricCategory.FINANCIAL:
+      return { low: 25, medium: 55 };
+    default:
+      return { low: 33, medium: 66 };
+  }
+}
+
+/**
+ * Determine if a metric change is significant based on its magnitude and category
+ * @param change The percentage change in the metric
+ * @param category The category of the metric
+ * @returns boolean indicating if the change is significant
+ */
+export function isSignificantChange(change: number, category: MetricCategory): boolean {
+  // Different thresholds for different metric categories
+  const thresholds: Record<MetricCategory, number> = {
+    [MetricCategory.ACQUISITION]: 10,
+    [MetricCategory.ENGAGEMENT]: 5,
+    [MetricCategory.PERFORMANCE]: 15,
+    [MetricCategory.OPPORTUNITY]: 20,
+    [MetricCategory.FINANCIAL]: 8,
+    [MetricCategory.TECHNICAL]: 25
+  };
+  
+  return Math.abs(change) >= thresholds[category];
+}

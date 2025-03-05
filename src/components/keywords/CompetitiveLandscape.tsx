@@ -1,8 +1,13 @@
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ProcessedKeywordData } from './types';
 import { CustomTooltip } from './CustomTooltip';
-import { formatPercentage, getValueBasedColor } from '@/utils/metrics/standardizedMetrics';
+import { 
+  formatPercentage, 
+  getValueBasedColor, 
+  getStandardChartOptions, 
+  MetricCategory 
+} from '@/utils/metrics/standardizedMetrics';
 
 interface CompetitiveLandscapeProps {
   data: ProcessedKeywordData[];
@@ -18,7 +23,10 @@ export function CompetitiveLandscape({ data }: CompetitiveLandscapeProps) {
   const sortedData = [...data].sort((a, b) => b.volume - a.volume).slice(0, 8);
   console.log("CompetitiveLandscape data:", sortedData.length, "items");
 
-  // Custom coloring function for the bars
+  // Get standard chart options for competitive metrics
+  const chartOptions = getStandardChartOptions(MetricCategory.OPPORTUNITY);
+
+  // Custom coloring function for the bars using standardized utilities
   const getChanceColor = (chance: number) => getValueBasedColor(chance, { low: 30, medium: 60 });
   const getDifficultyColor = (difficulty: number) => {
     // Inverse the value since lower difficulty is better
@@ -39,33 +47,46 @@ export function CompetitiveLandscape({ data }: CompetitiveLandscapeProps) {
             layout="vertical"
             margin={{ top: 5, right: 30, left: 140, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={false} />
-            <XAxis type="number" domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke={chartOptions.grid.stroke} 
+              horizontal={false} 
+            />
+            <XAxis 
+              type="number" 
+              domain={[0, 100]} 
+              tick={{ fill: chartOptions.text.fill }} 
+            />
             <YAxis 
               type="category" 
               dataKey="keyword" 
               width={140} 
-              tick={{ fill: '#9ca3af' }}
+              tick={{ fill: chartOptions.text.fill }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip 
+              content={<CustomTooltip />} 
+              contentStyle={chartOptions.tooltip.contentStyle}
+            />
             <Bar 
               dataKey="difficulty" 
               name="Difficulty Score" 
-              fill="#f87171" 
               barSize={12}
-              // Use a custom fill color based on difficulty value
-              // Lower difficulty is better (green), higher is worse (red)
               fillOpacity={0.9}
-            />
+            >
+              {sortedData.map((entry, index) => (
+                <Cell key={`difficulty-${index}`} fill={getDifficultyColor(entry.difficulty)} />
+              ))}
+            </Bar>
             <Bar 
               dataKey="chance" 
               name="Ranking Chance %" 
-              fill="#4ade80" 
               barSize={12}
-              // Use a custom fill color based on chance value
-              // Higher chance is better (green), lower is worse (red)
               fillOpacity={0.9}
-            />
+            >
+              {sortedData.map((entry, index) => (
+                <Cell key={`chance-${index}`} fill={getChanceColor(entry.chance)} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>

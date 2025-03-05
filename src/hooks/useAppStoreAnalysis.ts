@@ -5,6 +5,9 @@ import { useAnalyticsPersistence, UseAnalyticsPersistenceReturn } from "./analyt
 import { useAnalyticsHandlers, UseAnalyticsHandlersReturn } from "./analytics/useAnalyticsHandlers";
 import { useChat } from "@/hooks/useChat"; 
 import { useThread as useThreadContext } from "@/contexts/thread/ThreadContext";
+import { findCrossDomainCorrelations, CorrelationResult } from "@/utils/analytics/correlation/dataCorrelation";
+import { useKeywordAnalytics } from "./useKeywordAnalytics";
+import { useState, useEffect } from "react";
 
 export interface UseAppStoreAnalysisParams {
   initialData?: ProcessedAnalytics;
@@ -13,6 +16,8 @@ export interface UseAppStoreAnalysisParams {
 export interface UseAppStoreAnalysisReturn extends UseAnalyticsStateReturn, UseAnalyticsHandlersReturn {
   chatThreadId: string;
   chatAssistantId: string;
+  correlations: CorrelationResult[];
+  hasCorrelationData: boolean;
 }
 
 /**
@@ -21,6 +26,8 @@ export interface UseAppStoreAnalysisReturn extends UseAnalyticsStateReturn, UseA
 export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams): UseAppStoreAnalysisReturn {
   // Use smaller hooks for specific concerns
   const state = useAnalyticsState({ initialData });
+  const [correlations, setCorrelations] = useState<CorrelationResult[]>([]);
+  const [hasCorrelationData, setHasCorrelationData] = useState(false);
   
   // Get the thread context to access the feature-specific thread IDs
   const threadContext = useThreadContext();
@@ -30,7 +37,29 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams):
   const appStoreAssistantId = threadContext.getFeatureAssistantId('appStore');
   
   // Set up chat with the appStore feature
-  const chat = useChat({ feature: 'appStore' }); // Using useChat instead of useThread
+  const chat = useChat({ feature: 'appStore' });
+  
+  // Get keyword data to calculate correlations
+  const { keywordData } = useKeywordAnalytics();
+  
+  // Calculate correlations when both data sources are available
+  useEffect(() => {
+    if (state.processedAnalytics && keywordData && keywordData.length > 0) {
+      try {
+        const correlationResults = findCrossDomainCorrelations(
+          state.processedAnalytics,
+          keywordData
+        );
+        setCorrelations(correlationResults);
+        setHasCorrelationData(true);
+      } catch (error) {
+        console.error("Error calculating correlations:", error);
+        setHasCorrelationData(false);
+      }
+    } else {
+      setHasCorrelationData(false);
+    }
+  }, [state.processedAnalytics, keywordData]);
   
   const { saveAnalytics } = useAnalyticsPersistence({
     processedAnalytics: state.processedAnalytics,
@@ -53,7 +82,9 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams):
   return {
     ...state,
     ...handlers,
-    chatThreadId: appStoreThreadId, // Use the App Store specific thread ID
-    chatAssistantId: appStoreAssistantId // Use the App Store specific assistant ID
+    chatThreadId: appStoreThreadId,
+    chatAssistantId: appStoreAssistantId,
+    correlations,
+    hasCorrelationData
   };
 }
