@@ -1,8 +1,19 @@
 
-import { Info, Sparkles, Trash2, RefreshCw, BarChart2 } from "lucide-react";
+import { Info, Sparkles, Trash2, RefreshCw, BarChart2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import { DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 
 interface ChatHeaderProps {
@@ -10,7 +21,8 @@ interface ChatHeaderProps {
   assistantId: string;
   isCreatingThread: boolean;
   onClearConversation: () => void;
-  onToggleStats?: () => void;  // Added this property
+  onToggleStats?: () => void;
+  onExportChat?: (format: 'json' | 'csv' | 'pdf') => void;
 }
 
 export function ChatHeader({ 
@@ -18,7 +30,8 @@ export function ChatHeader({
   assistantId, 
   isCreatingThread, 
   onClearConversation,
-  onToggleStats
+  onToggleStats,
+  onExportChat
 }: ChatHeaderProps) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-white/10 p-3 bg-primary/10">
@@ -63,6 +76,31 @@ export function ChatHeader({
           >
             <BarChart2 className="h-3.5 w-3.5" />
           </Button>
+        )}
+        
+        {onExportChat && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-primary/20 border-primary/30 hover:bg-primary/30 text-white text-xs"
+              >
+                <Download className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-primary-foreground/5 backdrop-blur-xl border border-white/10 text-white">
+              <DropdownMenuItem onClick={() => onExportChat('json')} className="cursor-pointer hover:bg-primary/20">
+                Export as JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExportChat('csv')} className="cursor-pointer hover:bg-primary/20">
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExportChat('pdf')} className="cursor-pointer hover:bg-primary/20">
+                Export as PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
         
         <Button

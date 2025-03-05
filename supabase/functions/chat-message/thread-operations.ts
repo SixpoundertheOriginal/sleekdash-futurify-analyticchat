@@ -1,127 +1,194 @@
 
-import { corsHeaders, createResponse, handleError } from './utils.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { extractMessageContent } from './utils.ts';
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-// Function to retrieve messages from a thread
 export async function getMessagesFromThread(threadId: string) {
-  console.log('[chat-message] Retrieving messages from thread');
-  
-  const listResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2'
-    }
-  });
-  
-  if (!listResponse.ok) {
-    const errorText = await listResponse.text();
-    console.error('[chat-message] Error retrieving thread messages:', errorText);
-    throw new Error(`Failed to retrieve thread messages: ${errorText}`);
-  }
-  
-  const messagesData = await listResponse.json();
-  console.log('[chat-message] Retrieved messages count:', messagesData.data?.length || 0);
-  
-  return messagesData.data || [];
-}
-
-// Function to add a message to a thread
-export async function addMessageToThread(threadId: string, message: string) {
-  console.log('[chat-message] Adding user message to thread:', message.substring(0, 100) + (message.length > 100 ? '...' : ''));
-  
-  const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2'
-    },
-    body: JSON.stringify({
-      role: 'user',
-      content: message
-    }),
-  });
-
-  if (!messageResponse.ok) {
-    const errorText = await messageResponse.text();
-    console.error('[chat-message] Error adding message to thread:', errorText);
-    throw new Error(`Failed to add message to thread: ${errorText}`);
-  }
-  
-  console.log('[chat-message] Message added to thread successfully');
-}
-
-// Function to run the assistant on a thread
-export async function runAssistantOnThread(threadId: string, assistantId: string) {
-  console.log('[chat-message] Running assistant on thread');
-  
-  const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2'
-    },
-    body: JSON.stringify({
-      assistant_id: assistantId
-    }),
-  });
-
-  if (!runResponse.ok) {
-    const errorText = await runResponse.text();
-    console.error('[chat-message] Error running assistant:', errorText);
-    throw new Error(`Failed to run assistant: ${errorText}`);
-  }
-  
-  const runData = await runResponse.json();
-  console.log('[chat-message] Assistant run initiated:', runData.id);
-  return runData;
-}
-
-// Function to wait for a run to complete
-export async function waitForRunCompletion(threadId: string, runId: string) {
-  let runStatus: any = { status: 'in_progress' };
-  let attempts = 0;
-  const maxAttempts = 30; // Timeout after 30 attempts (90 seconds)
-  
-  while (runStatus.status !== 'completed' && runStatus.status !== 'failed' && attempts < maxAttempts) {
-    console.log(`[chat-message] Waiting for assistant run to complete. Current status: ${runStatus.status}, attempt: ${attempts + 1}`);
+  try {
+    console.log(`[thread-operations] Fetching messages from thread: ${threadId}`);
     
-    // Wait 3 seconds before checking again
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Check the status of the run
-    const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
+    const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages?limit=50&order=desc`, {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`[thread-operations] OpenAI API error: ${error}`);
+      throw new Error(`Failed to get messages from thread: ${error}`);
+    }
+
+    const data = await response.json();
+    console.log(`[thread-operations] Fetched ${data.data.length} messages from thread`);
+    
+    return data.data;
+  } catch (error) {
+    console.error('[thread-operations] Error fetching messages:', error);
+    throw new Error(`Failed to get messages from thread: ${error.message}`);
+  }
+}
+
+export async function sendMessageToThread(threadId: string, message: string) {
+  try {
+    console.log(`[thread-operations] Sending message to thread: ${threadId}`);
+    console.log(`[thread-operations] Message: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`);
+    
+    const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
         'OpenAI-Beta': 'assistants=v2'
       },
+      body: JSON.stringify({
+        role: 'user',
+        content: message
+      })
     });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`[thread-operations] OpenAI API error: ${error}`);
+      throw new Error(`Failed to send message to thread: ${error}`);
+    }
+
+    const data = await response.json();
+    console.log(`[thread-operations] Message sent with ID: ${data.id}`);
     
-    if (!statusResponse.ok) {
-      const errorText = await statusResponse.text();
-      console.error('[chat-message] Error checking run status:', errorText);
-      throw new Error(`Failed to check run status: ${errorText}`);
+    return data.id;
+  } catch (error) {
+    console.error('[thread-operations] Error sending message:', error);
+    throw new Error(`Failed to send message to thread: ${error.message}`);
+  }
+}
+
+export async function runAssistantOnThread(threadId: string, assistantId: string) {
+  try {
+    console.log(`[thread-operations] Running assistant ${assistantId} on thread ${threadId}`);
+    
+    const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        assistant_id: assistantId
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`[thread-operations] OpenAI API error: ${error}`);
+      throw new Error(`Failed to run assistant on thread: ${error}`);
+    }
+
+    const data = await response.json();
+    console.log(`[thread-operations] Run started with ID: ${data.id}`);
+    
+    // Option to poll for completion if needed
+    await waitForRunCompletion(threadId, data.id);
+    
+    return data.id;
+  } catch (error) {
+    console.error('[thread-operations] Error running assistant:', error);
+    throw new Error(`Failed to run assistant on thread: ${error.message}`);
+  }
+}
+
+async function waitForRunCompletion(threadId: string, runId: string) {
+  try {
+    let status = 'queued';
+    let attempts = 0;
+    const maxAttempts = 20; // Prevent infinite loops
+    
+    while (status !== 'completed' && status !== 'failed' && attempts < maxAttempts) {
+      console.log(`[thread-operations] Checking run status (attempt ${attempts + 1}): ${status}`);
+      
+      // Avoid polling too quickly
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        console.error(`[thread-operations] Error checking run status: ${error}`);
+        break;
+      }
+      
+      const data = await response.json();
+      status = data.status;
+      attempts++;
+      
+      if (status === 'failed') {
+        console.error(`[thread-operations] Run failed:`, data.last_error);
+        throw new Error(`Assistant run failed: ${data.last_error?.message || 'Unknown error'}`);
+      }
     }
     
-    runStatus = await statusResponse.json();
-    attempts++;
+    console.log(`[thread-operations] Run completed with final status: ${status}`);
+    return status === 'completed';
+  } catch (error) {
+    console.error('[thread-operations] Error waiting for run completion:', error);
+    return false;
   }
-  
-  if (runStatus.status === 'failed') {
-    console.error('[chat-message] Assistant run failed:', runStatus.last_error);
-    throw new Error(`Assistant run failed: ${runStatus.last_error?.message || 'Unknown error'}`);
+}
+
+export async function exportChatHistory(threadId: string, format: 'json' | 'csv' | 'pdf' = 'json') {
+  try {
+    console.log(`[thread-operations] Exporting chat history from thread: ${threadId} in ${format} format`);
+    
+    // Get all messages from the thread
+    const messages = await getMessagesFromThread(threadId);
+    
+    // Format messages based on requested format
+    if (format === 'json') {
+      return {
+        success: true,
+        data: messages,
+        format: 'json'
+      };
+    }
+    
+    if (format === 'csv') {
+      // Create CSV format
+      const headers = 'timestamp,role,content\n';
+      const rows = messages.map((msg: any) => {
+        const content = extractMessageContent(msg);
+        const timestamp = new Date(msg.created_at).toISOString();
+        return `"${timestamp}","${msg.role}","${content.replace(/"/g, '""')}"`; // Escape quotes
+      }).join('\n');
+      
+      return {
+        success: true,
+        data: headers + rows,
+        format: 'csv'
+      };
+    }
+    
+    // For PDF we'd typically generate this server-side with a library
+    // Since we can't do that in an edge function, we'd return data to be formatted
+    // client-side, or use a dedicated PDF service
+    return {
+      success: true,
+      data: messages,
+      format: 'pdf_ready_data'
+    };
+  } catch (error) {
+    console.error('[thread-operations] Error exporting chat history:', error);
+    throw new Error(`Failed to export chat history: ${error.message}`);
   }
-  
-  if (attempts >= maxAttempts) {
-    console.error('[chat-message] Timeout waiting for assistant run to complete');
-    throw new Error('Timeout waiting for assistant run to complete');
-  }
-  
-  console.log('[chat-message] Assistant run completed successfully');
-  return runStatus;
 }

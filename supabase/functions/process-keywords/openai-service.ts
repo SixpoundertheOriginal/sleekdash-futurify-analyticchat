@@ -18,7 +18,15 @@ export async function analyzeKeywords(data: any[]) {
         messages: [
           {
             role: 'system',
-            content: 'You are an ASO expert analyzing keyword data. Provide insights on keyword trends, ranking opportunities, and optimization recommendations.'
+            content: `You are an ASO expert analyzing keyword data. 
+            Provide detailed insights including:
+            1. Keyword performance trends
+            2. Ranking opportunities with specific metrics
+            3. Competitor insights and gap analysis
+            4. Specific optimization recommendations with expected impact
+            5. User search intent patterns
+            6. Seasonal trends if applicable
+            Format your response with clear sections and actionable insights.`
           },
           {
             role: 'user',
@@ -64,11 +72,13 @@ export async function addToThread(threadId: string, data: any[], dataSample: any
 ${JSON.stringify(dataSample, null, 2)}
 \`\`\`
 
-Please analyze this keyword data for App Store Optimization. Focus on:
-1. Identifying high-opportunity keywords (based on volume, difficulty, and relevance)
-2. Suggesting keyword combinations for app metadata
-3. Providing insights on user search behavior
-4. Recommending an optimization strategy based on the data`;
+Please provide a comprehensive keyword analysis focusing on:
+1. High-opportunity keywords (based on search volume, difficulty, and relevance)
+2. Strategic keyword combinations for app metadata optimization
+3. User search behavior patterns and intent analysis
+4. Competitive gap analysis based on the keyword landscape
+5. Specific optimization recommendations with estimated impact
+6. Seasonal trends or patterns if detectable in the data`;
       
     console.log('[process-keywords] Sending message to OpenAI thread with content:', fileUploadContent.substring(0, 100) + '...');
     
@@ -125,5 +135,25 @@ export async function runAssistant(threadId: string, assistantId: string) {
   } catch (error) {
     console.error('[process-keywords] Error running assistant:', error);
     return { error: error.message };
+  }
+}
+
+// Additional function to process multiple file formats
+export async function processFileFormat(fileContent: string, fileType: string) {
+  console.log(`[process-keywords] Processing file of type: ${fileType}`);
+  
+  try {
+    // Here we could add specific parsing logic based on file type
+    // For now, we just return the content as is, the file-processor will handle it
+    return {
+      success: true,
+      data: fileContent
+    };
+  } catch (error) {
+    console.error(`[process-keywords] Error processing ${fileType} file:`, error);
+    return {
+      success: false,
+      error: `Failed to process ${fileType} file: ${error.message}`
+    };
   }
 }

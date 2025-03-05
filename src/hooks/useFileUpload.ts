@@ -7,6 +7,8 @@ import { processExcelFile, validateFileContent, validateFileType } from "@/utils
 export function useFileUpload(threadId: string | null, assistantId: string | null) {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleDrag = (e: React.DragEvent) => {
@@ -20,11 +22,16 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
   };
 
   const processFile = async (file: File) => {
+    setError(null);
+    
     if (!await validateFileType(file, toast)) {
+      setError(`Invalid file type: ${file.name}. Please upload an Excel or CSV file.`);
       return;
     }
 
     setUploading(true);
+    setProgress(10);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -40,6 +47,7 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
       }
 
       let fileContent = '';
+      setProgress(20);
       
       // Process based on file type
       if (file.name.endsWith('.csv')) {
@@ -49,8 +57,21 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
         // For Excel files
         fileContent = await processExcelFile(file);
       }
+      
+      setProgress(40);
 
-      await validateFileContent(fileContent);
+      try {
+        await validateFileContent(fileContent);
+      } catch (validationError) {
+        toast({
+          variant: "destructive",
+          title: "File validation failed",
+          description: validationError.message
+        });
+        throw validationError;
+      }
+      
+      setProgress(50);
 
       // Call the Edge Function with file content
       toast({
@@ -68,6 +89,8 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
           }
         }
       );
+      
+      setProgress(80);
 
       if (functionError) {
         console.error('[FileUpload] Function error:', functionError);
@@ -79,6 +102,7 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
       }
 
       console.log('[FileUpload] Function response:', functionData);
+      setProgress(90);
 
       // Check if there's an OpenAI error in the response
       if (functionData.error) {
@@ -94,6 +118,8 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
           description: "Your keywords have been processed successfully."
         });
       }
+      
+      setProgress(95);
 
       // Store the analysis in the database with explicitly specified columns
       const { error: dbError } = await supabase
@@ -107,6 +133,8 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
           created_at: new Date().toISOString(),
           user_id: user.id
         });
+        
+      setProgress(100);
 
       if (dbError) {
         console.error('[FileUpload] Database error:', dbError);
@@ -115,6 +143,7 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
 
     } catch (error) {
       console.error('[FileUpload] Error processing file:', error);
+      setError(error.message || "Failed to process the file. Please try again.");
       toast({
         variant: "destructive",
         title: "Error",
@@ -122,14 +151,25 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
       });
     } finally {
       setUploading(false);
+      setProgress(0);
     }
+  };
+
+  const resetState = () => {
+    setDragActive(false);
+    setUploading(false);
+    setProgress(0);
+    setError(null);
   };
 
   return {
     dragActive,
     uploading,
+    progress,
+    error,
     handleDrag,
     processFile,
-    setDragActive
+    setDragActive,
+    resetState
   };
 }

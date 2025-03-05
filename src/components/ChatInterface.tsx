@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useChat } from "@/hooks/useChat";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
@@ -9,6 +10,9 @@ import { ChatNotifications } from "@/components/chat/ChatNotifications";
 import { ChatMessageList } from "@/components/chat/ChatMessageList";
 import { useMessagePolling } from "@/hooks/useMessagePolling";
 import { ChatStats } from "@/components/chat/ChatStats";
+import { exportChatHistory } from "@/services/export-service";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { X } from "lucide-react";
 
 export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (message: string) => Promise<any> }) {
   
@@ -27,6 +31,7 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
   const { toast } = useToast();
   const [isCreatingThread, setIsCreatingThread] = useState(false);
   const [showStats, setShowStats] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const { isCheckingForResponses, lastFileUpload, clearPollingTimers } = useMessagePolling({
     threadId,
@@ -54,6 +59,7 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
       }
     } catch (error) {
       console.error('[ChatInterface] Error creating new thread:', error);
+      setError('Failed to create a new conversation thread. Please try again.');
     } finally {
       setIsCreatingThread(false);
     }
@@ -74,6 +80,7 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
       });
     } catch (error) {
       console.error('[ChatInterface] Error clearing conversation:', error);
+      setError('Failed to clear the conversation. Please try again.');
     } finally {
       setIsCreatingThread(false);
     }
@@ -103,6 +110,38 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
     // In a real app, you would send this to your backend
   };
 
+  const handleExportChat = async (format: 'json' | 'csv' | 'pdf') => {
+    if (!threadId) {
+      setError('Cannot export: No active conversation thread.');
+      return;
+    }
+    
+    try {
+      toast({
+        title: "Exporting conversation",
+        description: `Preparing your ${format.toUpperCase()} export...`
+      });
+      
+      await exportChatHistory(threadId, format);
+      
+      toast({
+        title: "Export complete",
+        description: `Your conversation has been exported as ${format.toUpperCase()}.`
+      });
+    } catch (error) {
+      console.error('[ChatInterface] Export error:', error);
+      setError(`Failed to export conversation: ${error.message}`);
+      
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: "Could not export your conversation. Please try again."
+      });
+    }
+  };
+
+  const dismissError = () => setError(null);
+
   return (
     <div className="flex h-[700px] gap-4">
       <Card className="flex flex-1 flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg overflow-hidden">
@@ -112,7 +151,19 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
           isCreatingThread={isCreatingThread}
           onClearConversation={handleClearConversation}
           onToggleStats={() => setShowStats(prev => !prev)}
+          onExportChat={handleExportChat}
         />
+        
+        {error && (
+          <Alert variant="destructive" className="mx-3 mt-2 bg-red-500/10 text-red-200 border-red-500/20">
+            <AlertDescription className="flex justify-between items-center">
+              <span>{error}</span>
+              <button onClick={dismissError} className="p-1">
+                <X className="h-4 w-4" />
+              </button>
+            </AlertDescription>
+          </Alert>
+        )}
         
         <ChatNotifications
           isValidThread={isValidThread}
