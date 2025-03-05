@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { FormHeader } from "./FormHeader";
 import { FormInput } from "./FormInput";
@@ -22,6 +21,8 @@ interface AppStoreFormProps {
   setAnalyzing: (analyzing: boolean) => void;
   dateRange: DateRange | null;
   onDateRangeChange: (dateRange: DateRange | null) => void;
+  threadId?: string;
+  assistantId?: string;
 }
 
 export function AppStoreForm({
@@ -33,7 +34,9 @@ export function AppStoreForm({
   setProcessing,
   setAnalyzing,
   dateRange,
-  onDateRangeChange
+  onDateRangeChange,
+  threadId,
+  assistantId
 }: AppStoreFormProps) {
   const { toast } = useToast();
   const { setActiveFeature, getFeatureAssistantId } = useThread();
@@ -57,6 +60,8 @@ export function AppStoreForm({
     setActiveFeature('appStore');
     console.log('[AppStoreForm] Set active feature to appStore');
     console.log('[AppStoreForm] Using App Store assistant ID:', appStoreAssistantId);
+    console.log('[AppStoreForm] Thread ID from props:', threadId);
+    console.log('[AppStoreForm] Assistant ID from props:', assistantId);
   });
 
   const handleProcessAndAnalyze = () => {
