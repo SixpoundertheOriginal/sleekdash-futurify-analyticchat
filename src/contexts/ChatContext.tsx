@@ -39,7 +39,8 @@ export function ChatContextProvider({ children, initialState }: {
   const [isLoading, setIsLoading] = useState(initialState?.isLoading || false);
   const [isProcessing, setIsProcessing] = useState(initialState?.isProcessing || false);
   const [isCreatingThread, setIsCreatingThread] = useState(initialState?.isCreatingThread || false);
-  const [showStats, setShowStats] = useState(initialState?.showStats || true);
+  // Fix: Explicitly declare the state as boolean type instead of letting it infer as literal 'true'
+  const [showStats, setShowStats] = useState<boolean>(initialState?.showStats !== undefined ? initialState.showStats : true);
   const [error, setError] = useState<string | null>(initialState?.error || null);
   const [dateRange, setDateRange] = useState<DateRange | null>(initialState?.dateRange || null);
   const [isDateRangeSelected, setIsDateRangeSelected] = useState(initialState?.isDateRangeSelected || false);
