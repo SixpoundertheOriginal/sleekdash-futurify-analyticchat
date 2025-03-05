@@ -11,7 +11,8 @@ import {
   CartesianGrid, 
   Tooltip, 
   BarChart, 
-  Bar
+  Bar,
+  CategoricalChartState
 } from 'recharts';
 
 interface DataPoint {
@@ -28,7 +29,7 @@ interface InteractiveChartProps {
     name: string;
   }[];
   height?: number;
-  formatter?: (value: number, key?: string) => string;
+  formatter?: (value: any, index?: any) => string;
   isAnimated?: boolean;
   showGrid?: boolean;
   onPointHover?: (point: DataPoint | null) => void;
@@ -58,11 +59,11 @@ export function InteractiveChart({
     return () => clearTimeout(timer);
   }, []);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!containerRef.current || !data.length) return;
+  const handleMouseMove = (state: CategoricalChartState) => {
+    if (!containerRef.current || !data.length || !state.activeCoordinate) return;
     
     const containerRect = containerRef.current.getBoundingClientRect();
-    const xPosition = e.clientX - containerRect.left;
+    const xPosition = state.activeCoordinate.x;
     const xRatio = xPosition / containerRect.width;
     const dataIndex = Math.floor(xRatio * data.length);
     
@@ -97,7 +98,7 @@ export function InteractiveChart({
                 />
                 <p className="text-white/80 font-mono text-xs">
                   {entry.name}: {formatter 
-                    ? formatter(entry.value, entry.dataKey) 
+                    ? formatter(entry.value) 
                     : entry.value
                   }
                 </p>
