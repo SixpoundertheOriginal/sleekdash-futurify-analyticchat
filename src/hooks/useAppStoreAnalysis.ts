@@ -4,7 +4,7 @@ import { useAnalyticsState, UseAnalyticsStateReturn } from "./analytics/useAnaly
 import { useAnalyticsPersistence, UseAnalyticsPersistenceReturn } from "./analytics/useAnalyticsPersistence";
 import { useAnalyticsHandlers, UseAnalyticsHandlersReturn } from "./analytics/useAnalyticsHandlers";
 import { useChat } from "@/hooks/useChat"; 
-import { useThread as useThreadContext } from "@/contexts/ThreadContext";
+import { useThread as useThreadContext } from "@/contexts/thread/ThreadContext";
 
 export interface UseAppStoreAnalysisParams {
   initialData?: ProcessedAnalytics;

@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from './components/AuthProvider';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Lazy load route components
 const Index = lazy(() => import('./pages/Index'));
@@ -30,6 +32,28 @@ const PageLoader = () => (
   </div>
 );
 
+// Custom error fallback component
+const ErrorFallback = () => (
+  <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-[#1A1F2C] to-[#2d3748] p-8 text-white">
+    <div className="max-w-md w-full p-6 rounded-lg border border-white/10 bg-white/5">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="p-3 rounded-full bg-rose-500/20">
+          <AlertCircle className="h-8 w-8 text-rose-400" />
+        </div>
+        <h2 className="text-xl font-semibold">Something went wrong</h2>
+        <p className="text-white/70">We encountered an error while loading the application.</p>
+        <Button 
+          className="mt-2" 
+          variant="outline"
+          onClick={() => window.location.reload()}
+        >
+          Refresh the page
+        </Button>
+      </div>
+    </div>
+  </div>
+);
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -45,7 +69,7 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <ErrorBoundary fallback={<div className="p-8 text-white">Something went wrong. Please refresh the page.</div>}>
+    <ErrorBoundary fallback={<ErrorFallback />}>
       <QueryClientProvider client={queryClient}>
         <Router>
           <AuthProvider>
