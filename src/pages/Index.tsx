@@ -2,7 +2,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
-import { AppStoreAnalysis } from "@/components/AppStoreAnalysis";
+import { AppStoreAnalysis } from "@/components/app-store/AppStoreAnalysis";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 
 // Enhanced initial data for demonstration purposes
