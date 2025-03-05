@@ -53,6 +53,9 @@ export function AppStoreTabs({
   // Create a combined data object that uses the full processed analytics if available,
   // or falls back to directly extracted metrics
   const dashboardData = processedAnalytics || directlyExtractedMetrics as ProcessedAnalytics || initialData;
+  
+  // Combine both processing states to determine if we're loading analysis
+  const isLoadingAnalysis = isProcessing || isAnalyzing;
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -91,13 +94,10 @@ export function AppStoreTabs({
       </TabsContent>
       
       <TabsContent value="analysis" className="pt-4">
-        {analysisResult ? (
-          <AnalysisResultCard analysisResult={analysisResult} />
-        ) : (
-          <Card className="p-6 bg-white/5 border-white/10">
-            <p className="text-white/60">Submit your app data for analysis to see results here.</p>
-          </Card>
-        )}
+        <AnalysisResultCard 
+          analysisResult={analysisResult} 
+          isLoading={isLoadingAnalysis} 
+        />
       </TabsContent>
       
       <TabsContent value="dashboard" className="pt-4">

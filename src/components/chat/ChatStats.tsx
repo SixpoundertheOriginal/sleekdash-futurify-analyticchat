@@ -4,6 +4,7 @@ import { Message } from "@/types/chat";
 import { PinIcon, Clock, MessageSquare, FilePlus, ChevronRight, User2, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { useChatContext } from "@/contexts/ChatContext";
 
 interface ChatStatsProps {
   messages: Message[];
@@ -14,6 +15,7 @@ interface ChatStatsProps {
 export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsProps) {
   const [pinnedInsights, setPinnedInsights] = useState<Message[]>([]);
   const [showAllInsights, setShowAllInsights] = useState(false);
+  const { isCheckingForResponses } = useChatContext();
   
   // Calculate stats
   const totalMessages = messages.length;
@@ -128,7 +130,7 @@ export function ChatStats({ messages, lastFileUpload, isProcessing }: ChatStatsP
               </div>
               <span className="text-xs text-white/60">{lastFileUpload ? formatTimeAgo(lastFileUpload) : 'None'}</span>
             </div>
-            {lastFileUpload && isProcessing && (
+            {lastFileUpload && (isProcessing || isCheckingForResponses) && (
               <p className="text-xs text-primary/70 mt-1">Processing in progress...</p>
             )}
           </div>

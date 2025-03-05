@@ -22,6 +22,7 @@ interface ChatContextType {
   setIsDateRangeSelected: (selected: boolean) => void;
   lastFileUpload: Date | null;
   isCheckingForResponses: boolean;
+  setIsCheckingForResponses: (isChecking: boolean) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -71,7 +72,8 @@ export function ChatContextProvider({ children, initialState }: {
       isDateRangeSelected,
       setIsDateRangeSelected,
       lastFileUpload,
-      isCheckingForResponses
+      isCheckingForResponses,
+      setIsCheckingForResponses
     }}>
       {children}
     </ChatContext.Provider>
