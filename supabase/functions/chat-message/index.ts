@@ -14,6 +14,14 @@ const ASSISTANT_IDS = {
   general: 'asst_EYm70EgIE2okxc8onNc1DVTj'
 };
 
+// Default thread IDs for each feature
+const DEFAULT_THREAD_IDS = {
+  keywords: 'thread_XexaKEggRcir8kQLQbbLqqy9',
+  appStore: 'thread_d5BLFmp47v8EbWacFTjs6sgh',
+  marketing: 'thread_XexaKEggRcir8kQLQbbLqqy9',
+  general: 'thread_XexaKEggRcir8kQLQbbLqqy9'
+};
+
 // Main serve function
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -30,8 +38,8 @@ serve(async (req) => {
     console.log('[chat-message] Received body:', body);
     
     // Get thread ID and assistant ID, with feature-based fallbacks
-    const threadId = body.threadId || DEFAULT_THREAD_ID;
     const feature = body.feature || 'general';
+    const threadId = body.threadId || DEFAULT_THREAD_IDS[feature] || DEFAULT_THREAD_ID;
     
     // Select the proper assistant ID based on feature or use provided assistant ID
     const assistantId = body.assistantId || ASSISTANT_IDS[feature] || ASSISTANT_IDS.general;

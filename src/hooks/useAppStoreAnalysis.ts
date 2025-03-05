@@ -3,6 +3,7 @@ import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { useAnalyticsState } from "./analytics/useAnalyticsState";
 import { useAnalyticsPersistence } from "./analytics/useAnalyticsPersistence";
 import { useAnalyticsHandlers } from "./analytics/useAnalyticsHandlers";
+import { useChat } from "@/hooks/useChat";
 
 interface UseAppStoreAnalysisParams {
   initialData?: ProcessedAnalytics;
@@ -14,6 +15,9 @@ interface UseAppStoreAnalysisParams {
 export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) {
   // Use smaller hooks for specific concerns
   const state = useAnalyticsState({ initialData });
+  
+  // Set up chat with the appStore feature
+  const chat = useChat({ feature: 'appStore' });
   
   const { saveAnalytics } = useAnalyticsPersistence({
     processedAnalytics: state.processedAnalytics,
@@ -35,6 +39,8 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisParams) 
   // Return all the state and handlers needed by components
   return {
     ...state,
-    ...handlers
+    ...handlers,
+    chatThreadId: chat.threadId,
+    chatAssistantId: chat.assistantId
   };
 }

@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-const DEFAULT_THREAD_ID = 'thread_XexaKEggRcir8kQLQbbLqqy9';
+const DEFAULT_THREAD_ID = 'thread_d5BLFmp47v8EbWacFTjs6sgh';
 const DEFAULT_ASSISTANT_ID = 'asst_TfGVD0dcL2vsnPCihybxorC7';
 
 serve(async (req) => {

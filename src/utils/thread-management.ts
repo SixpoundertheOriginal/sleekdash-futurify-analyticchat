@@ -25,7 +25,7 @@ export const ASSISTANT_IDS = {
 // Define the default thread IDs (one per feature)
 export const DEFAULT_THREAD_IDS = {
   keywords: 'thread_XexaKEggRcir8kQLQbbLqqy9',
-  appStore: 'thread_XexaKEggRcir8kQLQbbLqqy9', // Uses same thread for now, but can be separated
+  appStore: 'thread_d5BLFmp47v8EbWacFTjs6sgh', // Updated to use the specified thread ID
   marketing: 'thread_XexaKEggRcir8kQLQbbLqqy9',
   general: 'thread_XexaKEggRcir8kQLQbbLqqy9'
 };

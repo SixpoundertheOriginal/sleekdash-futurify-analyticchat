@@ -25,8 +25,14 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
     setAnalyzing,
     handleProcessSuccess,
     handleAnalysisSuccess,
-    handleDirectExtractionSuccess
+    handleDirectExtractionSuccess,
+    chatThreadId,
+    chatAssistantId
   } = useAppStoreAnalysis({ initialData });
+
+  // Log thread and assistant IDs for debugging
+  console.log(`[AppStoreAnalysis] Using thread ID: ${chatThreadId}`);
+  console.log(`[AppStoreAnalysis] Using assistant ID: ${chatAssistantId}`);
 
   return (
     <div className="space-y-6 relative">
@@ -50,6 +56,8 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         onDirectExtractionSuccess={handleDirectExtractionSuccess}
         setProcessing={setProcessing}
         setAnalyzing={setAnalyzing}
+        threadId={chatThreadId}
+        assistantId={chatAssistantId}
       />
     </div>
   );
