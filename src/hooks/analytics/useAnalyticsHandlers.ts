@@ -1,10 +1,10 @@
-
 import { useToast } from "@/components/ui/use-toast";
 import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { processAnalysisText } from "@/utils/analytics/processAnalysis";
 import { storeAnalyticsData } from "@/utils/message-content/metrics/persistence";
 import { hasValidMetricsForVisualization } from "@/utils/analytics/offline/directExtraction";
 import { DateRange } from "@/components/chat/DateRangePicker";
+import { ToastAction } from "@/components/ui/toast";
 
 export interface UseAnalyticsHandlersParams {
   setExtractedData: (data: any) => void;
@@ -113,10 +113,7 @@ export function useAnalyticsHandlers({
           toast({
             title: "Dashboard Ready",
             description: "Your analytics dashboard is now ready to view",
-            action: {
-              label: "View Dashboard",
-              onClick: () => setActiveTab("dashboard")
-            },
+            action: <ToastAction altText="View Dashboard" onClick={() => setActiveTab("dashboard")}>View Dashboard</ToastAction>,
             duration: 7000,
           });
         }, 1000);
@@ -132,7 +129,6 @@ export function useAnalyticsHandlers({
     }
   };
 
-  // Handle direct metric extraction results
   const handleDirectExtractionSuccess = (metrics: Partial<ProcessedAnalytics>) => {
     console.log("Direct extraction successful:", metrics);
     setDirectlyExtractedMetrics(metrics);
