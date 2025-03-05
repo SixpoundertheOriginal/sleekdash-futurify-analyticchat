@@ -80,7 +80,8 @@ export function ChatInterface({ preprocessDataFn, feature = 'general' }: ChatInt
     onSubmit: handleSubmit,
     isDateRangeSelected,
     handleSubmit,
-    setMessage
+    setMessage,
+    feature
   });
 
   return (

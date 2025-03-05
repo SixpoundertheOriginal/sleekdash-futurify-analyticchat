@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { useState } from "react";
 import { Message } from "@/types/chat";
 import { useToast } from "@/components/ui/use-toast";
+import { AssistantType } from "@/utils/thread-management";
 
 interface ChatFormProps {
   message: string;
@@ -12,6 +13,7 @@ interface ChatFormProps {
   isDateRangeSelected: boolean;
   handleSubmit: (e: React.FormEvent) => void;
   setMessage: (message: string) => void;
+  feature?: AssistantType;
 }
 
 export function ChatForm({
@@ -20,14 +22,18 @@ export function ChatForm({
   onSubmit,
   isDateRangeSelected,
   handleSubmit,
-  setMessage
+  setMessage,
+  feature = 'general'
 }: ChatFormProps) {
   const { toast } = useToast();
   
   const handleSubmitWithDateCheck = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isDateRangeSelected && !message.trim().startsWith('/')) {
+    // Only require date range for the appStore feature
+    const requiresDateRange = feature === 'appStore';
+    
+    if (requiresDateRange && !isDateRangeSelected && !message.trim().startsWith('/')) {
       toast({
         variant: "destructive",
         title: "Date Range Required",
