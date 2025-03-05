@@ -1,8 +1,9 @@
 
-import { Send, Loader2, Sparkles } from "lucide-react";
+import { Send, Loader2, Sparkles, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Message } from "@/types/chat";
+import { ContextualHelp } from "@/components/ui/contextual-help";
 
 interface ChatInputProps {
   message: string;
@@ -94,6 +95,25 @@ export function ChatInput({ message, isLoading, onMessageChange, onSubmit, messa
               </div>
             )}
           </div>
+          <ContextualHelp 
+            content={
+              <div>
+                <p className="font-medium">Chat Commands & Tips:</p>
+                <ul className="list-disc pl-4 mt-1 space-y-1">
+                  <li>Use <span className="font-mono text-xs">/help</span> for command list</li>
+                  <li>Use <span className="font-mono text-xs">/clear</span> to reset conversation</li>
+                  <li>Be specific in your questions for better results</li>
+                  <li>Include keywords, time periods, or specific metrics in your questions</li>
+                </ul>
+                <p className="mt-2 text-xs">Example queries:</p>
+                <ul className="list-disc pl-4 mt-1 space-y-1 text-xs">
+                  <li>"Show me top performing keywords last month"</li>
+                  <li>"What's my user retention trend?"</li>
+                  <li>"Compare conversion rates across countries"</li>
+                </ul>
+              </div>
+            } 
+          />
           <Button 
             type="submit" 
             disabled={isLoading || !message.trim()}

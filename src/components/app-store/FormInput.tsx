@@ -2,6 +2,7 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useDevice } from "@/hooks/use-mobile";
+import { ContextualHelp } from "@/components/ui/contextual-help";
 
 interface FormInputProps {
   value: string;
@@ -19,12 +20,28 @@ export function FormInput({ value, onChange, disabled, placeholder }: FormInputP
   
   return (
     <div className="space-y-3">
-      <Label 
-        htmlFor={inputId} 
-        className="text-white font-medium"
-      >
-        {isMobile ? "App Store Data" : "Paste Your App Store Data"}
-      </Label>
+      <div className="flex items-center gap-2">
+        <Label 
+          htmlFor={inputId} 
+          className="text-white font-medium"
+        >
+          {isMobile ? "App Store Data" : "Paste Your App Store Data"}
+        </Label>
+        <ContextualHelp 
+          content={
+            <div>
+              <p className="font-medium">Accepted Data Formats:</p>
+              <ul className="list-disc pl-4 mt-1 space-y-1">
+                <li>Raw data from App Store Connect</li>
+                <li>CSV exports from AppFigures</li>
+                <li>Sensortower report exports</li>
+                <li>Plain text description of your app metrics</li>
+              </ul>
+              <p className="mt-2 text-xs">For best results, include data about downloads, revenue, ratings, and user engagement metrics.</p>
+            </div>
+          } 
+        />
+      </div>
       <Textarea 
         id={inputId}
         value={value}

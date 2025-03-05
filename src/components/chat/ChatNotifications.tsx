@@ -1,6 +1,7 @@
 
-import { AlertTriangle, RefreshCw, MessageSquareText, Info } from "lucide-react";
+import { AlertTriangle, RefreshCw, MessageSquareText, Info, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ContextualHelp } from "@/components/ui/contextual-help";
 
 interface ChatNotificationsProps {
   isValidThread: boolean;
@@ -32,6 +33,23 @@ export function ChatNotifications({
               Create new thread?
             </Button>
           </span>
+          <ContextualHelp 
+            icon="info"
+            size="sm"
+            content={
+              <div>
+                <p className="font-medium">About Thread Validation:</p>
+                <p className="mt-1 text-xs">Threads store your conversation history to provide context for future responses.</p>
+                <p className="mt-1 text-xs">When thread validation fails, it means:</p>
+                <ul className="list-disc pl-4 mt-1 space-y-1 text-xs">
+                  <li>Your conversation history might not be saved correctly</li>
+                  <li>The AI may not have full context of your previous messages</li>
+                  <li>You may experience inconsistent responses</li>
+                </ul>
+                <p className="mt-1 text-xs">Creating a new thread will resolve this issue but will start a fresh conversation.</p>
+              </div>
+            } 
+          />
         </div>
       )}
       
@@ -41,6 +59,22 @@ export function ChatNotifications({
           <span>
             File uploaded at {lastFileUpload.toLocaleTimeString()}. Analyzing your data...
           </span>
+          <ContextualHelp 
+            icon="info"
+            size="sm"
+            content={
+              <div>
+                <p>File analysis is processing your data through multiple steps:</p>
+                <ol className="list-decimal pl-4 mt-1 space-y-1 text-xs">
+                  <li>Validating file format and content</li>
+                  <li>Extracting relevant metrics and data points</li>
+                  <li>Processing trends and patterns</li>
+                  <li>Generating insights based on historical data</li>
+                </ol>
+                <p className="mt-1 text-xs">This process typically takes 30-60 seconds depending on file size and complexity.</p>
+              </div>
+            } 
+          />
         </div>
       )}
 
@@ -50,6 +84,22 @@ export function ChatNotifications({
         <span>
           <span className="font-medium">Pro tip:</span> Try asking about keyword trends, performance metrics, or upload a file for in-depth analysis.
         </span>
+        <ContextualHelp 
+          icon="help"
+          size="sm"
+          content={
+            <div>
+              <p className="font-medium">Getting Started Tips:</p>
+              <ul className="list-disc pl-4 mt-1 space-y-1 text-xs">
+                <li>Upload data files for detailed analysis</li>
+                <li>Ask specific questions about metrics like "What's my conversion rate?"</li>
+                <li>Use date ranges in your queries: "Show me downloads from last month"</li>
+                <li>Request comparisons: "Compare this month's performance to last month"</li>
+                <li>Ask for action items: "What should I improve based on this data?"</li>
+              </ul>
+            </div>
+          } 
+        />
       </div>
     </>
   );
