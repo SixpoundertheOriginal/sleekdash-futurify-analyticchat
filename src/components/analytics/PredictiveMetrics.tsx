@@ -1,7 +1,5 @@
-
 import { Card } from "@/components/ui/card";
-import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
-import { formatMetric } from "@/utils/analytics/processAnalysis";
+import { ProcessedAnalytics, formatMetric } from "@/utils/analytics/processAnalysis";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface PredictiveMetricsProps {

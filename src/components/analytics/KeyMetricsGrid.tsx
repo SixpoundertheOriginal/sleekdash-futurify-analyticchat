@@ -1,8 +1,6 @@
-
 import { Card } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
-import { formatMetric } from "@/utils/analytics/processAnalysis";
+import { ProcessedAnalytics, formatMetric } from "@/utils/analytics/processAnalysis";
 
 interface KeyMetricsGridProps {
   data: ProcessedAnalytics;
