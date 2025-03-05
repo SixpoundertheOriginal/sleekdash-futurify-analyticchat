@@ -1,9 +1,12 @@
 
-import { Card } from "@/components/ui/card";
+import { useState } from "react";
 import { FormHeader } from "./FormHeader";
 import { FormInput } from "./FormInput";
 import { FormButtons } from "./FormButtons";
 import { useAppStoreForm } from "@/hooks/useAppStoreForm";
+import { DateRange } from "@/components/chat/DateRangePicker";
+import { format } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AppStoreFormProps {
   onProcessSuccess: (data: any) => void;
@@ -12,6 +15,7 @@ interface AppStoreFormProps {
   isAnalyzing: boolean;
   setProcessing: (processing: boolean) => void;
   setAnalyzing: (analyzing: boolean) => void;
+  dateRange: DateRange | null;
 }
 
 export function AppStoreForm({
@@ -20,8 +24,10 @@ export function AppStoreForm({
   isProcessing,
   isAnalyzing,
   setProcessing,
-  setAnalyzing
+  setAnalyzing,
+  dateRange
 }: AppStoreFormProps) {
+  const { toast } = useToast();
   const {
     appDescription,
     setAppDescription,
@@ -34,25 +40,54 @@ export function AppStoreForm({
     setAnalyzing
   );
 
-  return (
-    <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm shadow-lg transition-all hover:shadow-primary/10">
-      <FormHeader />
-      
-      <div className="space-y-5">
-        <FormInput 
-          value={appDescription}
-          onChange={(e) => setAppDescription(e.target.value)}
-          disabled={isAnalyzing || isProcessing}
-        />
+  const handleProcessAndAnalyze = () => {
+    if (!dateRange) {
+      toast({
+        variant: "destructive",
+        title: "Date Range Required",
+        description: "Please select a date range before analyzing the data."
+      });
+      return;
+    }
+    
+    // Add date range info to the app description
+    const dateInfo = `Date range: ${format(dateRange.from, "yyyy-MM-dd")} to ${format(dateRange.to, "yyyy-MM-dd")}.\n\n`;
+    
+    // Process with date range info included
+    handleTextCleaningAndProcessing(dateInfo + appDescription);
+  };
 
-        <FormButtons 
-          isProcessing={isProcessing}
-          isAnalyzing={isAnalyzing}
-          appDescription={appDescription}
-          onProcessClick={handleTextCleaningAndProcessing}
-          onAnalyzeClick={() => handleAnalysis()}
-        />
-      </div>
-    </Card>
+  const handleAnalyzeOnly = () => {
+    if (!dateRange) {
+      toast({
+        variant: "destructive",
+        title: "Date Range Required",
+        description: "Please select a date range before analyzing the data."
+      });
+      return;
+    }
+    
+    // Add date range info to the app description
+    const dateInfo = `Date range: ${format(dateRange.from, "yyyy-MM-dd")} to ${format(dateRange.to, "yyyy-MM-dd")}.\n\n`;
+    
+    // Analyze with date range info included
+    handleAnalysis(dateInfo + appDescription);
+  };
+
+  return (
+    <div className="space-y-4 border border-white/10 bg-white/5 backdrop-blur-lg p-6 rounded-xl">
+      <FormHeader />
+      <FormInput 
+        value={appDescription} 
+        onChange={(e) => setAppDescription(e.target.value)} 
+      />
+      <FormButtons 
+        disabled={!appDescription.trim()}
+        isProcessing={isProcessing}
+        isAnalyzing={isAnalyzing}
+        onProcessAndAnalyze={handleProcessAndAnalyze}
+        onAnalyzeOnly={handleAnalyzeOnly}
+      />
+    </div>
   );
 }

@@ -14,8 +14,8 @@ export function useAppStoreForm(
   const { toast } = useToast();
   const { threadId, appStoreAssistantId } = useThread();
 
-  const handleTextCleaningAndProcessing = async () => {
-    if (!appDescription.trim()) {
+  const handleTextCleaningAndProcessing = async (text: string = appDescription.trim()) => {
+    if (!text) {
       toast({
         variant: "destructive",
         title: "Validation Error",
@@ -26,11 +26,11 @@ export function useAppStoreForm(
 
     try {
       setProcessing(true);
-      console.log('Processing app description:', appDescription.substring(0, 100) + "...");
+      console.log('Processing app description:', text.substring(0, 100) + "...");
       
       const { data, error } = await supabase.functions.invoke('process-app-data', {
         body: { 
-          rawText: appDescription.trim(),
+          rawText: text,
           threadId: threadId,
           assistantId: appStoreAssistantId
         }
@@ -58,7 +58,7 @@ export function useAppStoreForm(
 
       // If the data is valid, proceed with the AI analysis
       if (data.data.validation.isValid) {
-        await handleAnalysis(data.data);
+        await handleAnalysis(text, data.data);
       }
     } catch (error) {
       console.error('Processing error:', error);
@@ -74,8 +74,8 @@ export function useAppStoreForm(
     }
   };
 
-  const handleAnalysis = async (processedData?: any) => {
-    if (!appDescription.trim()) {
+  const handleAnalysis = async (text: string = appDescription.trim(), processedData?: any) => {
+    if (!text) {
       toast({
         variant: "destructive",
         title: "Validation Error",
@@ -86,20 +86,20 @@ export function useAppStoreForm(
 
     try {
       setAnalyzing(true);
-      console.log('Submitting app description for analysis:', appDescription.substring(0, 100) + "...");
+      console.log('Submitting app description for analysis:', text.substring(0, 100) + "...");
       console.log('Using thread ID:', threadId);
       console.log('Using App Store assistant ID:', appStoreAssistantId);
 
       // Include any pre-processed data if available
       const dataToSend = processedData 
         ? { 
-            appDescription: appDescription.trim(),
+            appDescription: text,
             threadId: threadId,
             assistantId: appStoreAssistantId,
             processedData: processedData
           }
         : { 
-            appDescription: appDescription.trim(),
+            appDescription: text,
             threadId: threadId,
             assistantId: appStoreAssistantId
           };

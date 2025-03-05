@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalysisData } from "@/hooks/useAnalysisData";
@@ -16,22 +16,30 @@ import { ImpressionAnalytics } from "./analytics/ImpressionAnalytics";
 import { ProceedsAnalysis } from "./analytics/ProceedsAnalysis";
 import { EngagementMetrics } from "./analytics/EngagementMetrics";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+import { DateRange } from "@/components/chat/DateRangePicker";
+import { format } from "date-fns";
 
 interface AnalyticsDashboardProps {
   data: ProcessedAnalytics;
+  dateRange: DateRange | null;
 }
 
-export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboardProps) {
   const [timeRange, setTimeRange] = useState("30days");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
+  
+  // Format the selected date range for display
+  const formattedDateRange = dateRange 
+    ? `${format(dateRange.from, "LLL dd, yyyy")} - ${format(dateRange.to, "LLL dd, yyyy")}`
+    : "Not specified";
   
   // Enhanced demo data for visualization
   const demoData: ProcessedAnalytics = {
     ...data,
     summary: {
       title: "App Analytics Dashboard Demo",
-      dateRange: "Last 30 days (Jan 1 - Jan 30, 2023)",
+      dateRange: dateRange ? formattedDateRange : "Last 30 days (Jan 1 - Jan 30, 2023)",
       executiveSummary: "Strong performance with 18.5% growth in downloads and 24.2% increase in revenue."
     },
     acquisition: {
@@ -107,7 +115,10 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-semibold text-white">{demoData.summary.title}</h2>
-          <p className="text-white/60">{demoData.summary.dateRange}</p>
+          <p className="text-white/60 flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            {demoData.summary.dateRange}
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <Button
