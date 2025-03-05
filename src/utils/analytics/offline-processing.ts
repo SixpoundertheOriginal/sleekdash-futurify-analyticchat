@@ -5,7 +5,12 @@
  */
 
 import { extractMetricsLocally, processContentWithFallback } from "@/utils/message-content";
-import { MetricType, standardizeMetricNames } from "./offline/metricTypes";
+import { 
+  MetricType, 
+  MetricCategory,
+  standardizeMetricNames,
+  getMetricCategory 
+} from "./offline/metricTypes";
 import { formatMetric } from "./offline/formatters";
 import { detectContentType, formatMessageOffline } from "./offline/contentDetector";
 import { extractKeywordMetrics } from "./offline/keywordExtractor";
@@ -15,9 +20,10 @@ import {
   hasValidMetricsForVisualization
 } from "./offline/directExtraction";
 
-export type { MetricType };
+export type { MetricType, MetricCategory };
 export { 
   standardizeMetricNames,
+  getMetricCategory,
   formatMetric,
   detectContentType,
   formatMessageOffline,
