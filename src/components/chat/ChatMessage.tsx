@@ -1,3 +1,4 @@
+
 import { Bot, User } from "lucide-react";
 import { Message } from "@/types/chat";
 import { Card } from "@/components/ui/card";
@@ -44,10 +45,10 @@ export function ChatMessage({ message, onReply, onReaction }: ChatMessageProps) 
       </div>
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-white/60">
+          <span className="font-display text-xs font-medium text-white/60">
             {message.role === 'assistant' ? 'AI Assistant' : 'You'}
           </span>
-          <span className="text-xs text-white/40">
+          <span className="font-mono text-xs text-white/40 tabular-nums">
             {formattedTime}
           </span>
         </div>

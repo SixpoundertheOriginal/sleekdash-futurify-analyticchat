@@ -7,7 +7,7 @@ export function FormHeader() {
       <div className="p-2 rounded-full bg-primary/20">
         <BarChart className="h-5 w-5 text-primary" />
       </div>
-      <h2 className="text-lg font-semibold text-white">AI-Powered App Store Analysis</h2>
+      <h2 className="text-lg font-display font-semibold text-white">AI-Powered App Store Analysis</h2>
     </div>
   );
 }

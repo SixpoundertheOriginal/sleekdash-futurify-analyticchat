@@ -75,8 +75,8 @@ export function ExecutiveSummary({ title, summary, dateRange, data }: ExecutiveS
           </div>
           
           <div>
-            <h3 className="font-medium text-white/90">Performance Summary</h3>
-            <p className="text-sm text-white/60">{dateRange}</p>
+            <h3 className="font-display font-medium text-white/90">Performance Summary</h3>
+            <p className="font-mono text-sm text-white/60 tabular-nums">{dateRange}</p>
             
             <div className={`mt-2 ${expanded ? '' : 'line-clamp-2'}`}>
               {displaySummary}
@@ -87,7 +87,7 @@ export function ExecutiveSummary({ title, summary, dateRange, data }: ExecutiveS
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setExpanded(!expanded)}
-                className="mt-1 h-6 px-2 text-primary"
+                className="mt-1 h-6 px-2 text-primary font-display"
               >
                 {expanded ? 'Show less' : 'Read more'}
                 <ChevronDown className={`ml-1 h-3 w-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />

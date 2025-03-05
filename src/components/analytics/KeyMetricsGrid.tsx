@@ -64,8 +64,8 @@ export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
           >
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-white/60">{metric.title}</p>
-                <h3 className="text-2xl font-semibold gradient-text mt-1">
+                <p className="font-display text-sm text-white/60">{metric.title}</p>
+                <h3 className="font-display text-2xl font-semibold gradient-text mt-1 tabular-nums">
                   {formatMetric(metric.value, metric.format as any)}
                 </h3>
               </div>
@@ -77,7 +77,7 @@ export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
                 ) : (
                   <TrendingDown className="h-3 w-3" />
                 )}
-                <span className="text-xs font-medium max-w-[50px] truncate">{Math.abs(metric.change)}%</span>
+                <span className="font-mono text-xs font-medium tabular-nums max-w-[50px] truncate">{Math.abs(metric.change)}%</span>
               </div>
             </div>
             <div className="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">

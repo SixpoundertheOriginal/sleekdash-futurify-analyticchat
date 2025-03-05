@@ -18,6 +18,11 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["'Space Grotesk Variable'", "system-ui", "sans-serif"],
+        mono: ["'JetBrains Mono'", "monospace"],
+        display: ["'Chakra Petch'", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -84,6 +89,33 @@ export default {
         "fade-up": "fade-up 0.5s ease-out",
         "fade-down": "fade-down 0.5s ease-out",
         "gradient-shift": "gradient-shift 3s ease infinite alternate",
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: '65ch',
+            '--tw-prose-headings': '#8b5cf6',
+            h1: {
+              fontFamily: "'Chakra Petch', sans-serif",
+              fontWeight: '700',
+            },
+            h2: {
+              fontFamily: "'Chakra Petch', sans-serif",
+              fontWeight: '600',
+            },
+            h3: {
+              fontFamily: "'Chakra Petch', sans-serif",
+              fontWeight: '600',
+            },
+            code: {
+              fontFamily: "'JetBrains Mono', monospace",
+            },
+            pre: {
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.9em',
+            },
+          },
+        },
       },
     },
   },

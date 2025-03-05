@@ -50,7 +50,7 @@ export function ContextualHelp({
         <TooltipContent 
           side={position} 
           sideOffset={sideOffset} 
-          className="max-w-xs bg-gradient-to-br from-popover to-popover/90 backdrop-blur-xl p-3 text-sm border border-white/10"
+          className="max-w-xs font-sans bg-gradient-to-br from-popover to-popover/90 backdrop-blur-xl p-3 text-sm border border-white/10"
         >
           {content}
         </TooltipContent>

@@ -35,11 +35,11 @@ export function DashboardHeader({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2">
+        <h2 className="text-xl sm:text-2xl font-display font-semibold text-white flex items-center gap-2">
           <Activity className="h-5 w-5 text-primary" />
           {isMobile ? (title.length > 20 ? title.substring(0, 20) + '...' : title) : (title || "App Store Analytics")}
         </h2>
-        <p className="text-sm sm:text-base text-white/60 flex items-center gap-1">
+        <p className="text-sm sm:text-base font-mono text-white/60 flex items-center gap-1 tabular-nums">
           <Calendar className="h-3 w-3" />
           {isMobile ? (formattedDateRange.length > 25 ? formattedDateRange.substring(0, 25) + '...' : formattedDateRange) : formattedDateRange}
         </p>
@@ -56,7 +56,7 @@ export function DashboardHeader({
           variant="outline" 
           size={isMobile ? "icon" : "sm"}
           onClick={handleRefresh}
-          className="bg-white/5 text-white hover:bg-white/10 border-white/10"
+          className="bg-white/5 text-white hover:bg-white/10 border-white/10 font-display"
         >
           <RefreshCcw className="h-4 w-4" />
           {!isMobile && <span className="ml-2">Refresh Data</span>}
