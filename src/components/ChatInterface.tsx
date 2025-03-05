@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { useChat } from "@/hooks/useChat";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 import { useToast } from "@/components/ui/use-toast";
