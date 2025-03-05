@@ -16,8 +16,13 @@ export {
   processContentWithFallback
 } from './processor';
 
+export {
+  storeAnalyticsData,
+  getHistoricalAnalytics,
+  getLatestAnalytics
+} from './persistence';
+
 export type { 
   MetricsCache,
   MetricsCacheEntry 
 } from './types';
-

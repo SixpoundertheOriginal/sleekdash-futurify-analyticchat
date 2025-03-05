@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useThread } from "@/contexts/ThreadContext";
+import { storeAnalyticsData } from "@/utils/message-content";
 
 export function useAppStoreForm(
   onProcessSuccess: (data: any) => void,
@@ -40,6 +41,29 @@ export function useAppStoreForm(
       if (!data?.success) throw new Error(data?.error || 'Processing failed');
 
       onProcessSuccess(data);
+      
+      // Extract date range for storage
+      const dateRange = data.data.dateRange || "Unknown date range";
+      
+      // Store processed metrics in Supabase for historical tracking
+      if (data.data.metrics && data.data.validation.isValid) {
+        try {
+          // Combine metrics and changes into one object for storage
+          const metricsForStorage = {
+            ...data.data.metrics.acquisitionMetrics,
+            ...data.data.metrics.financialMetrics,
+            ...data.data.metrics.engagementMetrics,
+            ...data.data.metrics.technicalMetrics,
+            changes: data.data.changes
+          };
+          
+          // Store metrics in Supabase
+          await storeAnalyticsData(metricsForStorage, dateRange);
+        } catch (storageError) {
+          console.error('Error storing analytics data:', storageError);
+          // Continue with analysis even if storage fails
+        }
+      }
       
       toast({
         title: "Data Processed",

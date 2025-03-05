@@ -7,6 +7,8 @@ export {
   cacheMetrics,
   getMetricsFromCache,
   generateCacheKey,
-  processContentWithFallback
+  processContentWithFallback,
+  storeAnalyticsData,
+  getHistoricalAnalytics,
+  getLatestAnalytics
 } from './metrics';
-

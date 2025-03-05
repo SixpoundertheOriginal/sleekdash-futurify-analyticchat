@@ -8,8 +8,10 @@ export {
   cacheMetrics, 
   getMetricsFromCache, 
   generateCacheKey,
-  processContentWithFallback
+  processContentWithFallback,
+  storeAnalyticsData,
+  getHistoricalAnalytics,
+  getLatestAnalytics
 } from './metrics-extraction';
 export { getSuggestedReplies, extractKeywords } from './suggestions';
 export { formatTimestamp } from './time-utils';
-

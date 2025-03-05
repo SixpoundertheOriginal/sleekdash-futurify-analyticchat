@@ -7,6 +7,8 @@ import { DataExtractionStatus } from "./DataExtractionStatus";
 import { AnalyticsDashboardWrapper } from "./AnalyticsDashboardWrapper";
 import { AnalysisResultCard } from "./AnalysisResultCard";
 import { DateRangePicker, DateRange } from "@/components/chat/DateRangePicker";
+import { HistoricalAnalytics } from "./HistoricalAnalytics";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AppStoreAnalysisProps {
   initialData: ProcessedAnalytics;
@@ -44,27 +46,43 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         </div>
       </div>
 
-      <AppStoreForm 
-        onProcessSuccess={handleProcessSuccess}
-        onAnalysisSuccess={handleAnalysisSuccess}
-        isProcessing={processing}
-        isAnalyzing={analyzing}
-        setProcessing={setProcessing}
-        setAnalyzing={setAnalyzing}
-        dateRange={dateRange}
-      />
-
-      {extractedData && <DataExtractionStatus extractedData={extractedData} />}
-
-      <AnalyticsDashboardWrapper 
-        processedData={processedData}
-        initialData={initialData}
-        isProcessing={isProcessing}
-        processingError={processingError}
-        dateRange={dateRange}
-      />
-
-      <AnalysisResultCard analysisResult={analysisResult} />
+      <Tabs defaultValue="dashboard" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="dashboard">Current Analysis</TabsTrigger>
+          <TabsTrigger value="historical">Historical Data</TabsTrigger>
+          <TabsTrigger value="input">Input Data</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="dashboard">
+          <AnalyticsDashboardWrapper 
+            processedData={processedData}
+            initialData={initialData}
+            isProcessing={isProcessing}
+            processingError={processingError}
+            dateRange={dateRange}
+          />
+          
+          <AnalysisResultCard analysisResult={analysisResult} />
+        </TabsContent>
+        
+        <TabsContent value="historical">
+          <HistoricalAnalytics />
+        </TabsContent>
+        
+        <TabsContent value="input">
+          <AppStoreForm 
+            onProcessSuccess={handleProcessSuccess}
+            onAnalysisSuccess={handleAnalysisSuccess}
+            isProcessing={processing}
+            isAnalyzing={analyzing}
+            setProcessing={setProcessing}
+            setAnalyzing={setAnalyzing}
+            dateRange={dateRange}
+          />
+          
+          {extractedData && <DataExtractionStatus extractedData={extractedData} />}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
