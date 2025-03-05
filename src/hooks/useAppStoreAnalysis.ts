@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
@@ -27,7 +28,8 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
   const [processingError, setProcessingError] = useState<string | null>(null);
   const { toast } = useToast();
   const { threadId, assistantId } = useThread();
-  const { sendMessage } = useChat();
+  // Fix: Destructure the actual sendMessage function from useChat
+  const { sendMessage: chatSendMessage } = useChat();
 
   // Add metrics registry integration
   const { registerMetrics } = useMetrics('appStore');
@@ -54,7 +56,9 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
 
     // If baseMetrics were extracted, set the processedAnalytics state
     if (baseMetrics) {
-      setProcessedAnalytics(baseMetrics);
+      // Fix: Ensure we're setting a full ProcessedAnalytics object by merging with defaults
+      const analyticsDefaults = createDefaultProcessedAnalytics();
+      setProcessedAnalytics({ ...analyticsDefaults, ...baseMetrics });
     }
 
     // Register metrics if we have processed analytics
@@ -71,7 +75,7 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
     });
   }, [processedAnalytics, setExtractedData, setProcessing, setProcessingError, setActiveTab, setDirectlyExtractedMetrics, setProcessedAnalytics, toast]);
 
-  const handleAnalysisSuccess = useCallback((result: any) => {
+  const handleAnalysisSuccess = useCallback((result: ProcessedAnalytics) => {
     setAnalyzing(false);
     setAnalysisResult(result);
 
@@ -89,10 +93,54 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
     });
   }, [setAnalyzing, setAnalysisResult, toast]);
 
+  // Fix: Update the parameter type to match expected usage
   const handleDirectExtractionSuccess = useCallback((analysisText: string) => {
     try {
       const extractedMetrics = parseMetricsFromAnalysis(analysisText);
-      setAnalysisResult(extractedMetrics as any);
+      // Create default analytics object to ensure we have required properties
+      const defaultAnalytics = createDefaultProcessedAnalytics();
+      
+      // Add extracted metrics to a properly structured ProcessedAnalytics object
+      if (extractedMetrics && Array.isArray(extractedMetrics)) {
+        const processedResult: ProcessedAnalytics = {
+          ...defaultAnalytics,
+          summary: {
+            ...defaultAnalytics.summary,
+            executiveSummary: "Metrics extracted from analysis text"
+          }
+        };
+        
+        // Attempt to map the metrics to the appropriate categories
+        extractedMetrics.forEach(metric => {
+          if (metric.metric === "Downloads") {
+            processedResult.acquisition.downloads = { 
+              value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
+              change: metric.change 
+            };
+          } else if (metric.metric === "Total Proceeds") {
+            processedResult.financial.proceeds = { 
+              value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
+              change: metric.change 
+            };
+          } else if (metric.metric === "Active Users") {
+            processedResult.engagement.sessionsPerDevice = { 
+              value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
+              change: metric.change 
+            };
+          } else if (metric.metric === "Crash Count") {
+            processedResult.technical.crashes = { 
+              value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
+              change: metric.change 
+            };
+          }
+        });
+        
+        setAnalysisResult(processedResult);
+      } else {
+        // Fallback if extraction returns unexpected format
+        setAnalysisResult(defaultAnalytics);
+      }
+      
       toast({
         title: "Direct Extraction Complete",
         description: "Successfully extracted metrics directly from the analysis text."
@@ -136,7 +184,8 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
 
     setAnalyzing(true);
     try {
-      const analysisText = await sendMessage(analysisPrompt, threadId, assistantId);
+      // Fix: Use the renamed chatSendMessage function
+      const analysisText = await chatSendMessage(analysisPrompt, threadId, assistantId);
       if (analysisText) {
         handleDirectExtractionSuccess(analysisText);
       } else {
@@ -146,7 +195,53 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
       console.error("Analysis failed:", error);
       handleAnalysisError(error.message || "Analysis failed.");
     }
-  }, [extractedData, handleAnalysisError, handleDirectExtractionSuccess, sendMessage, threadId, assistantId]);
+  }, [extractedData, handleAnalysisError, handleDirectExtractionSuccess, chatSendMessage, threadId, assistantId]);
+
+  // Helper function to create a default ProcessedAnalytics object
+  const createDefaultProcessedAnalytics = (): ProcessedAnalytics => {
+    return {
+      summary: {
+        title: "App Analytics Report",
+        dateRange: "Not specified",
+        executiveSummary: ""
+      },
+      acquisition: {
+        impressions: { value: 0, change: 0 },
+        pageViews: { value: 0, change: 0 },
+        conversionRate: { value: 0, change: 0 },
+        downloads: { value: 0, change: 0 },
+        funnelMetrics: {
+          impressionsToViews: 0,
+          viewsToDownloads: 0
+        }
+      },
+      financial: {
+        proceeds: { value: 0, change: 0 },
+        proceedsPerUser: { value: 0, change: 0 },
+        derivedMetrics: {
+          arpd: 0,
+          revenuePerImpression: 0,
+          monetizationEfficiency: 0,
+          payingUserPercentage: 0
+        }
+      },
+      engagement: {
+        sessionsPerDevice: { value: 0, change: 0 },
+        retention: {
+          day1: { value: 0, benchmark: 0 },
+          day7: { value: 0, benchmark: 0 }
+        }
+      },
+      technical: {
+        crashes: { value: 0, change: 0 },
+        crashRate: { value: 0, percentile: "average" }
+      },
+      geographical: {
+        markets: [],
+        devices: []
+      }
+    };
+  };
 
   return {
     activeTab,

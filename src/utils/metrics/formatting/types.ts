@@ -31,3 +31,29 @@ export type MetricFormatOptions = {
   compact?: boolean;
   inverseColors?: boolean;
 };
+
+/**
+ * Standard metric metadata to support cross-domain metrics
+ */
+export type MetricMetadata = {
+  source?: string;
+  confidence?: number;
+  domain?: string;
+  category?: string;
+  metricKey?: string;
+  timestamp?: Date;
+  dateRange?: { from: Date; to: Date };
+};
+
+/**
+ * Standardized metric object for registry
+ */
+export type StandardizedMetric = {
+  value: number;
+  rawValue: number;
+  formatted: string;
+  change?: number;
+  benchmark?: number;
+  percentile?: string;
+  metadata?: MetricMetadata;
+};
