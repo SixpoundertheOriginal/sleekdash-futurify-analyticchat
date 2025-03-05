@@ -7,13 +7,15 @@ interface ChatNotificationsProps {
   onCreateNewThread: () => void;
   lastFileUpload: Date | null;
   isCheckingForResponses: boolean;
+  isProcessing: boolean;
 }
 
 export function ChatNotifications({
   isValidThread,
   onCreateNewThread,
   lastFileUpload,
-  isCheckingForResponses
+  isCheckingForResponses,
+  isProcessing
 }: ChatNotificationsProps) {
   return (
     <>
@@ -33,7 +35,7 @@ export function ChatNotifications({
         </div>
       )}
       
-      {lastFileUpload && isCheckingForResponses && (
+      {lastFileUpload && (isCheckingForResponses || isProcessing) && (
         <div className="flex items-center gap-2 p-2 bg-blue-500/20 text-blue-200 text-xs border-b border-blue-500/20">
           <RefreshCw className="h-3 w-3 flex-shrink-0 animate-spin" />
           <span>
