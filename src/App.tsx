@@ -3,7 +3,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { 
+  BrowserRouter, 
+  Routes, 
+  Route, 
+  Navigate,
+  createBrowserRouter,
+  RouterProvider,
+  createRoutesFromElements
+} from "react-router-dom";
 import { AuthProvider, useAuth } from "@/components/AuthProvider";
 import { ThreadProvider } from "@/contexts/ThreadContext";
 import Index from "./pages/Index";
@@ -31,54 +39,61 @@ const ProtectedRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
-const AppRoutes = () => (
-  <Routes>
-    <Route path="/auth" element={<Auth />} />
-    <Route
-      path="/"
-      element={
-        <ProtectedRouteWrapper>
-          <ThreadProvider>
-            <Index />
-          </ThreadProvider>
-        </ProtectedRouteWrapper>
-      }
-    />
-    <Route
-      path="/keywords"
-      element={
-        <ProtectedRouteWrapper>
-          <ThreadProvider>
-            <KeywordsAnalysis />
-          </ThreadProvider>
-        </ProtectedRouteWrapper>
-      }
-    />
-    <Route
-      path="/dev-tools"
-      element={
-        <ProtectedRouteWrapper>
-          <ThreadProvider>
-            <DevTools />
-          </ThreadProvider>
-        </ProtectedRouteWrapper>
-      }
-    />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
+// Create router with future flags
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
+      <Route path="/auth" element={<Auth />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRouteWrapper>
+            <ThreadProvider>
+              <Index />
+            </ThreadProvider>
+          </ProtectedRouteWrapper>
+        }
+      />
+      <Route
+        path="/keywords"
+        element={
+          <ProtectedRouteWrapper>
+            <ThreadProvider>
+              <KeywordsAnalysis />
+            </ThreadProvider>
+          </ProtectedRouteWrapper>
+        }
+      />
+      <Route
+        path="/dev-tools"
+        element={
+          <ProtectedRouteWrapper>
+            <ThreadProvider>
+              <DevTools />
+            </ThreadProvider>
+          </ProtectedRouteWrapper>
+        }
+      />
+      <Route path="*" element={<NotFound />} />
+    </>
+  ),
+  {
+    future: {
+      v7_startTransition: true,
+      v7_relativeSplatPath: true
+    }
+  }
 );
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes />
-        </TooltipProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <RouterProvider router={router} />
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
