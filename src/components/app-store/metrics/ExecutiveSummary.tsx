@@ -16,30 +16,41 @@ export function ExecutiveSummary({ title, summary, dateRange, data }: ExecutiveS
   const [expanded, setExpanded] = useState(false);
   
   // Determine overall trend direction from metrics
+  // Make sure to handle cases where metrics might be 0
   const metrics = [
-    data.acquisition.downloads.change,
-    data.financial.proceeds.change,
-    data.acquisition.pageViews.change,
-    data.acquisition.impressions.change
+    data.acquisition.downloads.change || 0,
+    data.financial.proceeds.change || 0,
+    data.acquisition.pageViews.change || 0,
+    data.acquisition.impressions.change || 0
   ];
   
   const averageChange = metrics.reduce((sum, val) => sum + val, 0) / metrics.length;
   const isPositive = averageChange > 0;
+
+  // Check if all metrics are zero, which indicates potentially missing data
+  const hasNoData = metrics.every(metric => metric === 0);
   
   return (
     <Card className={`p-5 border ${
-      isPositive 
-        ? 'border-emerald-500/20 bg-emerald-500/5' 
-        : 'border-amber-500/20 bg-amber-500/5'
+      hasNoData 
+        ? 'border-white/20 bg-white/5' 
+        : (isPositive 
+          ? 'border-emerald-500/20 bg-emerald-500/5' 
+          : 'border-amber-500/20 bg-amber-500/5')
     }`}>
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-3">
           <div className={`p-2 rounded-full ${
-            isPositive
-              ? 'bg-emerald-500/20 text-emerald-500'
-              : 'bg-amber-500/20 text-amber-500'
+            hasNoData
+              ? 'bg-white/10 text-white/70'
+              : (isPositive
+                ? 'bg-emerald-500/20 text-emerald-500'
+                : 'bg-amber-500/20 text-amber-500')
           }`}>
-            {isPositive ? <ChevronUp className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+            {hasNoData 
+              ? <AlertCircle className="h-5 w-5" /> 
+              : (isPositive ? <ChevronUp className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />)
+            }
           </div>
           
           <div>
@@ -47,11 +58,13 @@ export function ExecutiveSummary({ title, summary, dateRange, data }: ExecutiveS
             <p className="text-sm text-white/60">{dateRange}</p>
             
             <div className={`mt-2 ${expanded ? '' : 'line-clamp-2'}`}>
-              {summary || 
-                `During this period, your app ${isPositive ? 'showed positive growth' : 'faced some challenges'}. 
-                Downloads ${data.acquisition.downloads.change > 0 ? 'increased' : 'decreased'} by ${Math.abs(data.acquisition.downloads.change)}% 
-                and revenue ${data.financial.proceeds.change > 0 ? 'grew' : 'declined'} by ${Math.abs(data.financial.proceeds.change)}%.`
-              }
+              {summary || (
+                hasNoData 
+                  ? `No performance data available for this period. Please analyze your app data to see insights.`
+                  : `During this period, your app ${isPositive ? 'showed positive growth' : 'faced some challenges'}. 
+                    Downloads ${data.acquisition.downloads.change > 0 ? 'increased' : 'decreased'} by ${Math.abs(data.acquisition.downloads.change)}% 
+                    and revenue ${data.financial.proceeds.change > 0 ? 'grew' : 'declined'} by ${Math.abs(data.financial.proceeds.change)}%.`
+              )}
             </div>
             
             {summary && summary.length > 120 && (

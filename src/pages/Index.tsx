@@ -4,9 +4,11 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { AppStoreAnalysis } from "@/components/app-store/AppStoreAnalysis";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+import { getAnalyticsFromStorage } from "@/utils/analytics/storage";
+import { useEffect, useState } from "react";
 
 // Enhanced initial data for demonstration purposes
-const initialData: ProcessedAnalytics = {
+const demoData: ProcessedAnalytics = {
   summary: {
     title: "App Analytics Dashboard",
     dateRange: "Sample Visualization Data",
@@ -56,11 +58,28 @@ const initialData: ProcessedAnalytics = {
       { type: "iPhone", count: 58970, percentage: 69.1 },
       { type: "iPad", count: 25620, percentage: 30.0 },
       { type: "iPod", count: 810, percentage: 0.9 }
+    ],
+    sources: [
+      { source: "App Store Search", percentage: 88.6, downloads: 2994 },
+      { source: "App Store Browse", percentage: 6.2, downloads: 210 },
+      { source: "Institutional Purchase", percentage: 3.0, downloads: 100 },
+      { source: "Unavailable", percentage: 1.2, downloads: 41 },
+      { source: "App Referrer", percentage: 0.9, downloads: 29 }
     ]
   }
 };
 
 const Index = () => {
+  const [initialData, setInitialData] = useState<ProcessedAnalytics>(demoData);
+
+  // Check for stored analytics data on page load
+  useEffect(() => {
+    const storedData = getAnalyticsFromStorage();
+    if (storedData) {
+      setInitialData(storedData);
+    }
+  }, []);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-[#1A1F2C] to-[#2d3748]">
