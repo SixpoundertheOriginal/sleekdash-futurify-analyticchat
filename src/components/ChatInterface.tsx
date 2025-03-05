@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useChat } from "@/hooks/useChat";
 import { useThread, DEFAULT_THREAD_ID } from "@/contexts/ThreadContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -9,6 +9,7 @@ import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatNotifications } from "@/components/chat/ChatNotifications";
 import { ChatMessageList } from "@/components/chat/ChatMessageList";
 import { useMessagePolling } from "@/hooks/useMessagePolling";
+import { ChatStats } from "@/components/chat/ChatStats";
 
 export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (message: string) => Promise<any> }) {
   const { 
@@ -25,8 +26,9 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
   const { threadId, assistantId, createNewThread, isValidThread } = useThread();
   const { toast } = useToast();
   const [isCreatingThread, setIsCreatingThread] = useState(false);
+  const [showStats, setShowStats] = useState(true);
   
-  const { isCheckingForResponses, lastFileUpload } = useMessagePolling({
+  const { isCheckingForResponses, lastFileUpload, clearPollingTimers } = useMessagePolling({
     threadId,
     isLoading,
     messages,
@@ -77,31 +79,71 @@ export function ChatInterface({ preprocessDataFn }: { preprocessDataFn?: (messag
     }
   };
 
-  return (
-    <Card className="flex h-[700px] flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg overflow-hidden">
-      <ChatHeader 
-        threadId={threadId || ""}
-        assistantId={assistantId}
-        isCreatingThread={isCreatingThread}
-        onClearConversation={handleClearConversation}
-      />
-      
-      <ChatNotifications
-        isValidThread={isValidThread}
-        onCreateNewThread={handleCreateNewThread}
-        lastFileUpload={lastFileUpload}
-        isCheckingForResponses={isCheckingForResponses}
-        isProcessing={isProcessing}
-      />
-      
-      <ChatMessageList messages={messages} />
+  const handleReply = (content: string) => {
+    setMessage(content);
+    // Focus the input field
+    const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
+    if (inputElement) {
+      inputElement.focus();
+    }
+  };
 
-      <ChatInput
-        message={message}
-        isLoading={isLoading || isCheckingForResponses || isProcessing}
-        onMessageChange={setMessage}
-        onSubmit={handleSubmit}
-      />
-    </Card>
+  const handleReaction = (messageId: string, reaction: 'like' | 'dislike') => {
+    console.log(`Message ${messageId} received ${reaction} reaction`);
+    
+    // Feedback toast
+    toast({
+      title: reaction === 'like' ? "Thanks for the feedback!" : "Sorry about that",
+      description: reaction === 'like' 
+        ? "We're glad this was helpful." 
+        : "We'll use your feedback to improve our responses.",
+      variant: reaction === 'like' ? "default" : "destructive",
+    });
+    
+    // In a real app, you would send this to your backend
+  };
+
+  return (
+    <div className="flex h-[700px] gap-4">
+      <Card className="flex flex-1 flex-col rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg overflow-hidden">
+        <ChatHeader 
+          threadId={threadId || ""}
+          assistantId={assistantId}
+          isCreatingThread={isCreatingThread}
+          onClearConversation={handleClearConversation}
+          onToggleStats={() => setShowStats(prev => !prev)}
+        />
+        
+        <ChatNotifications
+          isValidThread={isValidThread}
+          onCreateNewThread={handleCreateNewThread}
+          lastFileUpload={lastFileUpload}
+          isCheckingForResponses={isCheckingForResponses}
+          isProcessing={isProcessing}
+        />
+        
+        <ChatMessageList 
+          messages={messages} 
+          onReply={handleReply}
+          onReaction={handleReaction}
+        />
+
+        <ChatInput
+          message={message}
+          isLoading={isLoading || isCheckingForResponses || isProcessing}
+          onMessageChange={setMessage}
+          onSubmit={handleSubmit}
+          messages={messages}
+        />
+      </Card>
+      
+      {showStats && (
+        <ChatStats 
+          messages={messages} 
+          lastFileUpload={lastFileUpload} 
+          isProcessing={isProcessing}
+        />
+      )}
+    </div>
   );
 }

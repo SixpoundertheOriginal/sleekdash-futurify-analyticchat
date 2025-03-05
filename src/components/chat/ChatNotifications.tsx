@@ -1,5 +1,5 @@
 
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw, MessageSquareText, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ChatNotificationsProps {
@@ -43,6 +43,14 @@ export function ChatNotifications({
           </span>
         </div>
       )}
+
+      {/* New user onboarding hint */}
+      <div className="flex items-center gap-2 p-2 bg-primary/10 text-primary-foreground/80 text-xs border-b border-primary/10">
+        <Info className="h-3.5 w-3.5 flex-shrink-0" />
+        <span>
+          <span className="font-medium">Pro tip:</span> Try asking about keyword trends, performance metrics, or upload a file for in-depth analysis.
+        </span>
+      </div>
     </>
   );
 }
