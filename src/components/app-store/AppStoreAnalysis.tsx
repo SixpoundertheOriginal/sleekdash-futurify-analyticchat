@@ -26,6 +26,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [processedAnalytics, setProcessedAnalytics] = useState<ProcessedAnalytics | null>(initialData || null);
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
+  const [processingError, setProcessingError] = useState<string | null>(null);
   
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -63,6 +64,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
       console.log("Analysis processed to structured data:", processedData);
     } catch (error) {
       console.error("Error processing analysis text:", error);
+      setProcessingError(error instanceof Error ? error.message : "Error processing analysis text");
     }
   };
 
@@ -105,7 +107,7 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
         
         <TabsContent value="analysis" className="pt-4">
           {analysisResult ? (
-            <AnalysisResultCard analysis={analysisResult} />
+            <AnalysisResultCard analysisResult={analysisResult} />
           ) : (
             <Card className="p-6 bg-white/5 border-white/10">
               <p className="text-white/60">Submit your app data for analysis to see results here.</p>
@@ -120,7 +122,13 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
               dateRange={dateRange}
             />
           ) : (
-            <AnalyticsDashboardWrapper initialData={initialData} />
+            <AnalyticsDashboardWrapper 
+              initialData={initialData || {} as ProcessedAnalytics}
+              processedData={null}
+              isProcessing={isProcessing}
+              processingError={processingError}
+              dateRange={dateRange}
+            />
           )}
           
           <div className="mt-6">
