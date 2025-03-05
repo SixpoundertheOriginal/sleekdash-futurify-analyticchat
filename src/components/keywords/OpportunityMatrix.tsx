@@ -2,6 +2,7 @@
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer } from 'recharts';
 import { ProcessedKeywordData } from './types';
 import { CustomTooltip } from './CustomTooltip';
+import { getValueBasedColor } from '@/utils/metrics/standardizedMetrics';
 
 interface OpportunityMatrixProps {
   data: ProcessedKeywordData[];
@@ -16,6 +17,11 @@ export function OpportunityMatrix({ data, getColor }: OpportunityMatrixProps) {
   }
 
   console.log("OpportunityMatrix data:", data.length, "items");
+
+  // Get color based on standardized utility
+  const getStandardizedColor = (score: number) => {
+    return getValueBasedColor(score, { low: 30, medium: 60 });
+  };
 
   return (
     <div>
@@ -47,7 +53,10 @@ export function OpportunityMatrix({ data, getColor }: OpportunityMatrixProps) {
             <Tooltip content={<CustomTooltip />} />
             <Scatter name="Keywords" data={data}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={getColor(entry.opportunityScore)} />
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={getStandardizedColor(entry.opportunityScore)} 
+                />
               ))}
             </Scatter>
           </ScatterChart>

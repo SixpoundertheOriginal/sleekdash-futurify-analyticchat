@@ -2,6 +2,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ProcessedKeywordData } from './types';
 import { CustomTooltip } from './CustomTooltip';
+import { formatPercentage, getValueBasedColor } from '@/utils/metrics/standardizedMetrics';
 
 interface CompetitiveLandscapeProps {
   data: ProcessedKeywordData[];
@@ -16,6 +17,14 @@ export function CompetitiveLandscape({ data }: CompetitiveLandscapeProps) {
 
   const sortedData = [...data].sort((a, b) => b.volume - a.volume).slice(0, 8);
   console.log("CompetitiveLandscape data:", sortedData.length, "items");
+
+  // Custom coloring function for the bars
+  const getChanceColor = (chance: number) => getValueBasedColor(chance, { low: 30, medium: 60 });
+  const getDifficultyColor = (difficulty: number) => {
+    // Inverse the value since lower difficulty is better
+    const inverseDifficulty = 100 - difficulty;
+    return getValueBasedColor(inverseDifficulty, { low: 30, medium: 60 });
+  };
 
   return (
     <div>
@@ -39,8 +48,24 @@ export function CompetitiveLandscape({ data }: CompetitiveLandscapeProps) {
               tick={{ fill: '#9ca3af' }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="difficulty" name="Difficulty Score" fill="#f87171" barSize={12} />
-            <Bar dataKey="chance" name="Ranking Chance %" fill="#4ade80" barSize={12} />
+            <Bar 
+              dataKey="difficulty" 
+              name="Difficulty Score" 
+              fill="#f87171" 
+              barSize={12}
+              // Use a custom fill color based on difficulty value
+              // Lower difficulty is better (green), higher is worse (red)
+              fillOpacity={0.9}
+            />
+            <Bar 
+              dataKey="chance" 
+              name="Ranking Chance %" 
+              fill="#4ade80" 
+              barSize={12}
+              // Use a custom fill color based on chance value
+              // Higher chance is better (green), lower is worse (red)
+              fillOpacity={0.9}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
