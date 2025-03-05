@@ -11,9 +11,20 @@ import {
   CartesianGrid, 
   Tooltip, 
   BarChart, 
-  Bar,
-  CategoricalChartState
+  Bar
 } from 'recharts';
+
+// Define the CategoricalChartState type since it's not exported by recharts
+interface CategoricalChartState {
+  activeCoordinate?: {
+    x: number;
+    y: number;
+  };
+  activePayload?: Array<any>;
+  activeTooltipIndex?: number;
+  chartX?: number;
+  chartY?: number;
+}
 
 interface DataPoint {
   [key: string]: any;

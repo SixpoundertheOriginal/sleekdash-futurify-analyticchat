@@ -27,15 +27,15 @@ export function AdvancedDashboard({ data, dateRange, isLoading = false }: Advanc
   // Swipe handlers for tab navigation
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => {
-      const nextTab = Math.min(activeTab + 1, 3);
-      if (nextTab !== activeTab) {
-        setActiveTab(nextTab);
+      const nextTab = Math.min(Number(activeTab) + 1, 3);
+      if (nextTab !== Number(activeTab)) {
+        setActiveTab(String(nextTab));
       }
     },
     onSwipedRight: () => {
-      const prevTab = Math.max(activeTab - 1, 0);
-      if (prevTab !== activeTab) {
-        setActiveTab(prevTab);
+      const prevTab = Math.max(Number(activeTab) - 1, 0);
+      if (prevTab !== Number(activeTab)) {
+        setActiveTab(String(prevTab));
       }
     },
     trackMouse: false,

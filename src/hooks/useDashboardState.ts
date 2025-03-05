@@ -10,7 +10,7 @@ export interface UseDashboardStateProps {
 }
 
 export interface UseDashboardStateReturn {
-  activeTab: string;
+  activeTab: string;  // Keep as string to match the existing API
   setActiveTab: (tab: string) => void;
   formattedDateRange: string;
 }
