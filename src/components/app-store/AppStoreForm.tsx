@@ -7,6 +7,7 @@ import { useAppStoreForm } from "@/hooks/useAppStoreForm";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
+import { isAppStoreFormat, processAppStoreText } from "@/utils/file-processing";
 
 interface AppStoreFormProps {
   onProcessSuccess: (data: any) => void;
@@ -41,7 +42,7 @@ export function AppStoreForm({
   );
 
   const handleProcessAndAnalyze = () => {
-    if (!dateRange) {
+    if (!dateRange && !isAppStoreFormat(appDescription)) {
       toast({
         variant: "destructive",
         title: "Date Range Required",
@@ -50,15 +51,25 @@ export function AppStoreForm({
       return;
     }
     
-    // Add date range info to the app description
-    const dateInfo = `Date range: ${format(dateRange.from, "yyyy-MM-dd")} to ${format(dateRange.to, "yyyy-MM-dd")}.\n\n`;
+    // Pre-process text if it's in App Store format
+    let processedText = appDescription;
+    if (isAppStoreFormat(appDescription)) {
+      processedText = processAppStoreText(appDescription);
+      console.log('Detected App Store format, pre-processed text');
+    } else {
+      // Add date range info to the app description if not already in App Store format
+      const dateInfo = dateRange ? 
+        `Date range: ${format(dateRange.from, "yyyy-MM-dd")} to ${format(dateRange.to, "yyyy-MM-dd")}.\n\n` :
+        '';
+      processedText = dateInfo + appDescription;
+    }
     
-    // Process with date range info included
-    handleTextCleaningAndProcessing(dateInfo + appDescription);
+    // Process with pre-processed text
+    handleTextCleaningAndProcessing(processedText);
   };
 
   const handleAnalyzeOnly = () => {
-    if (!dateRange) {
+    if (!dateRange && !isAppStoreFormat(appDescription)) {
       toast({
         variant: "destructive",
         title: "Date Range Required",
@@ -67,11 +78,21 @@ export function AppStoreForm({
       return;
     }
     
-    // Add date range info to the app description
-    const dateInfo = `Date range: ${format(dateRange.from, "yyyy-MM-dd")} to ${format(dateRange.to, "yyyy-MM-dd")}.\n\n`;
+    // Pre-process text if it's in App Store format
+    let processedText = appDescription;
+    if (isAppStoreFormat(appDescription)) {
+      processedText = processAppStoreText(appDescription);
+      console.log('Detected App Store format, pre-processed text');
+    } else {
+      // Add date range info to the app description if not already in App Store format
+      const dateInfo = dateRange ? 
+        `Date range: ${format(dateRange.from, "yyyy-MM-dd")} to ${format(dateRange.to, "yyyy-MM-dd")}.\n\n` :
+        '';
+      processedText = dateInfo + appDescription;
+    }
     
-    // Analyze with date range info included
-    handleAnalysis(dateInfo + appDescription);
+    // Analyze with pre-processed text
+    handleAnalysis(processedText);
   };
 
   return (
