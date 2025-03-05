@@ -37,7 +37,7 @@ const ProtectedRouteWrapper = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
-// Create router with correct future flags syntax
+// Create router with standard configuration
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
