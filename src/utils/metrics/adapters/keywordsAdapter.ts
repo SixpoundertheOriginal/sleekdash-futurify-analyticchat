@@ -39,11 +39,11 @@ export function registerKeywordMetrics(
     aggregates.avgGrowth += keyword.growth || 0;
     
     // Count high opportunity keywords (opportunityScore > 70)
-    if ('opportunityScore' in keyword && keyword.opportunityScore > 70) {
+    if ('opportunityScore' in keyword && typeof keyword.opportunityScore === 'number' && keyword.opportunityScore > 70) {
       aggregates.highOpportunityCount++;
     }
     
-    if ('opportunityScore' in keyword) {
+    if ('opportunityScore' in keyword && typeof keyword.opportunityScore === 'number') {
       aggregates.opportunityScore += keyword.opportunityScore;
     }
   });
@@ -91,7 +91,7 @@ export function registerKeywordMetrics(
     };
     
     // Add opportunity score if available
-    if ('opportunityScore' in keyword) {
+    if ('opportunityScore' in keyword && typeof keyword.opportunityScore === 'number') {
       keywordMetrics[`keyword_${index}_opportunity`] = {
         value: keyword.opportunityScore,
         rawValue: keyword.opportunityScore,

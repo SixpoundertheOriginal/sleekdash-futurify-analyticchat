@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { KeywordMetric, ProcessedKeywordData, AnalysisError } from '@/components/keywords/types';
 import { calculateOpportunityScore } from '@/utils/keywords/opportunity-score';
@@ -14,6 +15,23 @@ export function useKeywordAnalytics() {
   // Add metrics registry integration
   const { registerMetrics } = useMetrics('keywords');
   
+  // Compute derived metrics for UI components
+  const keywordCount = processedData.length;
+  
+  // Find top opportunity
+  const topOpportunity = processedData.length > 0 
+    ? [...processedData].sort((a, b) => b.opportunityScore - a.opportunityScore)[0]
+    : { keyword: 'N/A', opportunityScore: 0 };
+  
+  // Calculate averages
+  const avgVolume = processedData.length > 0
+    ? Math.round(processedData.reduce((acc, item) => acc + item.volume, 0) / processedData.length)
+    : 0;
+  
+  const avgDifficulty = processedData.length > 0
+    ? Math.round(processedData.reduce((acc, item) => acc + item.difficulty, 0) / processedData.length)
+    : 0;
+  
   // Modify the processData function to register metrics
   const processData = useCallback((data: KeywordMetric[]) => {
     setIsLoading(true);
@@ -28,6 +46,14 @@ export function useKeywordAnalytics() {
       setProcessedData(processed);
       setTimestamp(new Date().toISOString());
       
+      // Register the processed data with the metrics registry
+      if (processed.length > 0) {
+        registerKeywordMetrics(processed, { 
+          source: 'keyword-analytics', 
+          confidence: 0.9 
+        });
+      }
+      
       return processed;
     } catch (processError: any) {
       setError({
@@ -38,26 +64,19 @@ export function useKeywordAnalytics() {
     } finally {
       setIsLoading(false);
     }
-    
-    if (processedData.length > 0) {
-      // Register the processed data with the metrics registry
-      registerKeywordMetrics(processedData, { 
-        source: 'keyword-analytics', 
-        confidence: 0.9 
-      });
-    }
-    
-    return {
-      data: processedData,
-      error,
-      isLoading
-    };
-  }, []);
+  }, [registerKeywordMetrics]);
   
   const setDataAndProcess = useCallback((newData: KeywordMetric[]) => {
     setData(newData);
     processData(newData);
   }, [processData]);
+  
+  // Refresh data function
+  const refreshData = useCallback(() => {
+    if (data.length > 0) {
+      processData(data);
+    }
+  }, [data, processData]);
   
   return {
     data,
@@ -66,6 +85,13 @@ export function useKeywordAnalytics() {
     error,
     isLoading,
     processData,
-    timestamp
+    timestamp,
+    // Export derived metrics for components
+    keywordData: processedData,
+    topOpportunity,
+    keywordCount,
+    avgVolume,
+    avgDifficulty,
+    refreshData
   };
 }
