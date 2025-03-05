@@ -57,25 +57,57 @@ serve(async (req) => {
       console.log('Received pre-processed data with validation confidence:', processedData.validation?.confidence);
     }
 
-    // 1. Add a message to the thread
+    // 1. Create an enhanced structured prompt with better sections and specific questions
     let prompt = `Analyze this app store data: ${appDescription}
 
-Please provide a structured analysis with the following sections:
-1. Summary
-2. Acquisition
-3. Engagement
-4. Retention
-5. Monetization
-6. Recommendations
+Please provide a comprehensive analysis with the following sections:
 
-Include metrics and percentages where available. Format your response so it can be parsed into sections.`;
+1. Executive Summary
+   - Provide a concise overview of the app's overall health
+   - Identify the most critical positive and negative trends
+   - Calculate estimated impact of any crash increases on user experience
 
-    // If we have date range, include it in the prompt
+2. Acquisition Analysis
+   - Analyze the full acquisition funnel and calculate drop-off rates between stages
+   - Compare conversion efficiency to industry benchmarks (typically 1-3%)
+   - Explain causes for any conversion rate changes
+   - Calculate cost implications if this was paid traffic
+
+3. Engagement & Retention
+   - Break down what the sessions per active device metric tells us about user behavior
+   - Analyze correlation between engagement metrics and other performance indicators
+   - Calculate estimated user retention based on available data
+   - Recommend specific strategies to improve engagement
+
+4. Technical Health
+   - Analyze crash rates and their impact on user experience
+   - Calculate the estimated percentage of user base affected by crashes
+   - Provide technical troubleshooting priorities
+   - Suggest monitoring and stability improvements
+
+5. Monetization Analysis
+   - Calculate average revenue per download and compare to previous periods
+   - Analyze correlation between proceeds growth and download growth
+   - Provide estimated lifetime value projections
+   - Suggest optimal pricing strategies based on the conversion and proceeds data
+
+6. Strategic Recommendations
+   - Provide 3-5 specific, actionable recommendations prioritized by impact
+   - Suggest A/B testing approaches for problem areas
+   - Outline a roadmap to address any critical issues
+   - Recommend key metrics to monitor going forward
+
+Please include specific percentages, calculations, and metrics in your analysis. Use tables where appropriate to present data clearly. Format your response with clear section headings and bullet points for readability.`;
+
+    // If we have date range, include it in the prompt with more specific temporal context
     if (dateRange && dateRange.from && dateRange.to) {
-      prompt += `\n\nThis data covers the period from ${dateRange.from} to ${dateRange.to}. Please reference this timeframe in your analysis.`;
+      prompt = `Analyze this app store data from ${dateRange.from} to ${dateRange.to}:\n\n${appDescription}\n\n${prompt.split('Analyze this app store data:')[1]}`;
+      
+      // Add seasonal context request
+      prompt += `\n\nAlso consider any seasonal factors or market trends that might be influencing results during this specific time period (${dateRange.from} to ${dateRange.to}).`;
     }
 
-    // If we have processed data, include it in the prompt
+    // If we have processed data, include it in the prompt with better structure
     if (processedData) {
       let extractedMetrics;
       let extractedChanges;
@@ -99,11 +131,17 @@ And the following percentage changes:
 ${extractedChanges}
 \`\`\`
 
-Please use these structured values in your analysis where appropriate.`;
+Please use these structured values in your analysis to:
+- Calculate derived metrics (ARPU, LTV, funnel conversion rates)
+- Identify correlations between different metrics
+- Compare to industry benchmarks
+- Make evidence-based recommendations
+
+Format all metrics consistently with appropriate units (%, $, counts) and use tables where helpful to present comparative data.`;
 
       // If we have a date range from processed data, include that too
       if (processedData.dateRange) {
-        prompt += `\n\nThe data indicates it covers the period: ${processedData.dateRange}`;
+        prompt += `\n\nThe data covers the specific period: ${processedData.dateRange}. Consider any seasonal trends or events during this timeframe in your analysis.`;
       }
     }
 
