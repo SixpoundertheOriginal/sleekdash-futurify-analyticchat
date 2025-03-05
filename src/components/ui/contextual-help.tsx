@@ -41,13 +41,17 @@ export function ContextualHelp({
         <TooltipTrigger asChild>
           <button 
             type="button" 
-            className={`text-primary/70 hover:text-primary focus:outline-none transition-colors ${className}`}
+            className={`text-primary/60 hover:text-primary focus:outline-none transition-colors duration-300 ${className}`}
             aria-label="Get help"
           >
             <IconComponent className={`${iconSize} stroke-current`} />
           </button>
         </TooltipTrigger>
-        <TooltipContent side={position} sideOffset={sideOffset} className="max-w-xs bg-popover p-3 text-sm">
+        <TooltipContent 
+          side={position} 
+          sideOffset={sideOffset} 
+          className="max-w-xs bg-gradient-to-br from-popover to-popover/90 backdrop-blur-xl p-3 text-sm border border-white/10"
+        >
           {content}
         </TooltipContent>
       </Tooltip>

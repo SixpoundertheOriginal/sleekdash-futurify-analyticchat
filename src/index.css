@@ -1,11 +1,10 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Modern futuristic color scheme */
+    /* Refined futuristic color scheme with monochromatic purple focus */
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
@@ -15,7 +14,8 @@
     --popover: 222 50% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 262 83% 58%;
+    /* Main accent color - vibrant purple */
+    --primary: 262 85% 66%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 217 33% 17.5%;
@@ -24,7 +24,7 @@
     --muted: 217 33% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217 33% 17.5%;
+    --accent: 262 70% 86%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 350 89% 60%;
@@ -32,19 +32,19 @@
 
     --border: 217 33% 20%;
     --input: 217 33% 20%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 262 85% 66%;
 
     --radius: 0.75rem;
     
     /* Sidebar specific colors */
     --sidebar-background: 222 47% 9%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary: 262 85% 66%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 217 33% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 20%;
-    --sidebar-ring: 262 83% 58%;
+    --sidebar-ring: 262 85% 66%;
   }
 }
 
@@ -56,57 +56,68 @@
   body {
     @apply bg-background text-foreground;
     background-image: 
-      radial-gradient(circle at top right, rgba(124, 58, 237, 0.03), transparent 40%),
-      radial-gradient(circle at center left, rgba(16, 185, 129, 0.03), transparent 50%);
+      radial-gradient(circle at top right, rgba(139, 92, 246, 0.03), transparent 40%),
+      radial-gradient(circle at center left, rgba(16, 185, 129, 0.01), transparent 50%);
     background-size: 100% 100%;
     background-attachment: fixed;
   }
 
-  /* Glassmorphism cards */
+  /* Glassmorphism cards with refined gradients */
   .glass-card {
-    @apply bg-white/5 backdrop-blur-md backdrop-saturate-150 border border-white/10 shadow-xl;
+    @apply bg-white/5 backdrop-blur-md backdrop-saturate-150 border border-white/10 shadow-xl hover:border-primary/20 transition-all duration-500;
   }
   
-  /* Glowing elements */
-  .glow {
-    box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+  /* Interactive gradient button */
+  .gradient-button {
+    @apply relative overflow-hidden bg-gradient-to-br from-primary to-primary/70 text-white font-medium py-2 px-4 rounded-md transition-all duration-300;
   }
   
-  .glow-text {
-    text-shadow: 0 0 8px rgba(124, 58, 237, 0.7);
-  }
-  
-  /* Gradient text */
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-400;
-  }
-  
-  /* Animated borders */
-  .animated-border {
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .animated-border::after {
+  .gradient-button::before {
     content: '';
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.8), transparent);
-    animation: border-glow 3s infinite;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: all 0.5s ease;
   }
   
-  @keyframes border-glow {
-    0% {
-      left: -100%;
-    }
-    100% {
-      left: 100%;
-    }
+  .gradient-button:hover::before {
+    left: 100%;
   }
   
+  /* Subtle interactive backgrounds */
+  .interactive-bg {
+    @apply bg-gradient-to-br from-secondary/80 to-background/90 hover:from-secondary/90 hover:to-background/95 transition-all duration-500;
+  }
+  
+  /* Gradient text effect */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+  
+  /* Interactive card */
+  .interactive-card {
+    @apply relative bg-white/5 backdrop-blur-md border border-white/10 hover:border-primary/20 rounded-lg p-4 transition-all duration-300 overflow-hidden;
+  }
+  
+  .interactive-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(139, 92, 246, 0.05) 50%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  
+  .interactive-card:hover::after {
+    opacity: 1;
+  }
+
   /* Futuristic button styles */
   .btn-future {
     @apply relative overflow-hidden bg-gradient-to-br from-violet-600 to-indigo-700 hover:from-violet-500 hover:to-indigo-600 text-white font-medium py-2 px-4 rounded-md transition-all duration-300;

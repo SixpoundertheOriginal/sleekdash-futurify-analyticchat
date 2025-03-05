@@ -18,8 +18,8 @@ export function AssistantIdInput({ assistantId, onChange }: AssistantIdInputProp
           size="sm"
           position="top"
           content={
-            <div>
-              <p className="font-medium">About Assistant IDs</p>
+            <div className="space-y-2">
+              <p className="font-medium gradient-text">About Assistant IDs</p>
               <p className="mt-1 text-xs">Each assistant has a unique ID that determines:</p>
               <ul className="list-disc pl-4 mt-1 space-y-1 text-xs">
                 <li>The model's capabilities and behavior</li>
@@ -27,7 +27,7 @@ export function AssistantIdInput({ assistantId, onChange }: AssistantIdInputProp
                 <li>Response format and style</li>
               </ul>
               <p className="mt-1 text-xs">Different features use different assistants specialized for that purpose.</p>
-              <p className="mt-2 text-xs text-amber-300">Advanced: Only change this if you know what you're doing.</p>
+              <p className="mt-2 text-xs text-primary/90">Advanced: Only change this if you know what you're doing.</p>
             </div>
           }
         />
@@ -36,7 +36,7 @@ export function AssistantIdInput({ assistantId, onChange }: AssistantIdInputProp
         value={assistantId} 
         onChange={(e) => onChange(e.target.value)} 
         placeholder="Assistant ID"
-        className="bg-black/30 border-white/10 text-white"
+        className="interactive-bg border-white/10 text-white focus:border-primary/30 transition-all duration-300"
       />
     </div>
   );

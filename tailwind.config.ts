@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -26,7 +25,7 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#9b87f5",
+          DEFAULT: "#8b5cf6",
           foreground: "#FFFFFF",
         },
         secondary: {
@@ -84,6 +83,7 @@ export default {
       animation: {
         "fade-up": "fade-up 0.5s ease-out",
         "fade-down": "fade-down 0.5s ease-out",
+        "gradient-shift": "gradient-shift 3s ease infinite alternate",
       },
     },
   },
