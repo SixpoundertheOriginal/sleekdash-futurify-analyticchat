@@ -1,6 +1,9 @@
 
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MessageContent } from "@/components/chat/MessageContent";
 
 interface AnalysisResultCardProps {
   analysisResult: string | null;
@@ -8,12 +11,21 @@ interface AnalysisResultCardProps {
 }
 
 export function AnalysisResultCard({ analysisResult, isLoading = false }: AnalysisResultCardProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  
   if (isLoading) {
     return (
       <Card className="p-5 mt-4 bg-white/5 border-white/10 backdrop-blur-sm rounded-lg shadow-lg">
         <div className="flex flex-col items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
-          <p className="text-white/80">Processing analysis...</p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
+          >
+            <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+          </motion.div>
+          <p className="text-white/80 font-display">Processing analysis...</p>
+          <p className="text-white/50 text-sm mt-1">Extracting insights from your data</p>
         </div>
       </Card>
     );
@@ -23,21 +35,54 @@ export function AnalysisResultCard({ analysisResult, isLoading = false }: Analys
     return (
       <Card className="p-5 mt-4 bg-white/5 border-white/10 backdrop-blur-sm rounded-lg shadow-lg">
         <div className="text-center py-8">
+          <Sparkles className="h-8 w-8 text-primary/40 mx-auto mb-2" />
           <p className="text-white/60">Submit your app data for analysis to see results here.</p>
+          <p className="text-white/40 text-sm mt-2">Upload your App Store data to get AI-powered insights</p>
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className="p-5 mt-4 bg-white/5 border-white/10 backdrop-blur-sm rounded-lg shadow-lg">
-      <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-        <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
-        Analysis Report
-      </h3>
-      <div className="prose prose-invert max-w-none">
-        <div className="text-white/90 whitespace-pre-wrap leading-relaxed">{analysisResult}</div>
+    <Card className="mt-4 bg-white/5 border-white/10 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-transparent border-b border-white/10">
+        <h3 className="text-white font-semibold flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          Analysis Report
+        </h3>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-white/70 hover:text-primary transition-colors p-1 rounded-full"
+        >
+          {isExpanded ? (
+            <ChevronUp className="h-5 w-5" />
+          ) : (
+            <ChevronDown className="h-5 w-5" />
+          )}
+        </motion.button>
       </div>
+      
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="prose prose-invert max-w-none p-5"
+          >
+            <MessageContent content={analysisResult} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {!isExpanded && (
+        <div className="p-3 text-center text-white/60 text-sm cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setIsExpanded(true)}>
+          Click to expand analysis
+        </div>
+      )}
     </Card>
   );
 }

@@ -37,15 +37,26 @@ export const processMessageContent = (content: any): string => {
   }
   
   // Process the content for better display
-  return content
+  let processedContent = content
+    // Format headers properly to ensure they render as headers
     .replace(/^### (.*)/gm, '## $1')
     .replace(/^#### (.*)/gm, '### $1')
+    .replace(/^# (.*)/gm, '# $1')
+    .replace(/^##(?!#) (.*)/gm, '## $1')
+    
+    // Convert common markdown patterns
     .replace(/\*\*(.*?)\*\*/g, '**$1**')
+    .replace(/\*(.*?)\*/g, '*$1*')
     .replace(/^- /gm, '• ')
+    
+    // Format metrics and numbers to stand out
     .replace(/(\$[\d,]+\.?\d*)/g, '**$1**')
     .replace(/([+\-]?\d+\.?\d*%)/g, '**$1**')
-    .replace(/increase/gi, '📈 increase')
-    .replace(/decrease/gi, '📉 decrease')
+    .replace(/\b(\d{4,})\b(?![^<]*>)/g, '**$1**') // Highlight large numbers
+    
+    // Enhance analysis-specific terms with emojis
+    .replace(/increase(?!d)/gi, '📈 increase')
+    .replace(/decrease(?!d)/gi, '📉 decrease')
     .replace(/improved/gi, '✨ improved')
     .replace(/downloads/gi, '⬇️ downloads')
     .replace(/revenue/gi, '💰 revenue')
@@ -61,4 +72,61 @@ export const processMessageContent = (content: any): string => {
     .replace(/competitive/gi, '🥊 competitive')
     .replace(/search volume/gi, '🔍 search volume')
     .replace(/trend/gi, '📈 trend');
+    
+  // Detect and format table-like structures
+  if (content.includes('|') && !content.includes('```')) {
+    const lines = content.split('\n');
+    const tableLines = [];
+    let inTable = false;
+    let tableStartIndex = -1;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.includes('|') && line.split('|').length > 2) {
+        if (!inTable) {
+          inTable = true;
+          tableStartIndex = i;
+        }
+        tableLines.push(line);
+      } else if (inTable) {
+        // End of table detected
+        if (tableLines.length > 1) {
+          // Insert table header divider if missing
+          if (tableLines.length > 1 && !tableLines[1].match(/^[\s|:-]+$/)) {
+            const headerParts = tableLines[0].split('|').length;
+            const divider = '|' + Array(headerParts).join('---|') + '---|';
+            tableLines.splice(1, 0, divider);
+          }
+          
+          // Replace the table lines in the original content
+          const tableContent = tableLines.join('\n');
+          const contentBefore = lines.slice(0, tableStartIndex).join('\n');
+          const contentAfter = lines.slice(i).join('\n');
+          
+          processedContent = contentBefore + '\n\n' + tableContent + '\n\n' + contentAfter;
+        }
+        
+        inTable = false;
+        tableLines.length = 0;
+      }
+    }
+    
+    // Handle table at the end of content
+    if (inTable && tableLines.length > 1) {
+      // Insert table header divider if missing
+      if (tableLines.length > 1 && !tableLines[1].match(/^[\s|:-]+$/)) {
+        const headerParts = tableLines[0].split('|').length;
+        const divider = '|' + Array(headerParts).join('---|') + '---|';
+        tableLines.splice(1, 0, divider);
+      }
+      
+      // Replace the table lines in the original content
+      const tableContent = tableLines.join('\n');
+      const contentBefore = lines.slice(0, tableStartIndex).join('\n');
+      
+      processedContent = contentBefore + '\n\n' + tableContent;
+    }
+  }
+  
+  return processedContent;
 };

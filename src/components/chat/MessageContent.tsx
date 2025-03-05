@@ -1,6 +1,7 @@
 
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import { motion } from 'framer-motion';
 
 interface MessageContentProps {
   content: string;
@@ -23,13 +24,62 @@ export function MessageContent({ content }: MessageContentProps) {
     >
       <ReactMarkdown
         components={{
-          h1: ({ children }) => <h1 className="text-2xl sm:text-3xl font-display font-bold mb-3">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-xl sm:text-2xl font-display font-semibold mb-2 text-primary">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-lg sm:text-xl font-display font-medium mb-2 text-primary/90">{children}</h3>,
-          h4: ({ children }) => <h4 className="text-base sm:text-lg font-display font-medium mb-1.5 text-primary/80">{children}</h4>,
-          p: ({ children }) => <p className="text-white/90 mb-2 leading-relaxed">{children}</p>,
-          strong: ({ children }) => <strong className="text-primary font-semibold">{children}</strong>,
-          em: ({ children }) => <em className="text-white/75 italic">{children}</em>,
+          h1: ({ children }) => (
+            <motion.h1 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-2xl sm:text-3xl font-display font-bold mb-3 border-b border-primary/20 pb-2"
+            >
+              {children}
+            </motion.h1>
+          ),
+          h2: ({ children }) => (
+            <motion.h2 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="text-xl sm:text-2xl font-display font-semibold mb-2 text-primary flex items-center gap-2 before:content-[''] before:w-1.5 before:h-5 before:bg-primary before:rounded-sm"
+            >
+              <span className="pl-2">{children}</span>
+            </motion.h2>
+          ),
+          h3: ({ children }) => (
+            <motion.h3 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.15 }}
+              className="text-lg sm:text-xl font-display font-medium mb-2 text-primary/90 flex items-center gap-1.5"
+            >
+              <span className="inline-block w-1 h-4 bg-primary/70 rounded-sm"></span>
+              {children}
+            </motion.h3>
+          ),
+          h4: ({ children }) => (
+            <h4 className="text-base sm:text-lg font-display font-medium mb-1.5 text-primary/80 pl-3 border-l-2 border-primary/50">
+              {children}
+            </h4>
+          ),
+          p: ({ children }) => (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="text-white/90 mb-2 leading-relaxed"
+            >
+              {children}
+            </motion.p>
+          ),
+          strong: ({ children }) => (
+            <strong className="text-primary font-semibold bg-primary/10 px-1 rounded">
+              {children}
+            </strong>
+          ),
+          em: ({ children }) => (
+            <em className="text-accent italic not-italic font-medium">
+              {children}
+            </em>
+          ),
           code: ({ children }) => (
             <code className="px-1.5 py-0.5 bg-white/10 rounded text-primary/90 font-mono text-sm">
               {children}
@@ -42,20 +92,46 @@ export function MessageContent({ content }: MessageContentProps) {
               </table>
             </div>
           ),
-          thead: ({ children }) => <thead className="bg-primary/20 font-display">{children}</thead>,
+          thead: ({ children }) => (
+            <thead className="bg-primary/20 font-display sticky top-0">
+              {children}
+            </thead>
+          ),
           th: ({ children }) => (
-            <th className="px-4 py-2 text-left font-display font-semibold text-white text-sm">{children}</th>
+            <th className="px-4 py-2 text-left font-display font-semibold text-white text-sm">
+              {children}
+            </th>
           ),
           td: ({ children }) => (
-            <td className="px-4 py-2 text-white/90 border-t border-white/10 text-sm font-mono tabular-nums">{children}</td>
+            <td className="px-4 py-2 text-white/90 border-t border-white/10 text-sm font-mono tabular-nums">
+              {children}
+            </td>
           ),
-          tr: ({ children }) => <tr className="hover:bg-white/5">{children}</tr>,
-          ul: ({ children }) => <ul className="space-y-1 my-2 pl-2">{children}</ul>,
+          tr: ({ children }) => (
+            <tr className="hover:bg-white/5 transition-colors">
+              {children}
+            </tr>
+          ),
+          ul: ({ children }) => (
+            <motion.ul 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="space-y-2 my-3 pl-3"
+            >
+              {children}
+            </motion.ul>
+          ),
           li: ({ children }) => (
-            <li className="flex items-start gap-1.5 text-white/90 text-sm">
-              <span className="text-primary mt-1 flex-shrink-0">•</span>
+            <li className="flex items-start gap-2 text-white/90 text-sm">
+              <span className="text-primary mt-1 flex-shrink-0 inline-block w-2 h-2 rounded-full bg-primary"></span>
               <span>{children}</span>
             </li>
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-4 border-primary/50 pl-4 italic text-white/80 my-4 bg-white/5 py-2 pr-2 rounded-r">
+              {children}
+            </blockquote>
           ),
         }}
       >
