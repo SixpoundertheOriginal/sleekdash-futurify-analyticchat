@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatInterface } from "@/components/ChatInterface";
 import { FileUpload } from "@/components/FileUpload";
@@ -33,7 +34,7 @@ export function KeywordsTabs({ activeTab: externalActiveTab, setActiveTab: exter
         <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
           AI-Powered Keywords Assistant
         </h3>
-        <ChatInterface preprocessDataFn={undefined} feature="keywords" />
+        <ChatInterface feature="keywords" />
       </TabsContent>
       
       <TabsContent value="upload" className="pt-4 space-y-6">
