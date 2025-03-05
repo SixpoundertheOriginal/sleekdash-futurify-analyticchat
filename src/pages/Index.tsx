@@ -3,7 +3,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { AppStoreAnalysis } from "@/components/app-store/AppStoreAnalysis";
-import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { getAnalyticsFromStorage } from "@/utils/analytics/storage";
 import { useEffect, useState } from "react";
 import { useDevice } from "@/hooks/use-mobile";
@@ -92,10 +92,10 @@ const Index = () => {
           <main className="flex-1 p-3 sm:p-6 animate-fade-up overflow-x-hidden">
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
               <header className="text-white space-y-1 sm:space-y-2">
-                <h1 className="responsive-text-2xl font-bold tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
                   App Store Analytics Dashboard
                 </h1>
-                <p className="responsive-text-base text-white/60">
+                <p className="text-sm sm:text-base text-white/60">
                   Monitor your app's performance and optimize your marketing strategy
                 </p>
               </header>

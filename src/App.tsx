@@ -45,7 +45,7 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <ErrorBoundary fallback={<div className="p-8">Something went wrong. Please refresh the page.</div>}>
+    <ErrorBoundary fallback={<div className="p-8 text-white">Something went wrong. Please refresh the page.</div>}>
       <QueryClientProvider client={queryClient}>
         <Router>
           <AuthProvider>
