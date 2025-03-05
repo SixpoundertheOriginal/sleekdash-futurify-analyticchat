@@ -5,9 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { 
   Navigate,
-  createBrowserRouter,
-  RouterProvider,
-  createRoutesFromElements,
+  BrowserRouter as Router,
+  Routes,
   Route
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/components/AuthProvider";
@@ -20,8 +19,8 @@ import KeywordsAnalysis from "./pages/KeywordsAnalysis";
 
 const queryClient = new QueryClient();
 
-// Move ProtectedRoute inside a separate component that's rendered within AuthProvider
-const ProtectedRouteWrapper = ({ children }: { children: React.ReactNode }) => {
+// Protected route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   
   if (isLoading) {
@@ -34,58 +33,44 @@ const ProtectedRouteWrapper = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 };
-
-// Create router with standard configuration
-const router = createBrowserRouter(
-  createRoutesFromElements(
-    <>
-      <Route path="/auth" element={<Auth />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRouteWrapper>
-            <ThreadProvider>
-              <Index />
-            </ThreadProvider>
-          </ProtectedRouteWrapper>
-        }
-      />
-      <Route
-        path="/keywords"
-        element={
-          <ProtectedRouteWrapper>
-            <ThreadProvider>
-              <KeywordsAnalysis />
-            </ThreadProvider>
-          </ProtectedRouteWrapper>
-        }
-      />
-      <Route
-        path="/dev-tools"
-        element={
-          <ProtectedRouteWrapper>
-            <ThreadProvider>
-              <DevTools />
-            </ThreadProvider>
-          </ProtectedRouteWrapper>
-        }
-      />
-      <Route path="*" element={<NotFound />} />
-    </>
-  )
-);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <RouterProvider router={router} />
-      </TooltipProvider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <ThreadProvider>
+                  <Index />
+                </ThreadProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/keywords" element={
+              <ProtectedRoute>
+                <ThreadProvider>
+                  <KeywordsAnalysis />
+                </ThreadProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/dev-tools" element={
+              <ProtectedRoute>
+                <ThreadProvider>
+                  <DevTools />
+                </ThreadProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </AuthProvider>
+    </Router>
   </QueryClientProvider>
 );
 
