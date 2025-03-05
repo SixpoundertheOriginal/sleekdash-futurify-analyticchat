@@ -47,7 +47,9 @@ export function ChatContextProvider({ children, initialState }: {
   const [isCheckingForResponses, setIsCheckingForResponses] = useState(initialState?.isCheckingForResponses || false);
 
   // Create a wrapper for setShowStats that matches the expected function signature
-  const setShowStatsWrapper = (show: boolean) => setShowStats(show);
+  const setShowStatsWrapper = (show: boolean) => {
+    setShowStats(show);
+  };
 
   return (
     <ChatContext.Provider value={{
