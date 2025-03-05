@@ -83,6 +83,11 @@ export function AppStoreForm({
     if (isAppStoreFormat(appDescription)) {
       processedText = processAppStoreText(appDescription);
       console.log('Detected App Store format, pre-processed text');
+      
+      // Add explicit Impressions mention for the analysis if it's in the data
+      if (appDescription.includes('Impressions')) {
+        processedText += "\n\nPlease include impressions data in the analysis.";
+      }
     } else {
       // Add date range info to the app description if not already in App Store format
       const dateInfo = dateRange ? 

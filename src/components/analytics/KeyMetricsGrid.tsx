@@ -1,5 +1,6 @@
+
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Eye } from "lucide-react";
 import { ProcessedAnalytics, formatMetric } from "@/utils/analytics/processAnalysis";
 
 interface KeyMetricsGridProps {
@@ -22,6 +23,12 @@ export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
       format: "currency"
     },
     {
+      title: "Impressions",
+      value: 2500000,
+      change: 15.3,
+      format: "number"
+    },
+    {
       title: "Conversion Rate",
       value: 4.8,
       change: 12.7,
@@ -38,7 +45,7 @@ export function KeyMetricsGrid({ data }: KeyMetricsGridProps) {
   ];
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
       {metrics.map((metric, index) => {
         // Determine if this is a "positive" change (using inverseColor for crash metrics)
         const isPositiveChange = metric.inverseColor 
