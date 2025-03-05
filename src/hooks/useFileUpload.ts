@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { processExcelFile, validateFileContent, validateFileType } from "@/utils/file-processing";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 export interface UseFileUploadReturn {
   dragActive: boolean;
@@ -19,8 +20,8 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { error, setError, clearError, handleError } = useErrorHandler();
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -44,10 +45,10 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
       return false;
     }
     return true;
-  }, [threadId, assistantId, toast]);
+  }, [threadId, assistantId, toast, setError]);
 
   const processFile = async (file: File) => {
-    setError(null);
+    clearError();
     
     if (!validateParameters()) {
       return;
@@ -168,12 +169,7 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
 
     } catch (error) {
       console.error('[FileUpload] Error processing file:', error);
-      setError(error instanceof Error ? error.message : "Failed to process the file. Please try again.");
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process the file. Please try again."
-      });
+      handleError(error, "File Processing");
     } finally {
       setUploading(false);
       setProgress(0);
@@ -184,8 +180,8 @@ export function useFileUpload(threadId: string | null, assistantId: string | nul
     setDragActive(false);
     setUploading(false);
     setProgress(0);
-    setError(null);
-  }, []);
+    clearError();
+  }, [clearError]);
 
   return {
     dragActive,
