@@ -26,25 +26,25 @@ export function ChatMessage({ message, onReply, onReaction }: ChatMessageProps) 
 
   return (
     <div 
-      className={`flex items-start gap-3 animate-fade-up ${
+      className={`flex items-start gap-4 animate-fade-up ${
         message.role === 'assistant' ? 'max-w-full' : 'max-w-[85%] ml-auto flex-row-reverse'
       }`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
-      <div className={`h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center ${
+      <div className={`h-10 w-10 rounded-full flex-shrink-0 flex items-center justify-center ${
         message.role === 'assistant' 
-          ? 'bg-primary/20 text-primary' 
-          : 'bg-accent/20 text-accent'
+          ? 'bg-primary/10 text-primary border border-primary/20' 
+          : 'bg-accent/10 text-accent border border-accent/20'
       }`}>
         {message.role === 'assistant' ? (
-          <Bot className="h-4 w-4" />
+          <Bot className="h-5 w-5" />
         ) : (
-          <User className="h-4 w-4" />
+          <User className="h-5 w-5" />
         )}
       </div>
       <div className="flex-1">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-2">
           <span className="font-display text-xs font-medium text-white/60">
             {message.role === 'assistant' ? 'AI Assistant' : 'You'}
           </span>
@@ -52,8 +52,8 @@ export function ChatMessage({ message, onReply, onReaction }: ChatMessageProps) 
             {formattedTime}
           </span>
         </div>
-        <Card className={`bg-white/5 border-none p-4 shadow-sm transition-all duration-200 ${
-          message.role === 'assistant' ? 'bg-primary/5' : 'bg-accent/5'
+        <Card className={`bg-white/3 border border-white/8 p-5 shadow-sm backdrop-blur-sm transition-all duration-200 ${
+          message.role === 'assistant' ? 'bg-primary/3' : 'bg-accent/3'
         }`}>
           <MessageContent content={processedContent} />
           

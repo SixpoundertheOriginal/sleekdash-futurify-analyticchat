@@ -23,7 +23,7 @@ export function ContextualHelp({
   size = "sm",
   className,
 }: ContextualHelpProps) {
-  const sideOffset = 5;
+  const sideOffset = 8;
   
   // Map size to icon dimensions
   const iconSize = {
@@ -41,7 +41,7 @@ export function ContextualHelp({
         <TooltipTrigger asChild>
           <button 
             type="button" 
-            className={`text-primary/60 hover:text-primary focus:outline-none transition-colors duration-300 ${className}`}
+            className={`text-primary/60 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors duration-300 ${className}`}
             aria-label="Get help"
           >
             <IconComponent className={`${iconSize} stroke-current`} />
@@ -50,7 +50,7 @@ export function ContextualHelp({
         <TooltipContent 
           side={position} 
           sideOffset={sideOffset} 
-          className="max-w-xs font-sans bg-gradient-to-br from-popover to-popover/90 backdrop-blur-xl p-3 text-sm border border-white/10"
+          className="max-w-xs font-sans bg-gradient-to-br from-black/80 to-black/90 backdrop-blur-xl p-4 text-sm border border-white/10 shadow-sm"
         >
           {content}
         </TooltipContent>

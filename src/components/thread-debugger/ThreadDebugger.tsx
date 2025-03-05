@@ -38,15 +38,15 @@ export function ThreadDebugger() {
   } = useThreadDebugger();
 
   return (
-    <Card className="bg-black/20 border-primary/20 backdrop-blur-sm">
-      <CardHeader className="bg-primary/10 rounded-t-lg border-b border-primary/20">
+    <Card className="bg-black/10 border-primary/20 backdrop-blur-sm shadow-sm">
+      <CardHeader className="bg-primary/5 rounded-t-lg border-b border-primary/10 p-6">
         <ThreadDebuggerHeader 
           showAdvanced={showAdvanced} 
           onToggleAdvanced={() => setShowAdvanced(!showAdvanced)} 
         />
       </CardHeader>
       
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-6 space-y-6">
         <ThreadIdInput 
           threadId={newThreadId}
           isValidThread={isValidThread}
@@ -63,7 +63,7 @@ export function ThreadDebugger() {
 
         {showAdvanced && (
           <>
-            <Separator className="bg-white/10" />
+            <Separator className="bg-white/5 my-6" />
             
             <SavedThreadsList 
               threads={savedThreads}
@@ -82,7 +82,7 @@ export function ThreadDebugger() {
         <InfoNotice />
       </CardContent>
       
-      <CardFooter>
+      <CardFooter className="p-0">
         <ThreadDebuggerActions 
           isCreatingThread={isCreatingThread}
           onResetDefaults={resetToDefaults}

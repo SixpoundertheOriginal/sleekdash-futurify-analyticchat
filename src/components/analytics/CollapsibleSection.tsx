@@ -31,19 +31,19 @@ export function CollapsibleSection({
 
   return (
     <div 
-      className="border border-white/10 rounded-lg bg-white/5 overflow-hidden transition-all duration-200"
+      className="border border-white/8 rounded-lg bg-white/3 overflow-hidden transition-all duration-200 backdrop-blur-sm shadow-sm"
       role="region"
       aria-labelledby={headerId}
     >
       <SkeletonWrapper 
         isLoading={isLoading} 
-        className="p-4"
+        className="p-5"
         items={[
           { height: "24px", width: "180px", className: "rounded-md" }
         ]}
       >
         <div 
-          className="flex items-center justify-between p-3 sm:p-4 cursor-pointer"
+          className="flex items-center justify-between p-5 cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}
           role="button"
           id={headerId}
@@ -57,11 +57,11 @@ export function CollapsibleSection({
             }
           }}
         >
-          <h2 className="text-lg sm:text-xl font-semibold text-white">{title}</h2>
+          <h2 className="text-lg sm:text-xl font-display font-semibold text-white">{title}</h2>
           <Button 
             variant="ghost" 
             size="icon"
-            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             onClick={(e) => {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
@@ -78,7 +78,7 @@ export function CollapsibleSection({
         id={contentId}
         className={`transition-all duration-300 ${
           isExpanded 
-            ? "max-h-[2000px] opacity-100 p-3 sm:p-4 pt-0" 
+            ? "max-h-[2000px] opacity-100 px-5 pb-5" 
             : "max-h-0 opacity-0 overflow-hidden p-0"
         }`}
         role="region"

@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { ProcessedAnalytics, formatMetric } from "@/utils/analytics/processAnalysis";
@@ -12,9 +11,8 @@ export function TrendAnalysis({ data }: TrendAnalysisProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const chartRef = useRef<HTMLDivElement>(null);
   
-  // Simulate historical data based on current values and changes
   const generateHistoricalData = (value: number, change: number) => {
-    const points = 12; // Last 12 periods
+    const points = 12;
     const data = [];
     let currentValue = value;
     
@@ -35,7 +33,6 @@ export function TrendAnalysis({ data }: TrendAnalysisProps) {
     data.acquisition.downloads.change
   );
 
-  // Handle keyboard navigation
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     switch (e.key) {
       case 'ArrowRight':
@@ -61,7 +58,6 @@ export function TrendAnalysis({ data }: TrendAnalysisProps) {
     }
   };
 
-  // Format trend info for screen reader
   const getTrendInfo = (index: number) => {
     const item = downloadsTrend[index];
     let info = `${item.period}: ${formatMetric(item.value, 'number')} downloads`;
@@ -80,20 +76,19 @@ export function TrendAnalysis({ data }: TrendAnalysisProps) {
   };
 
   return (
-    <Card className="p-6 bg-white/5 border-white/10">
-      <h3 className="font-semibold text-white mb-4" id="trend-analysis-title">Downloads Trend Analysis</h3>
+    <Card className="p-8 bg-white/5 border-white/10 shadow-sm backdrop-blur-sm">
+      <h3 className="font-display font-semibold text-white mb-6" id="trend-analysis-title">
+        Downloads Trend Analysis
+      </h3>
       
-      {/* Accessibility description */}
       <div className="sr-only" id="trend-analysis-desc">
         This chart shows the trend of downloads over time with a prediction for future downloads. Use arrow keys to navigate between time periods.
       </div>
 
-      {/* Screen reader announcements */}
       <div aria-live="polite" className="sr-only">
         {focusedIndex >= 0 ? getTrendInfo(focusedIndex) : ''}
       </div>
 
-      {/* Screen reader only table */}
       <div className="sr-only">
         <table aria-labelledby="trend-analysis-title">
           <caption>Downloads trend over time</caption>
@@ -123,7 +118,7 @@ export function TrendAnalysis({ data }: TrendAnalysisProps) {
       </div>
 
       <div 
-        className="h-[300px]"
+        className="h-[320px] p-4 bg-black/10 rounded-lg border border-white/5 backdrop-blur-sm my-4"
         ref={chartRef}
         tabIndex={0}
         role="figure"
@@ -133,7 +128,7 @@ export function TrendAnalysis({ data }: TrendAnalysisProps) {
       >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={downloadsTrend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
             <XAxis 
               dataKey="period" 
               tick={{ fill: '#9ca3af' }} 
@@ -145,10 +140,12 @@ export function TrendAnalysis({ data }: TrendAnalysisProps) {
             <Tooltip
               formatter={(value: number) => [formatMetric(value, 'number'), 'Downloads']}
               contentStyle={{ 
-                backgroundColor: 'rgba(0,0,0,0.8)', 
+                backgroundColor: 'rgba(0,0,0,0.7)', 
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '8px',
-                color: 'white' 
+                boxShadow: '0 2px 3px rgba(0,0,0,0.2)',
+                color: 'white',
+                padding: '8px 16px'
               }}
             />
             <Line 
@@ -196,20 +193,18 @@ export function TrendAnalysis({ data }: TrendAnalysisProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* Legend and summary information */}
-      <div className="mt-4 flex flex-wrap gap-4 justify-center">
+      <div className="mt-6 flex flex-wrap gap-8 justify-center">
         <div className="flex items-center">
-          <div className="w-3 h-3 mr-2 rounded-full bg-[#9b87f5]" aria-hidden="true"></div>
+          <div className="w-3 h-3 mr-3 rounded-full bg-[#9b87f5]" aria-hidden="true"></div>
           <span className="text-white">Actual Downloads</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 mr-2 rounded-full bg-[#4C51BF] border border-dashed border-[#4C51BF]" aria-hidden="true"></div>
+          <div className="w-3 h-3 mr-3 rounded-full bg-[#4C51BF] border border-dashed border-[#4C51BF]" aria-hidden="true"></div>
           <span className="text-white">Predicted Downloads</span>
         </div>
       </div>
 
-      {/* Trend summary */}
-      <div className="mt-4 p-2 bg-white/5 rounded">
+      <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
         <p className="text-white text-sm">
           Overall trend: <span className={data.acquisition.downloads.change >= 0 ? 'text-green-400' : 'text-red-400'}>
             {data.acquisition.downloads.change >= 0 ? 'Growing ' : 'Declining '}

@@ -18,7 +18,7 @@ export function AdvancedDashboard({ data, dateRange, isLoading = false }: Advanc
   const { activeTab, setActiveTab, formattedDateRange } = useDashboardState({ data, dateRange });
   
   return (
-    <div className="space-y-6 animate-fade">
+    <div className="space-y-8 animate-fade">
       <DashboardHeader 
         title={data.summary.title} 
         dateRange={dateRange} 
@@ -37,11 +37,13 @@ export function AdvancedDashboard({ data, dateRange, isLoading = false }: Advanc
       <GlobalMetrics data={data} isLoading={isLoading} />
       
       {/* Dashboard Tabs */}
-      <DashboardTabs
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        data={data}
-      />
+      <Card className="border border-white/10 bg-white/3 backdrop-blur-sm overflow-hidden shadow-sm">
+        <DashboardTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          data={data}
+        />
+      </Card>
     </div>
   );
 }
