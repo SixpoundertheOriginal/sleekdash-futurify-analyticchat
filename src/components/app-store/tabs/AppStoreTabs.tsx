@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppStoreForm } from "../AppStoreForm";
 import { AnalysisResultCard } from "../AnalysisResultCard";
@@ -54,10 +55,14 @@ export function AppStoreTabs({
   threadId,
   assistantId
 }: AppStoreTabsProps) {
+  // Create a combined data object that uses the full processed analytics if available,
+  // or falls back to directly extracted metrics
   const dashboardData = processedAnalytics || directlyExtractedMetrics as ProcessedAnalytics || initialData;
   
+  // Combine both processing states to determine if we're loading analysis
   const isLoadingAnalysis = isProcessing || isAnalyzing;
 
+  // Add effect to log data changes for debugging
   useEffect(() => {
     console.log("AppStoreTabs - Current tab:", activeTab);
     console.log("AppStoreTabs - Analysis result available:", !!analysisResult);
@@ -66,31 +71,18 @@ export function AppStoreTabs({
     console.log("AppStoreTabs - Dashboard data:", dashboardData);
   }, [activeTab, analysisResult, processedAnalytics, directlyExtractedMetrics, dashboardData]);
 
+  // Add effect to ensure dashboard data is available when switching to dashboard tab
   useEffect(() => {
     if (activeTab === "dashboard" && analysisResult && !processedAnalytics) {
       console.log("Dashboard tab active but processed analytics not available. Attempting to process analysis...");
+      // Try to process the analysis again
       onAnalysisSuccess(analysisResult);
     }
   }, [activeTab, analysisResult, processedAnalytics, onAnalysisSuccess]);
 
+  // Handler to switch to dashboard tab
   const handleViewDashboard = () => {
     setActiveTab("dashboard");
-  };
-
-  const handleRefreshDashboard = () => {
-    console.log("Refreshing dashboard with data from analysis tab");
-    
-    if (analysisResult) {
-      onAnalysisSuccess(analysisResult);
-    } else if (extractedData) {
-      try {
-        onDirectExtractionSuccess(extractedData);
-      } catch (error) {
-        console.error("Error refreshing dashboard with extracted data:", error);
-      }
-    } else {
-      setActiveTab("input");
-    }
   };
 
   return (
@@ -145,7 +137,6 @@ export function AppStoreTabs({
             data={dashboardData} 
             dateRange={dateRange}
             isLoading={isProcessing || isAnalyzing}
-            onRefresh={handleRefreshDashboard}
           />
         ) : (
           <AnalyticsDashboardWrapper 

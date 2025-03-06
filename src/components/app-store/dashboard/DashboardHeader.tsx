@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, Activity, Calendar } from "lucide-react";
 import { format } from "date-fns";
@@ -11,15 +12,13 @@ interface DashboardHeaderProps {
   dateRange: DateRange | null;
   formattedDateRange: string;
   onDateRangeChange?: (dateRange: DateRange | null) => void;
-  onRefresh?: () => void;
 }
 
 export function DashboardHeader({ 
   title, 
   dateRange, 
   formattedDateRange,
-  onDateRangeChange,
-  onRefresh
+  onDateRangeChange
 }: DashboardHeaderProps) {
   const { toast } = useToast();
   const deviceType = useDevice();
@@ -28,13 +27,9 @@ export function DashboardHeader({
   const handleRefresh = () => {
     toast({
       title: "Refreshing data",
-      description: "Pulling latest data from analysis..."
+      description: "Dashboard data is being updated..."
     });
-    
-    // Call the onRefresh callback if provided
-    if (onRefresh) {
-      onRefresh();
-    }
+    // Implementation would go here
   };
 
   return (

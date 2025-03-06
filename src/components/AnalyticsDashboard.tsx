@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCcw, Calendar } from "lucide-react";
@@ -23,10 +24,9 @@ import { useDevice } from "@/hooks/use-mobile";
 interface AnalyticsDashboardProps {
   data: ProcessedAnalytics;
   dateRange: DateRange | null;
-  onRefresh?: () => void;
 }
 
-export function AnalyticsDashboard({ data, dateRange, onRefresh }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboardProps) {
   const [timeRange, setTimeRange] = useState("30days");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
@@ -97,14 +97,8 @@ export function AnalyticsDashboard({ data, dateRange, onRefresh }: AnalyticsDash
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // If onRefresh callback is provided, call it
-      if (onRefresh) {
-        onRefresh();
-      } else {
-        // Simulate refresh delay if no callback is provided
-        await new Promise(resolve => setTimeout(resolve, 1200));
-      }
-      
+      // Simulate refresh delay
+      await new Promise(resolve => setTimeout(resolve, 1200));
       toast({
         title: "Dashboard Updated",
         description: "Analysis data has been refreshed"
