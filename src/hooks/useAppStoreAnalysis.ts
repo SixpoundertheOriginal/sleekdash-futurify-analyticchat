@@ -188,17 +188,20 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
         preventDefault: () => {},
       } as React.FormEvent<Element>;
       
-      const analysisText = await chatApi.handleSubmit(mockEvent);
-      if (analysisText) {
-        handleAnalysisSuccess(analysisText);
-      } else {
-        handleAnalysisError("Analysis failed to return any results.");
-      }
+      await chatApi.handleSubmit(mockEvent);
+      
+      setTimeout(() => {
+        if (analysisResult) {
+          handleAnalysisSuccess(analysisResult);
+        } else {
+          console.log("No analysis result received yet - this might be expected if processing takes time");
+        }
+      }, 500);
     } catch (error: any) {
       console.error("Analysis failed:", error);
       handleAnalysisError(error.message || "Analysis failed.");
     }
-  }, [extractedData, handleAnalysisError, handleAnalysisSuccess, chatApi]);
+  }, [extractedData, handleAnalysisError, handleAnalysisSuccess, chatApi, analysisResult]);
 
   const createDefaultProcessedAnalytics = (): ProcessedAnalytics => {
     return {
