@@ -18,19 +18,21 @@ export async function analyzeKeywords(data: any[]) {
         messages: [
           {
             role: 'system',
-            content: `You are an ASO expert analyzing keyword data. 
-            Provide detailed insights including:
-            1. Keyword performance trends
-            2. Ranking opportunities with specific metrics
-            3. Competitor insights and gap analysis
-            4. Specific optimization recommendations with expected impact
-            5. User search intent patterns
-            6. Seasonal trends if applicable
-            Format your response with clear sections and actionable insights.`
+            content: `You are an ASO expert specializing in educational and learning apps. 
+            Provide detailed insights on the keyword data including:
+            1. Keyword performance trends and patterns specific to educational apps
+            2. High-opportunity keywords with low competition for educational content
+            3. Competitor insights and gap analysis in the education category
+            4. Specific optimization recommendations tailored to educational apps
+            5. User search intent patterns for parents and educators
+            6. Age-specific keyword opportunities (preschool, elementary, etc.)
+            7. Seasonal educational trends (back-to-school, summer learning, etc.)
+            
+            Format your response with clear sections and highly actionable insights for educational app developers.`
           },
           {
             role: 'user',
-            content: `Analyze this keyword data: ${JSON.stringify(data.slice(0, 50))}`
+            content: `Analyze this keyword data for my educational app: ${JSON.stringify(data.slice(0, 50))}`
           }
         ],
       }),
@@ -66,19 +68,21 @@ export async function addToThread(threadId: string, data: any[], dataSample: any
     // Format the content for the thread message
     const fileUploadContent = openaiError
       ? `The user uploaded a keyword file with ${data.length} rows, but there was an error analyzing it: ${openaiError.message}`
-      : `The user uploaded a keyword file with ${data.length} rows. Here's a sample of the data:
+      : `The user uploaded a keyword file for their educational app with ${data.length} rows. Here's a sample of the data:
       
 \`\`\`json
 ${JSON.stringify(dataSample, null, 2)}
 \`\`\`
 
 Please provide a comprehensive keyword analysis focusing on:
-1. High-opportunity keywords (based on search volume, difficulty, and relevance)
-2. Strategic keyword combinations for app metadata optimization
-3. User search behavior patterns and intent analysis
-4. Competitive gap analysis based on the keyword landscape
-5. Specific optimization recommendations with estimated impact
-6. Seasonal trends or patterns if detectable in the data`;
+1. High-opportunity keywords for educational apps (based on search volume, difficulty, and relevance)
+2. Age-specific keyword strategies (preschool, elementary, middle school, etc.)
+3. Strategic keyword combinations for educational app metadata optimization
+4. Parent and educator search intent patterns
+5. Educational content category gaps based on keyword analysis
+6. Seasonal educational trends (back-to-school, summer learning, holiday educational searches)
+7. Specific optimization recommendations with estimated impact
+8. Educational competitor analysis based on keyword presence`;
       
     console.log('[process-keywords] Sending message to OpenAI thread with content:', fileUploadContent.substring(0, 100) + '...');
     
