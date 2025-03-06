@@ -1,3 +1,4 @@
+
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { AppStoreForm } from "../AppStoreForm";
 import { AnalyticsDashboardWrapper } from "../AnalyticsDashboardWrapper";
@@ -55,6 +56,19 @@ export function AppStoreTabs({
 }: AppStoreTabsProps) {
   const deviceType = useDevice();
   const isMobile = deviceType === 'mobile';
+  
+  // Define the tabs order for navigation
+  const tabsOrder = ['input', 'analysis', 'dashboard', 'advanced', 'chat'];
+  
+  // Add the navigateTab function
+  const navigateTab = (direction: 'prev' | 'next') => {
+    const currentIndex = tabsOrder.indexOf(activeTab);
+    if (direction === 'prev' && currentIndex > 0) {
+      setActiveTab(tabsOrder[currentIndex - 1]);
+    } else if (direction === 'next' && currentIndex < tabsOrder.length - 1) {
+      setActiveTab(tabsOrder[currentIndex + 1]);
+    }
+  };
   
   const defaultAnalytics: ProcessedAnalytics = {
     summary: {
