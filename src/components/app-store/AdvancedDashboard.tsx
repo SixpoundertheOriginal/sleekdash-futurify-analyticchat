@@ -16,9 +16,10 @@ interface AdvancedDashboardProps {
   data: ProcessedAnalytics;
   dateRange: DateRange | null;
   isLoading?: boolean;
+  onRefresh?: () => void;
 }
 
-export function AdvancedDashboard({ data, dateRange, isLoading = false }: AdvancedDashboardProps) {
+export function AdvancedDashboard({ data, dateRange, isLoading = false, onRefresh }: AdvancedDashboardProps) {
   const { activeTab, setActiveTab, formattedDateRange } = useDashboardState({ data, dateRange });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastTouchY, setLastTouchY] = useState(0);
@@ -81,7 +82,13 @@ export function AdvancedDashboard({ data, dateRange, isLoading = false }: Advanc
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    // Simulate refreshing data
+    
+    // Call the external refresh handler if provided
+    if (onRefresh) {
+      onRefresh();
+    }
+    
+    // Simulate refreshing data or wait for the onRefresh promise
     setTimeout(() => {
       setIsRefreshing(false);
       // Vibrate for 100ms on refresh completion if browser supports it
@@ -118,7 +125,8 @@ export function AdvancedDashboard({ data, dateRange, isLoading = false }: Advanc
       <DashboardHeader 
         title={data.summary.title} 
         dateRange={dateRange} 
-        formattedDateRange={formattedDateRange} 
+        formattedDateRange={formattedDateRange}
+        onRefresh={onRefresh} 
       />
       
       <AnimatePresence mode="wait">

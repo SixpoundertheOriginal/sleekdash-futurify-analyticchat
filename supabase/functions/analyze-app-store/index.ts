@@ -66,36 +66,52 @@ Please provide a comprehensive analysis with the following sections:
    - Provide a concise overview of the app's overall health
    - Identify the most critical positive and negative trends
    - Calculate estimated impact of any crash increases on user experience
+   - Prioritize identifying crashes and ANRs as critical issues affecting user experience and app store rankings
+   - Recognize their impact on organic discoverability
+   - Investigate traffic source changes, especially dips in ad and referral traffic
+   - Highlight growth areas such as increased organic traffic or improved brand search
+   - Associate performance metrics with strategic initiatives (e.g., ASO, keyword optimization)
+   - Analyze how KPIs affect business goals, identifying negative trends and root causes
+   - Balance challenges and successes for a nuanced understanding
+   - Transform data analysis into actionable business strategies
 
 2. Acquisition Analysis
    - Analyze the full acquisition funnel and calculate drop-off rates between stages
    - Compare conversion efficiency to industry benchmarks (typically 1-3%)
    - Explain causes for any conversion rate changes
    - Calculate cost implications if this was paid traffic
+   - Investigate dips in ad and referral traffic to identify marketing strategy deficiencies
+   - Highlight organic traffic improvements and their connection to ASO efforts
 
 3. Engagement & Retention
    - Break down what the sessions per active device metric tells us about user behavior
    - Analyze correlation between engagement metrics and other performance indicators
    - Calculate estimated user retention based on available data
    - Recommend specific strategies to improve engagement
+   - Examine how engagement metrics correlate with crashes and ANRs
 
 4. Technical Health
    - Analyze crash rates and their impact on user experience
    - Calculate the estimated percentage of user base affected by crashes
    - Provide technical troubleshooting priorities
    - Suggest monitoring and stability improvements
+   - Prioritize technical issues based on their impact on user experience and app store rankings
 
 5. Monetization Analysis
    - Calculate average revenue per download and compare to previous periods
    - Analyze correlation between proceeds growth and download growth
    - Provide estimated lifetime value projections
    - Suggest optimal pricing strategies based on the conversion and proceeds data
+   - Connect monetization performance to overall business objectives
 
 6. Strategic Recommendations
    - Provide 3-5 specific, actionable recommendations prioritized by impact
    - Suggest A/B testing approaches for problem areas
    - Outline a roadmap to address any critical issues
    - Recommend key metrics to monitor going forward
+   - Suggest solutions for identified challenges and strategies to leverage growth opportunities
+   - Emphasize improvements like ASO for better organic reach
+   - Keep recommendations concise and focused on key insights needed for decision-making
 
 Please include specific percentages, calculations, and metrics in your analysis. Use tables where appropriate to present data clearly. Format your response with clear section headings and bullet points for readability.`;
 

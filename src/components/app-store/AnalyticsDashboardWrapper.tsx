@@ -19,6 +19,7 @@ interface AnalyticsDashboardWrapperProps {
   processingError: string | null;
   dateRange: DateRange | null;
   onRetry?: () => void;
+  onRefresh?: () => void;
 }
 
 export function AnalyticsDashboardWrapper({
@@ -27,7 +28,8 @@ export function AnalyticsDashboardWrapper({
   isProcessing,
   processingError,
   dateRange,
-  onRetry
+  onRetry,
+  onRefresh
 }: AnalyticsDashboardWrapperProps) {
   const { error, setError, clearError } = useErrorHandler();
   
@@ -120,6 +122,7 @@ export function AnalyticsDashboardWrapper({
             <AnalyticsDashboard 
               data={dataToUse} 
               dateRange={dateRange}
+              onRefresh={onRefresh}
             />
           </SkeletonWrapper>
         </ErrorBoundary>

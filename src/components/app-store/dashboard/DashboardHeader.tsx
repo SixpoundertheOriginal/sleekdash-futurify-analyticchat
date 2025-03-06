@@ -12,13 +12,15 @@ interface DashboardHeaderProps {
   dateRange: DateRange | null;
   formattedDateRange: string;
   onDateRangeChange?: (dateRange: DateRange | null) => void;
+  onRefresh?: () => void;
 }
 
 export function DashboardHeader({ 
   title, 
   dateRange, 
   formattedDateRange,
-  onDateRangeChange
+  onDateRangeChange,
+  onRefresh
 }: DashboardHeaderProps) {
   const { toast } = useToast();
   const deviceType = useDevice();
@@ -29,7 +31,11 @@ export function DashboardHeader({
       title: "Refreshing data",
       description: "Dashboard data is being updated..."
     });
-    // Implementation would go here
+    
+    // Call the refresh callback if provided
+    if (onRefresh) {
+      onRefresh();
+    }
   };
 
   return (

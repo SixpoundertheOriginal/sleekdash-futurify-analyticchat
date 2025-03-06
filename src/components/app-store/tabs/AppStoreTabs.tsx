@@ -1,21 +1,21 @@
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AppStoreForm } from "../AppStoreForm";
-import { AnalysisResultCard } from "../AnalysisResultCard";
-import { AdvancedDashboard } from "../AdvancedDashboard";
-import { AnalyticsDashboardWrapper } from "../AnalyticsDashboardWrapper";
-import { HistoricalAnalytics } from "../HistoricalAnalytics";
-import { DataExtractionStatus } from "../DataExtractionStatus";
-import { Info } from "lucide-react";
-import { Card } from "@/components/ui/card";
+// Update the AppStoreTabs component to connect the refresh functionality between dashboard and input tabs
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+import { AppStoreForm } from "../AppStoreForm";
+import { AnalyticsDashboardWrapper } from "../AnalyticsDashboardWrapper";
+import { AnalysisResultCard } from "../AnalysisResultCard";
 import { DateRange } from "@/components/chat/DateRangePicker";
-import { useEffect } from "react";
+import { AdvancedDashboard } from "../AdvancedDashboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChatInterface } from "@/components/ChatInterface";
+import { Button } from "@/components/ui/button";
+import { useDevice } from "@/hooks/use-mobile";
+import { ArrowLeft, ArrowRight, FileText, BarChart, PieChart, MessageSquare } from "lucide-react";
 
 interface AppStoreTabsProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  extractedData: any;
+  extractedData: string | null;
   analysisResult: string | null;
   isProcessing: boolean;
   isAnalyzing: boolean;
@@ -27,7 +27,7 @@ interface AppStoreTabsProps {
   processingError: string | null;
   onProcessSuccess: (data: any) => void;
   onAnalysisSuccess: (analysisResult: string) => void;
-  onDirectExtractionSuccess: (metrics: Partial<ProcessedAnalytics>) => void;
+  onDirectExtractionSuccess?: (metrics: Partial<ProcessedAnalytics>) => void;
   setProcessing: (processing: boolean) => void;
   setAnalyzing: (analyzing: boolean) => void;
   threadId?: string;
@@ -55,46 +55,86 @@ export function AppStoreTabs({
   threadId,
   assistantId
 }: AppStoreTabsProps) {
-  // Create a combined data object that uses the full processed analytics if available,
-  // or falls back to directly extracted metrics
-  const dashboardData = processedAnalytics || directlyExtractedMetrics as ProcessedAnalytics || initialData;
+  const deviceType = useDevice();
+  const isMobile = deviceType === 'mobile';
   
-  // Combine both processing states to determine if we're loading analysis
-  const isLoadingAnalysis = isProcessing || isAnalyzing;
-
-  // Add effect to log data changes for debugging
-  useEffect(() => {
-    console.log("AppStoreTabs - Current tab:", activeTab);
-    console.log("AppStoreTabs - Analysis result available:", !!analysisResult);
-    console.log("AppStoreTabs - Processed analytics available:", !!processedAnalytics);
-    console.log("AppStoreTabs - Directly extracted metrics available:", !!directlyExtractedMetrics);
-    console.log("AppStoreTabs - Dashboard data:", dashboardData);
-  }, [activeTab, analysisResult, processedAnalytics, directlyExtractedMetrics, dashboardData]);
-
-  // Add effect to ensure dashboard data is available when switching to dashboard tab
-  useEffect(() => {
-    if (activeTab === "dashboard" && analysisResult && !processedAnalytics) {
-      console.log("Dashboard tab active but processed analytics not available. Attempting to process analysis...");
-      // Try to process the analysis again
-      onAnalysisSuccess(analysisResult);
-    }
-  }, [activeTab, analysisResult, processedAnalytics, onAnalysisSuccess]);
-
-  // Handler to switch to dashboard tab
-  const handleViewDashboard = () => {
-    setActiveTab("dashboard");
+  // Function to handle refreshing the analysis by navigating to the input tab
+  const handleRefreshAnalysis = () => {
+    setActiveTab('input');
   };
-
+  
+  // Function to navigate to the next or previous tab
+  const navigateTab = (direction: 'next' | 'prev') => {
+    const tabOrder = ['input', 'analysis', 'dashboard', 'advanced', 'chat'];
+    const currentIndex = tabOrder.indexOf(activeTab);
+    
+    if (direction === 'next' && currentIndex < tabOrder.length - 1) {
+      setActiveTab(tabOrder[currentIndex + 1]);
+    } else if (direction === 'prev' && currentIndex > 0) {
+      setActiveTab(tabOrder[currentIndex - 1]);
+    }
+  };
+  
+  const initialProcessedData = processedAnalytics || 
+    (initialData && directlyExtractedMetrics ? 
+      { ...initialData, ...directlyExtractedMetrics } : 
+      initialData);
+  
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid grid-cols-3 w-full bg-white/5 p-1">
-        <TabsTrigger value="input">Input Data</TabsTrigger>
-        <TabsTrigger value="analysis">Analysis</TabsTrigger>
-        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-      </TabsList>
+    <Tabs
+      defaultValue="input"
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="w-full"
+    >
+      <div className="flex justify-between items-center border-b border-white/10 px-4">
+        <TabsList className="bg-transparent overflow-x-auto max-w-full hide-scrollbar">
+          <TabsTrigger value="input" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+            <FileText className="h-4 w-4 mr-2" />
+            <span className={isMobile ? "hidden" : "inline"}>Input</span>
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+            <PieChart className="h-4 w-4 mr-2" />
+            <span className={isMobile ? "hidden" : "inline"}>Analysis</span>
+          </TabsTrigger>
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+            <BarChart className="h-4 w-4 mr-2" />
+            <span className={isMobile ? "hidden" : "inline"}>Dashboard</span>
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+            <BarChart className="h-4 w-4 mr-2" />
+            <span className={isMobile ? "hidden" : "inline"}>Advanced</span>
+          </TabsTrigger>
+          <TabsTrigger value="chat" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            <span className={isMobile ? "hidden" : "inline"}>Chat</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigateTab('prev')}
+            disabled={activeTab === 'input'}
+            className="text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigateTab('next')}
+            disabled={activeTab === 'chat'}
+            className="text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       
-      <TabsContent value="input" className="pt-4">
-        <AppStoreForm 
+      <TabsContent value="input" className="mt-4 space-y-4">
+        <AppStoreForm
           onProcessSuccess={onProcessSuccess}
           onAnalysisSuccess={onAnalysisSuccess}
           onDirectExtractionSuccess={onDirectExtractionSuccess}
@@ -107,51 +147,68 @@ export function AppStoreTabs({
           threadId={threadId}
           assistantId={assistantId}
         />
-        
-        {extractedData && (
-          <div className="mt-4">
-            <DataExtractionStatus extractedData={extractedData} />
-          </div>
-        )}
-        
-        <div className="flex items-start mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-          <Info className="h-5 w-5 text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-white/80">
-            <p className="font-medium mb-1">How to use this tool:</p>
-            <p>Paste your App Store Connect analytics data here and we'll analyze it for you. First select the date range, then copy the data directly from the App Store Connect dashboard or export as text.</p>
-          </div>
-        </div>
       </TabsContent>
       
-      <TabsContent value="analysis" className="pt-4">
-        <AnalysisResultCard 
-          analysisResult={analysisResult} 
-          isLoading={isLoadingAnalysis}
-          onViewDashboard={handleViewDashboard}
+      <TabsContent value="analysis" className="mt-4 space-y-4">
+        <AnalysisResultCard
+          analysisResult={analysisResult}
+          isAnalyzing={isAnalyzing}
+          dateRange={dateRange}
         />
       </TabsContent>
       
-      <TabsContent value="dashboard" className="pt-4">
-        {dashboardData ? (
+      <TabsContent value="dashboard" className="mt-4 space-y-4">
+        <AnalyticsDashboardWrapper
+          processedData={processedAnalytics}
+          initialData={initialData || {
+            summary: { title: "App Analytics", dateRange: "", executiveSummary: "" },
+            acquisition: {},
+            financial: {},
+            engagement: {},
+            technical: {},
+            geographical: {}
+          }}
+          isProcessing={isProcessing}
+          processingError={processingError}
+          dateRange={dateRange}
+          onRetry={() => setActiveTab('input')}
+          onRefresh={handleRefreshAnalysis}
+        />
+      </TabsContent>
+      
+      <TabsContent value="advanced" className="mt-4 space-y-4">
+        {processedAnalytics && (
           <AdvancedDashboard 
-            data={dashboardData} 
+            data={processedAnalytics} 
             dateRange={dateRange}
             isLoading={isProcessing || isAnalyzing}
-          />
-        ) : (
-          <AnalyticsDashboardWrapper 
-            initialData={initialData || {} as ProcessedAnalytics}
-            processedData={processedAnalytics}
-            isProcessing={isProcessing}
-            processingError={processingError}
-            dateRange={dateRange}
-            onRetry={() => setActiveTab("input")}
+            onRefresh={handleRefreshAnalysis}
           />
         )}
-        
-        <div className="mt-6">
-          <HistoricalAnalytics />
-        </div>
+        {!processedAnalytics && initialData && (
+          <AdvancedDashboard 
+            data={initialData} 
+            dateRange={dateRange}
+            isLoading={isProcessing || isAnalyzing}
+            onRefresh={handleRefreshAnalysis}
+          />
+        )}
+        {!processedAnalytics && !initialData && (
+          <div className="text-center py-8 text-white/60">
+            <p>No analytics data available. Run an analysis first.</p>
+            <Button 
+              variant="default" 
+              className="mt-4 bg-primary hover:bg-primary/90"
+              onClick={() => setActiveTab('input')}
+            >
+              Go to Input Tab
+            </Button>
+          </div>
+        )}
+      </TabsContent>
+      
+      <TabsContent value="chat" className="mt-4 space-y-4">
+        <ChatInterface feature="appStore" />
       </TabsContent>
     </Tabs>
   );
