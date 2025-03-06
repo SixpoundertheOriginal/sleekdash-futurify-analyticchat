@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCcw, Calendar } from "lucide-react";
@@ -21,24 +20,23 @@ import { format } from "date-fns";
 import { CollapsibleSection } from "./analytics/CollapsibleSection";
 import { useDevice } from "@/hooks/use-mobile";
 
-interface AnalyticsDashboardProps {
+export interface AnalyticsDashboardProps {
   data: ProcessedAnalytics;
   dateRange: DateRange | null;
+  onRefresh?: () => void;
 }
 
-export function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ data, dateRange, onRefresh }: AnalyticsDashboardProps) {
   const [timeRange, setTimeRange] = useState("30days");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const deviceType = useDevice();
   const isMobile = deviceType === 'mobile';
   
-  // Format the selected date range for display
   const formattedDateRange = dateRange 
     ? `${format(dateRange.from, "LLL dd, yyyy")} - ${format(dateRange.to, "LLL dd, yyyy")}`
     : "Not specified";
   
-  // Enhanced demo data for visualization
   const demoData: ProcessedAnalytics = {
     ...data,
     summary: {
@@ -97,7 +95,6 @@ export function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboardProps)
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // Simulate refresh delay
       await new Promise(resolve => setTimeout(resolve, 1200));
       toast({
         title: "Dashboard Updated",
@@ -147,7 +144,6 @@ export function AnalyticsDashboard({ data, dateRange }: AnalyticsDashboardProps)
         </div>
       </div>
 
-      {/* Always show key metrics as they provide the essential overview */}
       <KeyMetricsGrid data={demoData} />
 
       <div className="space-y-6">

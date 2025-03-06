@@ -1,5 +1,3 @@
-
-// Update the AppStoreTabs component to connect the refresh functionality between dashboard and input tabs
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { AppStoreForm } from "../AppStoreForm";
 import { AnalyticsDashboardWrapper } from "../AnalyticsDashboardWrapper";
@@ -58,27 +56,53 @@ export function AppStoreTabs({
   const deviceType = useDevice();
   const isMobile = deviceType === 'mobile';
   
-  // Function to handle refreshing the analysis by navigating to the input tab
-  const handleRefreshAnalysis = () => {
-    setActiveTab('input');
-  };
-  
-  // Function to navigate to the next or previous tab
-  const navigateTab = (direction: 'next' | 'prev') => {
-    const tabOrder = ['input', 'analysis', 'dashboard', 'advanced', 'chat'];
-    const currentIndex = tabOrder.indexOf(activeTab);
-    
-    if (direction === 'next' && currentIndex < tabOrder.length - 1) {
-      setActiveTab(tabOrder[currentIndex + 1]);
-    } else if (direction === 'prev' && currentIndex > 0) {
-      setActiveTab(tabOrder[currentIndex - 1]);
+  const defaultAnalytics: ProcessedAnalytics = {
+    summary: {
+      title: "App Analytics",
+      dateRange: "",
+      executiveSummary: ""
+    },
+    acquisition: {
+      impressions: { value: 0, change: 0 },
+      pageViews: { value: 0, change: 0 },
+      conversionRate: { value: 0, change: 0 },
+      downloads: { value: 0, change: 0 },
+      funnelMetrics: {
+        impressionsToViews: 0,
+        viewsToDownloads: 0
+      }
+    },
+    financial: {
+      proceeds: { value: 0, change: 0 },
+      proceedsPerUser: { value: 0, change: 0 },
+      derivedMetrics: {
+        arpd: 0,
+        revenuePerImpression: 0,
+        monetizationEfficiency: 0,
+        payingUserPercentage: 0
+      }
+    },
+    engagement: {
+      sessionsPerDevice: { value: 0, change: 0 },
+      retention: {
+        day1: { value: 0, benchmark: 0 },
+        day7: { value: 0, benchmark: 0 }
+      }
+    },
+    technical: {
+      crashes: { value: 0, change: 0 },
+      crashRate: { value: 0, percentile: "average" }
+    },
+    geographical: {
+      markets: [],
+      devices: []
     }
   };
   
   const initialProcessedData = processedAnalytics || 
     (initialData && directlyExtractedMetrics ? 
       { ...initialData, ...directlyExtractedMetrics } : 
-      initialData);
+      initialData || defaultAnalytics);
   
   return (
     <Tabs
@@ -152,6 +176,7 @@ export function AppStoreTabs({
       <TabsContent value="analysis" className="mt-4 space-y-4">
         <AnalysisResultCard
           analysisResult={analysisResult}
+          isLoading={isAnalyzing}
           isAnalyzing={isAnalyzing}
           dateRange={dateRange}
         />
@@ -160,19 +185,12 @@ export function AppStoreTabs({
       <TabsContent value="dashboard" className="mt-4 space-y-4">
         <AnalyticsDashboardWrapper
           processedData={processedAnalytics}
-          initialData={initialData || {
-            summary: { title: "App Analytics", dateRange: "", executiveSummary: "" },
-            acquisition: {},
-            financial: {},
-            engagement: {},
-            technical: {},
-            geographical: {}
-          }}
+          initialData={initialData || defaultAnalytics}
           isProcessing={isProcessing}
           processingError={processingError}
           dateRange={dateRange}
           onRetry={() => setActiveTab('input')}
-          onRefresh={handleRefreshAnalysis}
+          onRefresh={() => setActiveTab('input')}
         />
       </TabsContent>
       
@@ -182,7 +200,7 @@ export function AppStoreTabs({
             data={processedAnalytics} 
             dateRange={dateRange}
             isLoading={isProcessing || isAnalyzing}
-            onRefresh={handleRefreshAnalysis}
+            onRefresh={() => setActiveTab('input')}
           />
         )}
         {!processedAnalytics && initialData && (
@@ -190,7 +208,7 @@ export function AppStoreTabs({
             data={initialData} 
             dateRange={dateRange}
             isLoading={isProcessing || isAnalyzing}
-            onRefresh={handleRefreshAnalysis}
+            onRefresh={() => setActiveTab('input')}
           />
         )}
         {!processedAnalytics && !initialData && (

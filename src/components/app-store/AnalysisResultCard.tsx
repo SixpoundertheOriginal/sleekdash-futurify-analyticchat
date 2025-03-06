@@ -6,17 +6,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageContent } from "@/components/chat/MessageContent";
 import { Button } from "@/components/ui/button";
 import { saveAs } from "file-saver";
+import { DateRange } from "@/components/chat/DateRangePicker";
 
-interface AnalysisResultCardProps {
+export interface AnalysisResultCardProps {
   analysisResult: string | null;
   isLoading?: boolean;
+  isAnalyzing?: boolean;
+  dateRange?: DateRange | null;
   title?: string;
   onViewDashboard?: () => void;
 }
 
 export function AnalysisResultCard({ 
   analysisResult, 
-  isLoading = false, 
+  isLoading = false,
+  isAnalyzing = false,
+  dateRange,
   title = "Analysis Report",
   onViewDashboard 
 }: AnalysisResultCardProps) {
