@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
@@ -28,14 +27,10 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
   const [processingError, setProcessingError] = useState<string | null>(null);
   const { toast } = useToast();
   const { threadId, assistantId } = useThread();
-  // Fix: Get the actual sendMessage function
   const chatApi = useChat();
   const sendMessage = chatApi.sendMessage || chatApi.handleSubmit;
-
-  // Add metrics registry integration
   const { registerMetrics } = useMetrics('appStore');
 
-  // Register initial data if provided
   useEffect(() => {
     if (initialData) {
       registerAppStoreMetrics(initialData, {
@@ -51,18 +46,14 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
     setProcessingError(null);
     setActiveTab("analysis");
 
-    // Extract base metrics directly from the extracted data
     const baseMetrics = extractBaseMetrics(extractedData);
     setDirectlyExtractedMetrics(baseMetrics);
 
-    // If baseMetrics were extracted, set the processedAnalytics state
     if (baseMetrics) {
-      // Fix: Ensure we're setting a full ProcessedAnalytics object by merging with defaults
       const analyticsDefaults = createDefaultProcessedAnalytics();
       setProcessedAnalytics({ ...analyticsDefaults, ...baseMetrics });
     }
 
-    // Register metrics if we have processed analytics
     if (processedAnalytics) {
       registerAppStoreMetrics(processedAnalytics, {
         source: 'direct-extraction',
@@ -81,16 +72,12 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
     setAnalysisResult(result);
     
     try {
-      // Try to parse the analysis text and create processed analytics
       const extractedMetrics = parseMetricsFromAnalysis(result);
       if (extractedMetrics) {
-        // Create a properly structured ProcessedAnalytics object
         const processedResult = createDefaultProcessedAnalytics();
         
-        // Update the processed result with metrics extracted from analysis
         if (Array.isArray(extractedMetrics)) {
           extractedMetrics.forEach(metric => {
-            // Map extracted metrics to the appropriate fields
             if (metric.metric === "Downloads") {
               processedResult.acquisition.downloads = { 
                 value: Number(metric.value.replace(/[^0-9.-]+/g, '')), 
@@ -115,10 +102,8 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
           });
         }
         
-        // Update state with the processed analytics
         setProcessedAnalytics(processedResult);
         
-        // Register metrics from AI analysis
         registerAppStoreMetrics(processedResult, {
           source: 'ai-analysis',
           confidence: 0.95
@@ -134,13 +119,10 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
     });
   }, [setAnalyzing, setAnalysisResult, toast, registerAppStoreMetrics]);
 
-  // Update the parameter type to match expected usage
   const handleDirectExtractionSuccess = useCallback((metrics: Partial<ProcessedAnalytics>) => {
     try {
-      // Create default analytics object to ensure we have required properties
       const defaultAnalytics = createDefaultProcessedAnalytics();
       
-      // Merge the extracted metrics with the default structure
       const processedResult: ProcessedAnalytics = {
         ...defaultAnalytics,
         ...metrics,
@@ -154,7 +136,6 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
       setAnalysisResult(JSON.stringify(processedResult));
       setProcessedAnalytics(processedResult);
       
-      // Register the metrics
       registerAppStoreMetrics(processedResult, {
         source: 'direct-extraction',
         confidence: 0.8
@@ -203,10 +184,12 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
 
     setAnalyzing(true);
     try {
-      // Fix: Use the properly accessed sendMessage function
-      const analysisText = await sendMessage(analysisPrompt, threadId, assistantId);
+      const mockEvent = {
+        preventDefault: () => {},
+      } as React.FormEvent<Element>;
+      
+      const analysisText = await chatApi.handleSubmit(mockEvent);
       if (analysisText) {
-        // Pass the analysis text to handleAnalysisSuccess which will process it
         handleAnalysisSuccess(analysisText);
       } else {
         handleAnalysisError("Analysis failed to return any results.");
@@ -215,9 +198,8 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps) {
       console.error("Analysis failed:", error);
       handleAnalysisError(error.message || "Analysis failed.");
     }
-  }, [extractedData, handleAnalysisError, handleAnalysisSuccess, sendMessage, threadId, assistantId]);
+  }, [extractedData, handleAnalysisError, handleAnalysisSuccess, chatApi]);
 
-  // Helper function to create a default ProcessedAnalytics object
   const createDefaultProcessedAnalytics = (): ProcessedAnalytics => {
     return {
       summary: {

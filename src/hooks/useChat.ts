@@ -153,7 +153,9 @@ export const useChat = (options: UseChatOptions = {}) => {
       }
       
       const lastMessage = messages[messages.length - 1];
-      return lastMessage.role === 'assistant' ? lastMessage.content : "";
+      return lastMessage.role === 'assistant' && typeof lastMessage.content === 'string' 
+        ? lastMessage.content 
+        : "";
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
