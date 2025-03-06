@@ -1,5 +1,6 @@
 
 import { TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { AppStoreForm } from "../../AppStoreForm";
 import { AnalysisResultCard } from "../../AnalysisResultCard";
 import { AnalyticsDashboardWrapper } from "../../AnalyticsDashboardWrapper";
