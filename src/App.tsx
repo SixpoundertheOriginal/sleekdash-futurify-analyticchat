@@ -15,6 +15,8 @@ const Auth = lazy(() => import('./pages/Auth'));
 const KeywordsAnalysis = lazy(() => import('./pages/KeywordsAnalysis'));
 const FileUpload = lazy(() => import('./pages/FileUpload'));
 const DevTools = lazy(() => import('./pages/DevTools'));
+const AppEventsAi = lazy(() => import('./pages/AppEventsAi'));
+const CroTestingAi = lazy(() => import('./pages/CroTestingAi'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Loading fallback component
@@ -80,6 +82,8 @@ function App() {
                 <Route path="/keywords" element={<KeywordsAnalysis />} />
                 <Route path="/file-upload" element={<FileUpload />} />
                 <Route path="/devtools" element={<DevTools />} />
+                <Route path="/app-events-ai" element={<AppEventsAi />} />
+                <Route path="/cro-testing-ai" element={<CroTestingAi />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

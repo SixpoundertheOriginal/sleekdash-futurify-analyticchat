@@ -11,7 +11,10 @@ const ASSISTANT_IDS = {
   keywords: 'asst_EYm70EgIE2okxc8onNc1DVTj',
   appStore: 'asst_TfGVD0dcL2vsnPCihybxorC7',
   marketing: 'asst_EYm70EgIE2okxc8onNc1DVTj',
-  general: 'asst_EYm70EgIE2okxc8onNc1DVTj'
+  general: 'asst_EYm70EgIE2okxc8onNc1DVTj',
+  // Add new assistants for the new features
+  appEvents: 'asst_EYm70EgIE2okxc8onNc1DVTj', // Using general assistant for now
+  croTesting: 'asst_EYm70EgIE2okxc8onNc1DVTj', // Using general assistant for now
 };
 
 // Default thread IDs for each feature
@@ -19,7 +22,10 @@ const DEFAULT_THREAD_IDS = {
   keywords: 'thread_XexaKEggRcir8kQLQbbLqqy9',
   appStore: 'thread_d5BLFmp47v8EbWacFTjs6sgh',
   marketing: 'thread_XexaKEggRcir8kQLQbbLqqy9',
-  general: 'thread_XexaKEggRcir8kQLQbbLqqy9'
+  general: 'thread_XexaKEggRcir8kQLQbbLqqy9',
+  // Add new thread IDs for the new features
+  appEvents: 'thread_XexaKEggRcir8kQLQbbLqqy9', // Using general thread for now
+  croTesting: 'thread_XexaKEggRcir8kQLQbbLqqy9', // Using general thread for now
 };
 
 // Main serve function
