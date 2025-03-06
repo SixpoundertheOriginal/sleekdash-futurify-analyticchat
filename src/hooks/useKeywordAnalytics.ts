@@ -4,12 +4,13 @@ import { KeywordMetric, ProcessedKeywordData, AnalysisError } from '@/components
 import { calculateOpportunityScore } from '@/utils/keywords/opportunity-score';
 import { registerKeywordMetrics } from '@/utils/metrics/adapters/keywordsAdapter';
 import { useMetrics } from '@/hooks/useMetrics';
+import { generateProcessedDummyData } from '@/utils/keywords/dummyData';
 
 export function useKeywordAnalytics() {
   const [data, setData] = useState<KeywordMetric[]>([]);
   const [processedData, setProcessedData] = useState<ProcessedKeywordData[]>([]);
   const [error, setError] = useState<AnalysisError | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [timestamp, setTimestamp] = useState<string | undefined>(undefined);
   
   // Add metrics registry integration
@@ -75,8 +76,19 @@ export function useKeywordAnalytics() {
   const refreshData = useCallback(() => {
     if (data.length > 0) {
       processData(data);
+    } else {
+      // Generate new dummy data on refresh if no real data exists
+      const dummyData = generateProcessedDummyData(30);
+      setDataAndProcess(dummyData);
     }
-  }, [data, processData]);
+  }, [data, processData, setDataAndProcess]);
+  
+  // Load dummy data on initial render
+  useEffect(() => {
+    // Generate dummy data for presentation
+    const dummyData = generateProcessedDummyData(30);
+    setDataAndProcess(dummyData);
+  }, [setDataAndProcess]);
   
   return {
     data,
