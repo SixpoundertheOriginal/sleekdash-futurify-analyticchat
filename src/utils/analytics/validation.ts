@@ -40,3 +40,36 @@ export const validateAnalysisText = (analysisText: string): boolean => {
 
   return true;
 };
+
+/**
+ * Checks if the processed analytics data has valid metrics for visualization
+ * @param data The processed analytics data to validate
+ * @returns Boolean indicating if the data has sufficient valid metrics
+ */
+export const hasValidMetrics = (data: any): boolean => {
+  if (!data) {
+    console.log('No data to validate metrics');
+    return false;
+  }
+  
+  // Check for essential metrics needed for visualization
+  const requiredMetrics = [
+    'impressions',
+    'pageViews',
+    'downloads',
+    'conversionRate'
+  ];
+  
+  // Count how many required metrics are present and have valid values
+  const validMetricsCount = requiredMetrics.filter(metric => {
+    const value = data.metrics?.[metric];
+    return value !== undefined && value !== null && !isNaN(Number(value));
+  }).length;
+  
+  // We consider the data valid if it has at least 60% of required metrics
+  const validThreshold = Math.ceil(requiredMetrics.length * 0.6);
+  const isValid = validMetricsCount >= validThreshold;
+  
+  console.log(`Metrics validation: ${validMetricsCount}/${requiredMetrics.length} valid metrics, threshold: ${validThreshold}`);
+  return isValid;
+};
