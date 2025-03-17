@@ -1,6 +1,12 @@
 
 import React from 'react';
-import { ErrorBoundary, ErrorBoundaryProps } from './error-boundary';
+import { ErrorBoundary } from './error-boundary';
+
+// Define the props interface locally instead of importing it
+interface ErrorBoundaryProps {
+  fallback?: React.ReactNode;
+  onReset?: () => void;
+}
 
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
