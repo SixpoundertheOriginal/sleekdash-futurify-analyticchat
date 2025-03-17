@@ -75,8 +75,8 @@ describe('FileValidation utilities', () => {
   
   describe('validateFileContent', () => {
     it('should validate json content correctly', async () => {
-      const validJson = createMockFile('valid.json', 'application/json', JSON.stringify({ data: [1, 2, 3] }));
-      const invalidJson = createMockFile('invalid.json', 'application/json', '{ "data": [1, 2,');
+      const validJson = new File([JSON.stringify({ data: [1, 2, 3] })], 'valid.json', { type: 'application/json' });
+      const invalidJson = new File(['{ "data": [1, 2,'], 'invalid.json', { type: 'application/json' });
       
       const validResult = await validateFileContent(validJson, 'json');
       const invalidResult = await validateFileContent(invalidJson, 'json');
@@ -87,8 +87,8 @@ describe('FileValidation utilities', () => {
     });
     
     it('should validate csv content correctly', async () => {
-      const validCsv = createMockFile('valid.csv', 'text/csv', 'header1,header2\nvalue1,value2');
-      const invalidCsv = createMockFile('invalid.csv', 'text/csv', 'no commas or new lines');
+      const validCsv = new File(['header1,header2\nvalue1,value2'], 'valid.csv', { type: 'text/csv' });
+      const invalidCsv = new File(['no commas or new lines'], 'invalid.csv', { type: 'text/csv' });
       
       const validResult = await validateFileContent(validCsv, 'csv');
       const invalidResult = await validateFileContent(invalidCsv, 'csv');

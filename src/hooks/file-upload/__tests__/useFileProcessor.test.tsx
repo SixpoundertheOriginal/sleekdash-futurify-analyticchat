@@ -108,26 +108,27 @@ describe('useFileProcessor', () => {
     
     // Fix: Rather than using requireMock which doesn't exist in Vitest,
     // we'll create a temporary mock implementation for this test
-    const processDataMock = vi.mocked(
-      (await import('@/utils/data-processing/DataProcessingService')).processData
-    );
-    
-    // Save original mock
-    const originalMock = processDataMock.getMockImplementation();
-    
-    // Set temporary mock for this test
-    processDataMock.mockImplementationOnce(() => ({
+    const processDataMock = vi.fn().mockImplementationOnce(() => ({
       success: false,
       error: 'Processing failed'
     }));
+    
+    // Save original implementation
+    const originalProcessData = vi.mocked(
+      (await import('@/utils/data-processing/DataProcessingService')).processData
+    );
+    const originalImpl = originalProcessData.getMockImplementation();
+    
+    // Override the mock for this test only
+    originalProcessData.mockImplementation(processDataMock);
     
     const csvFile = createMockFile('test.csv', 'text/csv');
     
     const processingResult = await result.current.processFileContent(csvFile);
     
     // Restore original mock after test
-    if (originalMock) {
-      processDataMock.mockImplementation(originalMock);
+    if (originalImpl) {
+      originalProcessData.mockImplementation(originalImpl);
     }
     
     expect(processingResult).toBeNull();
