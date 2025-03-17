@@ -1,6 +1,9 @@
 
-import { useState, useCallback } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useCallback } from "react";
+import { useErrorState } from "./errors/useErrorState";
+import { useErrorAnalysis } from "./errors/useErrorAnalysis";
+import { useErrorNotification } from "./errors/useErrorNotification";
+import { useAsyncErrorHandler } from "./errors/useAsyncErrorHandler";
 
 export interface ErrorHandlerState {
   error: string | null;
@@ -15,89 +18,32 @@ export interface ErrorHandlerState {
   };
 }
 
+/**
+ * Composite hook that combines all error handling capabilities
+ */
 export function useErrorHandler(initialError: string | null = null): ErrorHandlerState {
-  const [error, setError] = useState<string | null>(initialError);
-  const { toast } = useToast();
+  // Use the smaller, more focused hooks
+  const { error, setError, clearError } = useErrorState(initialError);
+  const { getErrorDetails } = useErrorAnalysis();
+  const { notifyError } = useErrorNotification();
 
-  const clearError = useCallback(() => setError(null), []);
-
-  const getErrorDetails = useCallback((error: unknown) => {
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : typeof error === 'string' 
-        ? error 
-        : 'An unexpected error occurred';
-    
-    // Determine error type based on message content or error instance
-    let type: "network" | "validation" | "permission" | "timeout" | "unknown" = "unknown";
-    let suggestion = "Please try again or contact support if the issue persists.";
-    
-    if (error instanceof Error) {
-      if (error.name === "NetworkError" || errorMessage.includes("network") || errorMessage.includes("fetch")) {
-        type = "network";
-        suggestion = "Check your internet connection and try again.";
-      } else if (error.name === "ValidationError" || errorMessage.includes("valid")) {
-        type = "validation";
-        suggestion = "Please check your input data and try again.";
-      } else if (error.name === "PermissionError" || errorMessage.includes("permission") || errorMessage.includes("unauthorized")) {
-        type = "permission";
-        suggestion = "You may not have permission to perform this action. Try logging in again.";
-      } else if (error.name === "TimeoutError" || errorMessage.includes("timeout")) {
-        type = "timeout";
-        suggestion = "The operation timed out. Please try again when the server is less busy.";
-      }
-    } else if (typeof error === "string") {
-      if (error.includes("network") || error.includes("connection") || error.includes("offline")) {
-        type = "network";
-        suggestion = "Check your internet connection and try again.";
-      } else if (error.includes("valid") || error.includes("format") || error.includes("invalid")) {
-        type = "validation";
-        suggestion = "Please check your input data and try again.";
-      } else if (error.includes("permission") || error.includes("access") || error.includes("unauthorized")) {
-        type = "permission";
-        suggestion = "You may not have permission to perform this action. Try logging in again.";
-      } else if (error.includes("timeout") || error.includes("timed out")) {
-        type = "timeout";
-        suggestion = "The operation timed out. Please try again when the server is less busy.";
-      }
-    }
-    
-    return {
-      message: errorMessage,
-      type,
-      suggestion
-    };
-  }, []);
-
+  // Handle errors with logging and notification
   const handleError = useCallback((error: unknown, context?: string) => {
-    const { message: errorMessage, suggestion } = getErrorDetails(error);
-    
+    const errorDetails = getErrorDetails(error);
     const contextPrefix = context ? `${context}: ` : '';
-    const fullErrorMessage = `${contextPrefix}${errorMessage}`;
+    const fullErrorMessage = `${contextPrefix}${errorDetails.message}`;
     
     console.error('Error:', fullErrorMessage, error);
     setError(fullErrorMessage);
-    
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: `${fullErrorMessage}. ${suggestion}`
-    });
+    notifyError(errorDetails, context);
     
     return fullErrorMessage;
-  }, [toast, getErrorDetails]);
+  }, [getErrorDetails, notifyError, setError]);
 
-  // Helper to wrap async functions with error handling
-  const withErrorHandling = useCallback(async <T>(fn: () => Promise<T>, context?: string): Promise<T | null> => {
-    try {
-      clearError();
-      return await fn();
-    } catch (error) {
-      handleError(error, context);
-      return null;
-    }
-  }, [clearError, handleError]);
+  // Get the async error handling capability
+  const { withErrorHandling } = useAsyncErrorHandler(handleError, clearError);
 
+  // Return the combined interface
   return {
     error,
     setError,
