@@ -3,7 +3,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { AnalysisResultCard } from "../../AnalysisResultCard";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { formatMetricWithDynamicPrecision } from "@/utils/metrics/formatting";
-import { MetricCategory } from "@/utils/metrics/formatting";
+import { MetricCategory } from "@/utils/metrics/formatting/types";
 
 interface AnalysisTabContentProps {
   analysisResult: string | null;
