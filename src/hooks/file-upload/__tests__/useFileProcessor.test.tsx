@@ -106,16 +106,29 @@ describe('useFileProcessor', () => {
   it('should return null when processing fails', async () => {
     const { result } = renderHook(() => useFileProcessor());
     
-    // Mock implementation of processData to simulate failure
-    const processDataMock = vi.requireMock('@/utils/data-processing/DataProcessingService').processData;
-    processDataMock.mockReturnValueOnce({
+    // Fix: Rather than using requireMock which doesn't exist in Vitest,
+    // we'll create a temporary mock implementation for this test
+    const processDataMock = vi.mocked(
+      (await import('@/utils/data-processing/DataProcessingService')).processData
+    );
+    
+    // Save original mock
+    const originalMock = processDataMock.getMockImplementation();
+    
+    // Set temporary mock for this test
+    processDataMock.mockImplementationOnce(() => ({
       success: false,
       error: 'Processing failed'
-    });
+    }));
     
     const csvFile = createMockFile('test.csv', 'text/csv');
     
     const processingResult = await result.current.processFileContent(csvFile);
+    
+    // Restore original mock after test
+    if (originalMock) {
+      processDataMock.mockImplementation(originalMock);
+    }
     
     expect(processingResult).toBeNull();
     expect(console.error).toHaveBeenCalled();
