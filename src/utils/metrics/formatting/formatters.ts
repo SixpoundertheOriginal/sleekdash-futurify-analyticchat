@@ -75,3 +75,51 @@ export function formatMetricByCategory(value: number, category: MetricCategory):
       return formatMetricValue(value);
   }
 }
+
+/**
+ * Format a range of values (e.g., "10-20K")
+ * @param min Minimum value
+ * @param max Maximum value
+ * @param options Formatting options
+ * @returns Formatted range string
+ */
+export function formatMetricRange(
+  min: number, 
+  max: number, 
+  options: MetricFormatOptions = {}
+): string {
+  const minFormatted = formatMetricValue(min, { ...options, suffix: '' });
+  const maxFormatted = formatMetricValue(max, options);
+  
+  return `${minFormatted}-${maxFormatted}`;
+}
+
+/**
+ * Format a metric with an appropriate level of precision based on its magnitude
+ * @param value The metric value
+ * @param category The metric category
+ * @returns Formatted value with dynamic precision
+ */
+export function formatMetricWithDynamicPrecision(value: number, category: MetricCategory): string {
+  // Determine appropriate precision based on magnitude and category
+  let decimals = 1; // Default
+  
+  if (Math.abs(value) >= 1000000) {
+    decimals = 1; // Millions (1.2M)
+  } else if (Math.abs(value) >= 1000) {
+    decimals = 1; // Thousands (1.2K) 
+  } else if (Math.abs(value) >= 100) {
+    decimals = 0; // Hundreds (123)
+  } else if (Math.abs(value) >= 10) {
+    decimals = 1; // Tens (12.3)
+  } else {
+    decimals = 2; // Small values (1.23)
+  }
+  
+  // Special cases for financial metrics (always show 2 decimals for currency under 1000)
+  if (category === MetricCategory.FINANCIAL && Math.abs(value) < 1000) {
+    decimals = 2;
+  }
+  
+  return formatMetricByCategory(value, category);
+}

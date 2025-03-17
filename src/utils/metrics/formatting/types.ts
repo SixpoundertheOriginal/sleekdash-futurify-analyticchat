@@ -43,6 +43,8 @@ export type MetricMetadata = {
   metricKey?: string;
   timestamp?: Date;
   dateRange?: { from: Date; to: Date };
+  importance?: MetricImportance;
+  volatility?: number;
 };
 
 /**
@@ -56,4 +58,61 @@ export type StandardizedMetric = {
   benchmark?: number;
   percentile?: string;
   metadata?: MetricMetadata;
+};
+
+/**
+ * Chart related metric type definitions
+ */
+export type ChartDataPoint = {
+  name: string;
+  value: number;
+  date?: Date | string;
+  category?: string;
+  change?: number;
+  benchmark?: number;
+};
+
+/**
+ * Enum for metric importance levels
+ */
+export enum MetricImportance {
+  CRITICAL = 'critical',
+  HIGH = 'high',
+  MEDIUM = 'medium',
+  LOW = 'low',
+  INFORMATIONAL = 'informational'
+}
+
+/**
+ * Trend direction for metrics
+ */
+export enum TrendDirection {
+  UP = 'up',
+  DOWN = 'down',
+  STABLE = 'stable',
+  FLUCTUATING = 'fluctuating'
+}
+
+/**
+ * Types of metric aggregation methods
+ */
+export enum MetricAggregation {
+  SUM = 'sum',
+  AVERAGE = 'average',
+  MEDIAN = 'median',
+  MIN = 'min',
+  MAX = 'max',
+  COUNT = 'count',
+  LATEST = 'latest'
+}
+
+/**
+ * Configuration for metric comparison
+ */
+export type MetricComparisonConfig = {
+  baselineKey: string;
+  comparisonKey: string;
+  relativeDifference: boolean;
+  formatAsDifference: boolean;
+  invertComparison: boolean;
 };

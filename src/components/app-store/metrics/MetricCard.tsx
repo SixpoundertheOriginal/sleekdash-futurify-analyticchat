@@ -1,6 +1,8 @@
 
 import { Card } from "@/components/ui/card";
-import { formatMetric } from "@/utils/analytics/formatting";
+import { formatMetricByCategory, formatMetricWithDynamicPrecision } from "@/utils/metrics/formatting";
+import { getMetricChangeColor } from "@/utils/metrics/formatting";
+import { MetricCategory } from "@/utils/metrics/formatting";
 import { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -9,8 +11,10 @@ interface MetricCardProps {
   value: number;
   change: number;
   icon: LucideIcon;
-  format: "number" | "currency" | "percentage";
+  format?: "number" | "currency" | "percentage";
+  category?: MetricCategory;
   inverseColor?: boolean;
+  importance?: "critical" | "high" | "medium" | "low";
 }
 
 export function MetricCard({ 
@@ -18,8 +22,10 @@ export function MetricCard({
   value, 
   change, 
   icon: Icon, 
-  format,
-  inverseColor = false 
+  format = "number",
+  category = MetricCategory.ACQUISITION,
+  inverseColor = false,
+  importance = "medium"
 }: MetricCardProps) {
   // Skip rendering if we don't have a value for this metric
   if (value === 0) {
@@ -51,6 +57,24 @@ export function MetricCard({
     );
   }
 
+  // Use our new formatting utilities
+  const formattedValue = category 
+    ? formatMetricByCategory(value, category)
+    : formatMetricWithDynamicPrecision(value, category);
+    
+  const changeColorClass = getMetricChangeColor(change, inverseColor);
+    
+  // Determine importance-based styling
+  const getImportanceClass = () => {
+    switch (importance) {
+      case "critical": return "border-l-4 border-l-rose-500";
+      case "high": return "border-l-4 border-l-amber-500";
+      case "medium": return "";
+      case "low": return "opacity-90";
+      default: return "";
+    }
+  };
+
   const displayPositiveColor = inverseColor 
     ? change < 0 
     : change > 0;
@@ -62,7 +86,7 @@ export function MetricCard({
       whileHover={{ y: -3, transition: { duration: 0.2 } }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="p-6 bg-white/3 backdrop-blur-sm border border-white/8 shadow-sm transition-all hover:shadow-md hover:border-white/15">
+      <Card className={`p-6 bg-white/3 backdrop-blur-sm border border-white/8 shadow-sm transition-all hover:shadow-md hover:border-white/15 ${getImportanceClass()}`}>
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
             <div className="flex items-center gap-3">
@@ -75,7 +99,7 @@ export function MetricCard({
               animate={{ scale: 1 }}
               transition={{ duration: 0.3, type: "spring" }}
             >
-              {formatMetric(value, format)}
+              {formattedValue}
             </motion.span>
           </div>
           <motion.div 

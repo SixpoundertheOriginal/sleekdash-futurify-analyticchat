@@ -40,3 +40,30 @@ export function isSignificantChange(change: number, category: MetricCategory): b
   
   return Math.abs(change) >= thresholds[category];
 }
+
+/**
+ * Get dynamic threshold values based on metric context and historical data
+ * @param baseThreshold The base threshold value
+ * @param category The metric category
+ * @param volatility Optional volatility factor (0-1) that adjusts threshold sensitivity
+ * @returns Adjusted threshold value
+ */
+export function getDynamicThreshold(
+  baseThreshold: number, 
+  category: MetricCategory, 
+  volatility: number = 0.5
+): number {
+  // Adjustment factors for different categories
+  const categoryFactors: Record<MetricCategory, number> = {
+    [MetricCategory.ACQUISITION]: 1.2,  // More volatile, higher threshold
+    [MetricCategory.ENGAGEMENT]: 0.9,   // Moderately volatile
+    [MetricCategory.PERFORMANCE]: 1.0,  // Neutral
+    [MetricCategory.OPPORTUNITY]: 1.1,  // Slightly more volatile
+    [MetricCategory.FINANCIAL]: 0.8,    // Less volatile, lower threshold
+    [MetricCategory.TECHNICAL]: 1.3     // Highly volatile, higher threshold
+  };
+  
+  // Apply volatility and category adjustments
+  const adjustedThreshold = baseThreshold * categoryFactors[category] * (1 + (volatility - 0.5));
+  return Math.max(adjustedThreshold, baseThreshold * 0.5); // Ensure minimum threshold
+}
