@@ -13,10 +13,10 @@ export function useAsyncErrorHandler(
   clearError: () => void
 ): AsyncErrorHandlerState {
   const withErrorHandling = useCallback(
-    <T,>(fn: () => Promise<T>, context?: string): Promise<T | null> => {
+    async <T,>(fn: () => Promise<T>, context?: string): Promise<T | null> => {
       try {
         clearError();
-        return fn();
+        return await fn();
       } catch (error) {
         handleError(error, context);
         return null;
