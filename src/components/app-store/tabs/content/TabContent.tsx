@@ -4,55 +4,29 @@ import { AnalysisTabContent } from "./AnalysisTabContent";
 import { DashboardTabContent } from "./DashboardTabContent";
 import { AdvancedTabContent } from "./AdvancedTabContent";
 import { ChatTabContent } from "./ChatTabContent";
-import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
-import { DateRange } from "@/components/chat/DateRangePicker";
+import { useAppStore } from "@/contexts/AppStoreContext";
 import { createDefaultProcessedAnalytics } from "@/hooks/app-store/appStoreAnalyticsUtils";
 
-interface TabContentProps {
-  activeTab: string;
-  extractedData: string | null;
-  analysisResult: string | null;
-  isProcessing: boolean;
-  isAnalyzing: boolean;
-  processedAnalytics: ProcessedAnalytics | null;
-  directlyExtractedMetrics: Partial<ProcessedAnalytics> | null;
-  dateRange: DateRange | null;
-  onDateRangeChange: (dateRange: DateRange | null) => void;
-  initialData: ProcessedAnalytics | null;
-  processingError: string | null;
-  onProcessSuccess: (data: any) => void;
-  onAnalysisSuccess: (analysisResult: string) => void;
-  onDirectExtractionSuccess?: (metrics: Partial<ProcessedAnalytics>) => void;
-  setProcessing: (processing: boolean) => void;
-  setAnalyzing: (analyzing: boolean) => void;
-  threadId?: string;
-  assistantId?: string;
-  setActiveTab: (tab: string) => void;
-}
-
-export function TabContent({
-  activeTab,
-  extractedData,
-  analysisResult,
-  isProcessing,
-  isAnalyzing,
-  processedAnalytics,
-  directlyExtractedMetrics,
-  dateRange,
-  onDateRangeChange,
-  initialData,
-  processingError,
-  onProcessSuccess,
-  onAnalysisSuccess,
-  onDirectExtractionSuccess,
-  setProcessing,
-  setAnalyzing,
-  threadId,
-  assistantId,
-  setActiveTab
-}: TabContentProps) {
-  const defaultAnalytics = initialData || createDefaultProcessedAnalytics();
-  const goToInputTab = () => setActiveTab('input');
+export function TabContent() {
+  const {
+    extractedData,
+    analysisResult,
+    isProcessing,
+    isAnalyzing,
+    processedAnalytics,
+    directlyExtractedMetrics,
+    dateRange,
+    setDateRange,
+    processingError,
+    handleProcessSuccess,
+    handleAnalysisSuccess,
+    handleDirectExtractionSuccess,
+    setProcessing,
+    setAnalyzing,
+    threadId,
+    assistantId,
+    goToInputTab
+  } = useAppStore();
 
   return (
     <>
@@ -60,10 +34,10 @@ export function TabContent({
         isProcessing={isProcessing}
         isAnalyzing={isAnalyzing}
         dateRange={dateRange}
-        onDateRangeChange={onDateRangeChange}
-        onProcessSuccess={onProcessSuccess}
-        onAnalysisSuccess={onAnalysisSuccess}
-        onDirectExtractionSuccess={onDirectExtractionSuccess}
+        onDateRangeChange={setDateRange}
+        onProcessSuccess={handleProcessSuccess}
+        onAnalysisSuccess={handleAnalysisSuccess}
+        onDirectExtractionSuccess={handleDirectExtractionSuccess}
         setProcessing={setProcessing}
         setAnalyzing={setAnalyzing}
         threadId={threadId}
@@ -78,7 +52,7 @@ export function TabContent({
       
       <DashboardTabContent
         processedAnalytics={processedAnalytics}
-        initialData={defaultAnalytics}
+        initialData={processedAnalytics || createDefaultProcessedAnalytics()}
         isProcessing={isProcessing}
         processingError={processingError}
         dateRange={dateRange}
@@ -88,7 +62,7 @@ export function TabContent({
       
       <AdvancedTabContent
         processedAnalytics={processedAnalytics}
-        initialData={initialData}
+        initialData={processedAnalytics}
         isLoading={isProcessing || isAnalyzing}
         dateRange={dateRange}
         onGoToInput={goToInputTab}

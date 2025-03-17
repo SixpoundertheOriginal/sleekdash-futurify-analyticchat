@@ -1,9 +1,9 @@
-
 import { TabsContent } from "@/components/ui/tabs";
 import { AnalysisResultCard } from "../../AnalysisResultCard";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { formatMetricWithDynamicPrecision } from "@/utils/metrics/formatting";
 import { MetricCategory } from "@/utils/metrics/formatting/types";
+import { useAppStore } from "@/contexts/AppStoreContext";
 
 interface AnalysisTabContentProps {
   analysisResult: string | null;
@@ -16,6 +16,21 @@ export function AnalysisTabContent({
   isAnalyzing,
   dateRange
 }: AnalysisTabContentProps) {
+  return (
+    <TabsContent value="analysis" className="mt-4 space-y-4">
+      <AnalysisResultCard
+        analysisResult={analysisResult}
+        isLoading={isAnalyzing}
+        isAnalyzing={isAnalyzing}
+        dateRange={dateRange}
+      />
+    </TabsContent>
+  );
+}
+
+export function AnalysisTabContentWithContext() {
+  const { analysisResult, isAnalyzing, dateRange } = useAppStore();
+  
   return (
     <TabsContent value="analysis" className="mt-4 space-y-4">
       <AnalysisResultCard
