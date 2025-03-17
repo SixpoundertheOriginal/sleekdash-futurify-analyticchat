@@ -2,7 +2,7 @@
 import { useThread } from "@/contexts/ThreadContext";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useFilePreview } from "@/hooks/useFilePreview";
-import { useDragAndDrop } from "@/hooks/useDragAndDrop";
+import { useDragAndDrop } from "@/hooks/file-upload/useDragAndDrop";
 import { validateFile } from "@/components/upload/FileValidation";
 import { FilePreviewCard } from "@/components/upload/FilePreviewCard";
 import { FileErrorState } from "@/components/upload/FileErrorState";
