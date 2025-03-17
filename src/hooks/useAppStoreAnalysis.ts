@@ -8,12 +8,17 @@ import { useMetrics } from '@/hooks/useMetrics';
 import { useAppStoreState } from './app-store/useAppStoreState';
 import { useAppStoreHandlers } from './app-store/useAppStoreHandlers';
 import { useAppStoreAnalysisActions } from './app-store/useAppStoreAnalysisActions';
+import { useAppStoreAnalysisData } from './app-store/useAppStoreAnalysisData';
 
 interface UseAppStoreAnalysisProps {
   initialData?: ProcessedAnalytics;
 }
 
+/**
+ * Main hook for App Store analysis, separating concerns using composition pattern
+ */
 export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps = {}) {
+  // Get state from app store state hook
   const {
     activeTab,
     setActiveTab,
@@ -35,10 +40,12 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps = 
     setProcessingError
   } = useAppStoreState(initialData);
 
+  // Get thread context
   const { threadId, assistantId } = useThread();
   const chatApi = useChat();
   const { registerMetrics } = useMetrics('appStore');
 
+  // Get handlers for different operations
   const {
     handleProcessSuccess,
     handleAnalysisSuccess,
@@ -57,6 +64,7 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps = 
     registerMetrics
   });
 
+  // Get analysis actions
   const {
     analyzeExtractedData
   } = useAppStoreAnalysisActions({
@@ -65,6 +73,17 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps = 
     setAnalyzing,
     handleAnalysisSuccess,
     handleAnalysisError
+  });
+
+  // Get computed data properties
+  const analysisData = useAppStoreAnalysisData({
+    processedAnalytics,
+    initialData: initialData || null,
+    dateRange,
+    isProcessing,
+    isAnalyzing,
+    extractedData,
+    analysisResult
   });
 
   // Register initial metrics if provided
@@ -78,6 +97,7 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps = 
   }, [initialData]);
 
   return {
+    // Basic state
     activeTab,
     setActiveTab,
     extractedData,
@@ -89,14 +109,25 @@ export function useAppStoreAnalysis({ initialData }: UseAppStoreAnalysisProps = 
     dateRange,
     setDateRange,
     processingError,
+    
+    // State setters
     setProcessing,
     setAnalyzing,
+    
+    // Handlers
     handleProcessSuccess,
     handleAnalysisSuccess,
     handleDirectExtractionSuccess,
     handleProcessError,
     handleAnalysisError,
+    
+    // Actions
     analyzeExtractedData,
+    
+    // Data utilities
+    ...analysisData,
+    
+    // Chat context
     chatThreadId: threadId,
     chatAssistantId: assistantId
   };
