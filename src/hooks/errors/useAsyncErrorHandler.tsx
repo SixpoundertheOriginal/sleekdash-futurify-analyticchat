@@ -1,6 +1,5 @@
 
 import { useCallback } from "react";
-import { useErrorState } from "./useErrorState";
 
 export interface AsyncErrorHandlerState {
   withErrorHandling: <T>(fn: () => Promise<T>, context?: string) => Promise<T | null>;
