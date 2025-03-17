@@ -49,4 +49,43 @@ describe('useAsyncErrorHandler', () => {
     expect(response).toBeNull();
     expect(mockHandleError).toHaveBeenCalledWith(error, context);
   });
+  
+  it('should handle errors with specific context', async () => {
+    const { result } = renderHook(() => 
+      useAsyncErrorHandler(mockHandleError, mockClearError)
+    );
+    
+    const error = new Error('Operation failed');
+    const failingFn = vi.fn().mockRejectedValue(error);
+    
+    await result.current.withErrorHandling(failingFn, 'file-upload');
+    
+    expect(mockHandleError).toHaveBeenCalledWith(error, 'file-upload');
+  });
+  
+  it('should handle errors without context', async () => {
+    const { result } = renderHook(() => 
+      useAsyncErrorHandler(mockHandleError, mockClearError)
+    );
+    
+    const error = new Error('Operation failed');
+    const failingFn = vi.fn().mockRejectedValue(error);
+    
+    await result.current.withErrorHandling(failingFn);
+    
+    expect(mockHandleError).toHaveBeenCalledWith(error, undefined);
+  });
+  
+  it('should handle non-Error objects', async () => {
+    const { result } = renderHook(() => 
+      useAsyncErrorHandler(mockHandleError, mockClearError)
+    );
+    
+    const stringError = 'string error';
+    const failingFn = vi.fn().mockRejectedValue(stringError);
+    
+    await result.current.withErrorHandling(failingFn);
+    
+    expect(mockHandleError).toHaveBeenCalledWith(stringError, undefined);
+  });
 });
