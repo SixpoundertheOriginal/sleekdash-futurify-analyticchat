@@ -1,11 +1,9 @@
 
-import { TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { AppStoreForm } from "../../AppStoreForm";
-import { AnalysisResultCard } from "../../AnalysisResultCard";
-import { AnalyticsDashboardWrapper } from "../../AnalyticsDashboardWrapper";
-import { AdvancedDashboard } from "../../AdvancedDashboard";
-import { ChatInterface } from "@/components/ChatInterface";
+import { InputTabContent } from "./InputTabContent";
+import { AnalysisTabContent } from "./AnalysisTabContent";
+import { DashboardTabContent } from "./DashboardTabContent";
+import { AdvancedTabContent } from "./AdvancedTabContent";
+import { ChatTabContent } from "./ChatTabContent";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { createDefaultProcessedAnalytics } from "@/hooks/app-store/appStoreAnalyticsUtils";
@@ -54,80 +52,49 @@ export function TabContent({
   setActiveTab
 }: TabContentProps) {
   const defaultAnalytics = initialData || createDefaultProcessedAnalytics();
+  const goToInputTab = () => setActiveTab('input');
 
   return (
     <>
-      <TabsContent value="input" className="mt-4 space-y-4">
-        <AppStoreForm
-          onProcessSuccess={onProcessSuccess}
-          onAnalysisSuccess={onAnalysisSuccess}
-          onDirectExtractionSuccess={onDirectExtractionSuccess}
-          isProcessing={isProcessing}
-          isAnalyzing={isAnalyzing}
-          setProcessing={setProcessing}
-          setAnalyzing={setAnalyzing}
-          dateRange={dateRange}
-          onDateRangeChange={onDateRangeChange}
-          threadId={threadId}
-          assistantId={assistantId}
-        />
-      </TabsContent>
+      <InputTabContent 
+        isProcessing={isProcessing}
+        isAnalyzing={isAnalyzing}
+        dateRange={dateRange}
+        onDateRangeChange={onDateRangeChange}
+        onProcessSuccess={onProcessSuccess}
+        onAnalysisSuccess={onAnalysisSuccess}
+        onDirectExtractionSuccess={onDirectExtractionSuccess}
+        setProcessing={setProcessing}
+        setAnalyzing={setAnalyzing}
+        threadId={threadId}
+        assistantId={assistantId}
+      />
       
-      <TabsContent value="analysis" className="mt-4 space-y-4">
-        <AnalysisResultCard
-          analysisResult={analysisResult}
-          isLoading={isAnalyzing}
-          isAnalyzing={isAnalyzing}
-          dateRange={dateRange}
-        />
-      </TabsContent>
+      <AnalysisTabContent
+        analysisResult={analysisResult}
+        isAnalyzing={isAnalyzing}
+        dateRange={dateRange}
+      />
       
-      <TabsContent value="dashboard" className="mt-4 space-y-4">
-        <AnalyticsDashboardWrapper
-          processedData={processedAnalytics}
-          initialData={defaultAnalytics}
-          isProcessing={isProcessing}
-          processingError={processingError}
-          dateRange={dateRange}
-          onRetry={() => setActiveTab('input')}
-          onRefresh={() => setActiveTab('input')}
-        />
-      </TabsContent>
+      <DashboardTabContent
+        processedAnalytics={processedAnalytics}
+        initialData={defaultAnalytics}
+        isProcessing={isProcessing}
+        processingError={processingError}
+        dateRange={dateRange}
+        onRetry={goToInputTab}
+        onRefresh={goToInputTab}
+      />
       
-      <TabsContent value="advanced" className="mt-4 space-y-4">
-        {processedAnalytics && (
-          <AdvancedDashboard 
-            data={processedAnalytics} 
-            dateRange={dateRange}
-            isLoading={isProcessing || isAnalyzing}
-            onRefresh={() => setActiveTab('input')}
-          />
-        )}
-        {!processedAnalytics && initialData && (
-          <AdvancedDashboard 
-            data={initialData} 
-            dateRange={dateRange}
-            isLoading={isProcessing || isAnalyzing}
-            onRefresh={() => setActiveTab('input')}
-          />
-        )}
-        {!processedAnalytics && !initialData && (
-          <div className="text-center py-8 text-white/60">
-            <p>No analytics data available. Run an analysis first.</p>
-            <Button 
-              variant="default" 
-              className="mt-4 bg-primary hover:bg-primary/90"
-              onClick={() => setActiveTab('input')}
-            >
-              Go to Input Tab
-            </Button>
-          </div>
-        )}
-      </TabsContent>
+      <AdvancedTabContent
+        processedAnalytics={processedAnalytics}
+        initialData={initialData}
+        isLoading={isProcessing || isAnalyzing}
+        dateRange={dateRange}
+        onGoToInput={goToInputTab}
+      />
       
-      <TabsContent value="chat" className="mt-4 space-y-4">
-        <ChatInterface feature="appStore" />
-      </TabsContent>
+      <ChatTabContent />
     </>
   );
 }
