@@ -1,4 +1,7 @@
 
+/**
+ * Analytics data structure after processing
+ */
 export interface ProcessedAnalytics {
   summary: {
     title: string;
@@ -6,18 +9,18 @@ export interface ProcessedAnalytics {
     executiveSummary: string;
   };
   acquisition: {
-    impressions: { value: number; change: number };
-    pageViews: { value: number; change: number };
-    conversionRate: { value: number; change: number };
-    downloads: { value: number; change: number };
+    impressions: MetricWithChange;
+    pageViews: MetricWithChange;
+    conversionRate: MetricWithChange;
+    downloads: MetricWithChange;
     funnelMetrics: {
       impressionsToViews: number;
       viewsToDownloads: number;
     };
   };
   financial: {
-    proceeds: { value: number; change: number };
-    proceedsPerUser: { value: number; change: number };
+    proceeds: MetricWithChange;
+    proceedsPerUser: MetricWithChange;
     derivedMetrics: {
       arpd: number;
       revenuePerImpression: number;
@@ -26,43 +29,60 @@ export interface ProcessedAnalytics {
     };
   };
   engagement: {
-    sessionsPerDevice: { value: number; change: number };
+    sessionsPerDevice: MetricWithChange;
     retention: {
-      day1: { value: number; benchmark: number };
-      day7: { value: number; benchmark: number };
-      day14?: { value: number; benchmark: number };
-      day28?: { value: number; benchmark: number };
-    };
-    confidenceScores?: {
-      overall: number;
-      sessionsPerDevice: number;
-      retention: number;
-    };
-    validationState?: {
-      valid: boolean;
-      warnings: string[];
+      day1: RetentionMetric;
+      day7: RetentionMetric;
+      day28?: RetentionMetric;
     };
   };
   technical: {
-    crashes: { value: number; change: number };
-    crashRate: { value: number; percentile: string };
+    crashes: MetricWithChange;
+    crashRate: {
+      value: number;
+      percentile: string;
+    };
   };
   geographical: {
-    markets: Array<{
-      country: string;
-      percentage: number;
-      downloads: number;
-    }>;
-    devices: Array<{
-      type: string;
-      percentage: number;
-      count: number;
-    }>;
-    sources?: Array<{
-      source: string;
-      percentage: number;
-      downloads: number;
-    }>;
+    markets: Territory[];
+    devices: Device[];
+    sources: Source[];
   };
-  dateRange?: string; // Added dateRange as optional property at the root level
+  keywords?: {
+    terms: KeywordTerm[];
+  };
+}
+
+export interface MetricWithChange {
+  value: number;
+  change: number;
+}
+
+export interface RetentionMetric {
+  value: number;
+  benchmark: number;
+}
+
+export interface Territory {
+  country: string;
+  downloads: number;
+  percentage: number;
+}
+
+export interface Device {
+  type: string;
+  count: number;
+  percentage: number;
+}
+
+export interface Source {
+  source: string;
+  downloads: number;
+  percentage: number;
+}
+
+export interface KeywordTerm {
+  keyword: string;
+  volume: number | null;
+  difficulty: number | null;
 }

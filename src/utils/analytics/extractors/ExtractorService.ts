@@ -1,6 +1,9 @@
 
 import { ExtractionPipeline, PipelineConfig } from './ExtractionPipeline';
 import { AppStoreExtractor } from './AppStoreExtractor';
+import { KeywordExtractor } from './KeywordExtractor';
+import { RetentionExtractor } from './RetentionExtractor';
+import { GeographicalExtractor } from './GeographicalExtractor';
 import { ProcessedAnalytics } from '../types';
 import { BaseExtractor, ExtractionResult } from './BaseExtractor';
 
@@ -27,6 +30,9 @@ export class ExtractorService {
     
     // Register default extractors
     this.appStorePipeline.registerExtractor(new AppStoreExtractor());
+    this.appStorePipeline.registerExtractor(new KeywordExtractor());
+    this.appStorePipeline.registerExtractor(new RetentionExtractor());
+    this.appStorePipeline.registerExtractor(new GeographicalExtractor());
     
     console.log('[ExtractorService] Initialized with default extractors');
   }
