@@ -38,7 +38,27 @@ export function EngagementMetricsTab({
           benchmark={engagementMetrics.retention.day7.benchmark}
           formatter={formatPercentage}
         />
+        {engagementMetrics.retention.day14 && (
+          <MetricInput
+            label="Day 14 Retention (%)"
+            value={engagementMetrics.retention.day14.value.toString()}
+            onChange={(value) => handleMetricChange("engagement", "retention", "day14", value)}
+            benchmark={engagementMetrics.retention.day14.benchmark}
+            formatter={formatPercentage}
+          />
+        )}
       </div>
+      {engagementMetrics.retention.day28 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MetricInput
+            label="Day 28 Retention (%)"
+            value={engagementMetrics.retention.day28.value.toString()}
+            onChange={(value) => handleMetricChange("engagement", "retention", "day28", value)}
+            benchmark={engagementMetrics.retention.day28.benchmark}
+            formatter={formatPercentage}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -86,7 +86,7 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
       }
     }
     
-    // Day 14 retention with multiple patterns
+    // Day 14 retention with multiple patterns (add support for Day 14)
     const day14Patterns = [
       /Day 14[\s\S]*?(\d+(?:\.\d+)?)%/i,
       /Day 14 Retention[\s\S]*?(\d+(?:\.\d+)?)%/i,
@@ -107,7 +107,7 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
       }
     }
     
-    // Day 28 retention with multiple patterns
+    // Day 28 retention with multiple patterns (add support for Day 28)
     const day28Patterns = [
       /Day 28[\s\S]*?(\d+(?:\.\d+)?)%/i,
       /Day 28 Retention[\s\S]*?(\d+(?:\.\d+)?)%/i,
