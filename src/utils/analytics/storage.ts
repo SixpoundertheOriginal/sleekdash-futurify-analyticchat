@@ -181,7 +181,10 @@ export const mergeAnalyticsData = (
         result.geographical?.markets || [],
       devices: overlay.geographical.devices?.length ? 
         overlay.geographical.devices : 
-        result.geographical?.devices || []
+        result.geographical?.devices || [],
+      sources: overlay.geographical.sources?.length ?
+        overlay.geographical.sources :
+        result.geographical?.sources || []
     };
   }
   

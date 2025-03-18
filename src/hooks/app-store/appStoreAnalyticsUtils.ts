@@ -1,5 +1,5 @@
 
-import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+import { ProcessedAnalytics } from "@/utils/analytics/types";
 
 /**
  * Creates a default ProcessedAnalytics object with initialized values
