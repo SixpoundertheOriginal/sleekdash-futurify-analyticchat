@@ -1,5 +1,6 @@
 
 import { extractMetric, extractRetention, extractTerritory, extractDevice } from './app-store-extractors';
+import { isAppStoreFormat, parseAppStoreSections, parseTabularData, preprocessAppStoreData } from '@/utils/analytics/offline/appStoreFormatDetector';
 
 /**
  * Process pasted App Store analytics data 
@@ -8,6 +9,12 @@ import { extractMetric, extractRetention, extractTerritory, extractDevice } from
  */
 export function processAppStoreText(text: string): string {
   console.log('[FileProcessor] Processing App Store text, length:', text.length);
+  
+  // Use our specialized preprocessing for App Store format
+  const preprocessedText = preprocessAppStoreData(text);
+  
+  // Parse sections to extract structured data
+  const sections = parseAppStoreSections(text);
   
   // Extract date range which is usually at the top
   const dateRangeMatch = text.match(/([A-Za-z]+\s+\d+[-–]\w+\s+\d+)/i);
@@ -26,14 +33,29 @@ export function processAppStoreText(text: string): string {
     extractMetric(text, "Crashes", "\\?\\s*([\\d.,]+)\\s*([+\\-]\\d+%)")
   ];
   
-  // Extract retention data
-  const retentionData = extractRetention(text);
+  // Use specialized tabular data parsing for territories, devices, and sources
+  let territoryData, deviceData, sourcesData;
   
-  // Extract territory data
-  const territoryData = extractTerritory(text);
+  if (sections.territories) {
+    territoryData = parseTabularData(sections.territories, 'territories');
+  } else {
+    // Fallback to old method if section parsing fails
+    territoryData = extractTerritory(text);
+  }
   
-  // Extract device data
-  const deviceData = extractDevice(text);
+  if (sections.devices) {
+    deviceData = parseTabularData(sections.devices, 'devices');
+  } else {
+    // Fallback to old method if section parsing fails
+    deviceData = extractDevice(text);
+  }
+  
+  if (sections.sources) {
+    sourcesData = parseTabularData(sections.sources, 'sources');
+  } else {
+    // Use retention data for backward compatibility
+    const retentionData = extractRetention(text);
+  }
   
   // Convert to a CSV-like format for consistency with our existing processing
   let csvContent = "Metric,Value,Change\n";
@@ -46,27 +68,27 @@ export function processAppStoreText(text: string): string {
   // Add date range
   csvContent += `Date Range,${dateRange},,\n`;
   
-  // Add retention data
-  if (retentionData.length > 0) {
-    csvContent += "\nRetention,Value,Benchmark\n";
-    retentionData.forEach(data => {
-      csvContent += `${data.day},${data.value},${data.benchmark}\n`;
-    });
-  }
-  
   // Add territory data
-  if (territoryData.length > 0) {
+  if (territoryData && territoryData.length > 0) {
     csvContent += "\nTerritory,Downloads,Percentage\n";
     territoryData.forEach(data => {
-      csvContent += `${data.country},${data.downloads},${data.percentage}\n`;
+      csvContent += `${data.country},${data.downloads},${data.percentage || 0}\n`;
     });
   }
   
   // Add device data
-  if (deviceData.length > 0) {
+  if (deviceData && deviceData.length > 0) {
     csvContent += "\nDevice,Downloads,Percentage\n";
     deviceData.forEach(data => {
-      csvContent += `${data.type},${data.downloads},${data.percentage}\n`;
+      csvContent += `${data.type},${data.count || data.downloads},${data.percentage || 0}\n`;
+    });
+  }
+  
+  // Add source data if available
+  if (sourcesData && sourcesData.length > 0) {
+    csvContent += "\nSource,Downloads,Percentage\n";
+    sourcesData.forEach(data => {
+      csvContent += `${data.source},${data.downloads},${data.percentage || 0}\n`;
     });
   }
   
@@ -77,17 +99,4 @@ export function processAppStoreText(text: string): string {
 /**
  * Determine if text is App Store data format
  */
-export function isAppStoreFormat(text: string): boolean {
-  // Look for common App Store metrics patterns
-  const appStorePatterns = [
-    /Impressions\s*\?\s*[\d.,K]+\s*[+\-]\d+%/i,
-    /Product Page Views\s*\?\s*[\d.,K]+\s*[+\-]\d+%/i,
-    /Conversion Rate\s*\?\s*[\d.,]+%\s*[+\-]\d+%/i,
-    /Total Downloads\s*\?\s*[\d.,K]+\s*[+\-]\d+%/i,
-    /App Store Connect/i,
-    /Analytics\s*Trends\s*Users and Access/i
-  ];
-  
-  // If at least 2 patterns match, consider it App Store format
-  return appStorePatterns.filter(pattern => pattern.test(text)).length >= 2;
-}
+export { isAppStoreFormat };

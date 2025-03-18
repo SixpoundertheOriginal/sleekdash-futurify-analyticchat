@@ -1,6 +1,6 @@
 
 import { Input } from "@/components/ui/input";
-import { InfoCircle, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface MetricInputProps {
@@ -45,7 +45,7 @@ export function MetricInput({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <InfoCircle className="h-3.5 w-3.5 text-white/40" />
+                  <Info className="h-3.5 w-3.5 text-white/40" />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[250px] text-xs">
                   {description}

@@ -3,6 +3,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useDevice } from "@/hooks/use-mobile";
 import { ContextualHelp } from "@/components/ui/contextual-help";
+import { isAppStoreFormat } from "@/utils/analytics/offline/appStoreFormatDetector";
+import { useEffect, useState } from "react";
 
 interface FormInputProps {
   value: string;
@@ -14,6 +16,12 @@ interface FormInputProps {
 export function FormInput({ value, onChange, disabled, placeholder }: FormInputProps) {
   const deviceType = useDevice();
   const isMobile = deviceType === 'mobile';
+  const [isAppStore, setIsAppStore] = useState(false);
+  
+  // Detect App Store format
+  useEffect(() => {
+    setIsAppStore(isAppStoreFormat(value));
+  }, [value]);
   
   // Unique ID for accessibility association
   const inputId = "analysis-input";
@@ -41,6 +49,12 @@ export function FormInput({ value, onChange, disabled, placeholder }: FormInputP
             </div>
           } 
         />
+        
+        {isAppStore && (
+          <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">
+            App Store Format Detected
+          </span>
+        )}
       </div>
       <Textarea 
         id={inputId}
@@ -70,6 +84,15 @@ export function FormInput({ value, onChange, disabled, placeholder }: FormInputP
         </div>
       )}
       
+      {isAppStore && (
+        <div className="p-2 bg-green-500/10 border border-green-500/20 rounded text-sm">
+          <p className="text-green-400 font-medium">App Store format detected!</p>
+          <p className="text-white/70 text-xs mt-1">
+            We'll automatically parse sections, tables, and metrics from your App Store Connect data.
+          </p>
+        </div>
+      )}
+      
       {!value && !disabled && (
         <div className="p-3 bg-gray-800/50 border border-gray-700/50 rounded-md">
           <p className="text-sm text-white/70 font-medium mb-1">Format Tips for Best Results:</p>
@@ -78,6 +101,7 @@ export function FormInput({ value, onChange, disabled, placeholder }: FormInputP
             <li>Include percentage changes where available (e.g., "+5% week-over-week")</li>
             <li>Include date ranges (e.g., "June 1 - June 30, 2023")</li>
             <li>Copy complete sections for Acquisition, Engagement, and Financial metrics</li>
+            <li><span className="text-green-400">Pro tip:</span> Copy directly from App Store Connect for best parsing results</li>
           </ul>
         </div>
       )}

@@ -3,6 +3,8 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+import { extractBaseMetrics } from "@/utils/analytics/offline/directExtraction";
+import { isAppStoreFormat, preprocessAppStoreData } from "@/utils/analytics/offline/appStoreFormatDetector";
 
 export interface UseAppStoreFormProps {
   onProcessSuccess: (data: any) => void;
@@ -37,7 +39,10 @@ export function useAppStoreForm({
   const extractMetricsFromText = (text: string) => {
     if (onDirectExtractionSuccess) {
       try {
-        const extractedMetrics = extractBaseMetrics(text);
+        // Preprocess App Store format if detected
+        const processedText = isAppStoreFormat(text) ? preprocessAppStoreData(text) : text;
+        
+        const extractedMetrics = extractBaseMetrics(processedText);
         if (extractedMetrics && Object.keys(extractedMetrics).length > 0) {
           console.log('Extracted metrics directly from text:', extractedMetrics);
           onDirectExtractionSuccess(extractedMetrics);
@@ -62,13 +67,16 @@ export function useAppStoreForm({
     setProcessing(true);
     
     try {
+      // Preprocess App Store format if detected
+      const processedText = isAppStoreFormat(text) ? preprocessAppStoreData(text) : text;
+      
       // Try to extract metrics directly from the text first
       extractMetricsFromText(text);
       
       // Process data through Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('process-app-data', {
         body: { 
-          rawText: text, // Use rawText parameter as this is what the edge function expects
+          rawText: processedText, // Use processed text for better results
           threadId,
           assistantId
         }
@@ -116,14 +124,17 @@ export function useAppStoreForm({
     setAnalyzing(true);
     
     try {
+      // Preprocess App Store format if detected
+      const processedText = isAppStoreFormat(text) ? preprocessAppStoreData(text) : text;
+      
       // Try to extract metrics directly from the text first
       if (!processedData) {
-        extractMetricsFromText(text);
+        extractMetricsFromText(processedText);
       }
       
       // Prepare the request body
       const requestBody: any = { 
-        rawText: text // Use rawText parameter for consistency
+        rawText: processedText // Use processed text for better results
       };
       
       // Add specific thread and assistant IDs if provided
@@ -185,11 +196,4 @@ export function useAppStoreForm({
     handleTextCleaningAndProcessing,
     handleAnalysis
   };
-}
-
-// Add missing function import or implementation
-function extractBaseMetrics(text: string): Partial<ProcessedAnalytics> {
-  // This should be imported from the correct module
-  // For now, providing a placeholder implementation
-  return {};
 }
