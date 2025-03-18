@@ -21,7 +21,7 @@ export class ExtractorService {
     // Initialize pipeline with appropriate config
     const pipelineConfig: PipelineConfig = {
       debug: process.env.NODE_ENV !== 'production',
-      stopOnFirstSuccess: true,
+      stopOnFirstSuccess: false,
       runValidation: true
     };
     
