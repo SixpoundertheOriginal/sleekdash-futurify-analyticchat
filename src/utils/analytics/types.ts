@@ -33,7 +33,17 @@ export interface ProcessedAnalytics {
     retention: {
       day1: RetentionMetric;
       day7: RetentionMetric;
+      day14?: RetentionMetric;
       day28?: RetentionMetric;
+    };
+    confidenceScores?: {
+      overall: number;
+      sessionsPerDevice: number;
+      retention: number;
+    };
+    validationState?: {
+      valid: boolean;
+      warnings: string[];
     };
   };
   technical: {

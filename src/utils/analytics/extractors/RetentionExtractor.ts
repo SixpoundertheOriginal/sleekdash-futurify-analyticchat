@@ -35,6 +35,18 @@ export class RetentionExtractor implements BaseExtractor<ProcessedAnalytics> {
         /typical day 7 retention:?\s*(\d+\.?\d*)%/i
       ]
     },
+    day14: {
+      value: [
+        /day 14 retention:?\s*(\d+\.?\d*)%/i,
+        /day 14:?\s*(\d+\.?\d*)%/i,
+        /14-day retention:?\s*(\d+\.?\d*)%/i
+      ],
+      benchmark: [
+        /day 14 retention.*?benchmark:?\s*(\d+\.?\d*)%/i,
+        /day 14.*?average:?\s*(\d+\.?\d*)%/i,
+        /typical day 14 retention:?\s*(\d+\.?\d*)%/i
+      ]
+    },
     day28: {
       value: [
         /day 28 retention:?\s*(\d+\.?\d*)%/i,
@@ -96,8 +108,16 @@ export class RetentionExtractor implements BaseExtractor<ProcessedAnalytics> {
           sessionsPerDevice: { value: 0, change: 0 },
           retention: {
             day1: { value: 0, benchmark: 0 },
-            day7: { value: 0, benchmark: 0 },
-            day28: { value: 0, benchmark: 0 }
+            day7: { value: 0, benchmark: 0 }
+          },
+          confidenceScores: {
+            overall: 0,
+            sessionsPerDevice: 0,
+            retention: 0
+          },
+          validationState: {
+            valid: false,
+            warnings: []
           }
         },
         technical: {
@@ -114,13 +134,15 @@ export class RetentionExtractor implements BaseExtractor<ProcessedAnalytics> {
       // Extract retention metrics
       this.extractRetentionMetric(input, 'day1', result);
       this.extractRetentionMetric(input, 'day7', result);
+      this.extractRetentionMetric(input, 'day14', result);
       this.extractRetentionMetric(input, 'day28', result);
       
       // Check if we extracted any retention data
       const hasRetentionData = 
         result.engagement.retention.day1.value > 0 || 
         result.engagement.retention.day7.value > 0 || 
-        result.engagement.retention.day28.value > 0;
+        (result.engagement.retention.day14?.value || 0) > 0 ||
+        (result.engagement.retention.day28?.value || 0) > 0;
       
       if (!hasRetentionData) {
         console.log('[RetentionExtractor] No retention values extracted');
@@ -137,12 +159,19 @@ export class RetentionExtractor implements BaseExtractor<ProcessedAnalytics> {
   /**
    * Extract a specific retention metric
    */
-  private extractRetentionMetric(input: string, metricKey: 'day1' | 'day7' | 'day28', result: ProcessedAnalytics): void {
+  private extractRetentionMetric(input: string, metricKey: 'day1' | 'day7' | 'day14' | 'day28', result: ProcessedAnalytics): void {
+    // For day14 and day28, initialize if not present
+    if ((metricKey === 'day14' || metricKey === 'day28') && !result.engagement.retention[metricKey]) {
+      result.engagement.retention[metricKey] = { value: 0, benchmark: 0 };
+    }
+    
     // Extract value
     for (const pattern of this.patterns[metricKey].value) {
       const match = input.match(pattern);
       if (match && match[1]) {
-        result.engagement.retention[metricKey].value = parseFloat(match[1]);
+        if (result.engagement.retention[metricKey]) {
+          result.engagement.retention[metricKey]!.value = parseFloat(match[1]);
+        }
         break;
       }
     }
@@ -151,7 +180,9 @@ export class RetentionExtractor implements BaseExtractor<ProcessedAnalytics> {
     for (const pattern of this.patterns[metricKey].benchmark) {
       const match = input.match(pattern);
       if (match && match[1]) {
-        result.engagement.retention[metricKey].benchmark = parseFloat(match[1]);
+        if (result.engagement.retention[metricKey]) {
+          result.engagement.retention[metricKey]!.benchmark = parseFloat(match[1]);
+        }
         break;
       }
     }
@@ -165,7 +196,8 @@ export class RetentionExtractor implements BaseExtractor<ProcessedAnalytics> {
     return (
       result.engagement.retention.day1.value > 0 || 
       result.engagement.retention.day7.value > 0 ||
-      result.engagement.retention.day28.value > 0
+      (result.engagement.retention.day14?.value || 0) > 0 ||
+      (result.engagement.retention.day28?.value || 0) > 0
     );
   }
 }
