@@ -15,72 +15,127 @@ export const extractTechnicalMetrics = (rawInput: any, result: Partial<Processed
     return result;
   }
   
-  // Normalize input - trim whitespace and standardize newlines
-  const normalizedInput = rawInput.replace(/\r\n/g, '\n').trim();
+  // Normalize input - trim whitespace, standardize newlines, and normalize spacing around question marks
+  const normalizedInput = rawInput.replace(/\r\n/g, '\n')
+                                 .replace(/\s*\?\s*/g, ' ? ')
+                                 .trim();
   
-  // Extract crashes - improved patterns to match App Store Connect format
-  // First try the standard format with question mark
-  let crashesMatch = normalizedInput.match(/Crashes:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i);
+  // Extract crashes - improved patterns to match App Store Connect format with various prefixes
+  const crashPatterns = [
+    /Crashes:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i,
+    /Crashes:?\s*\??\s*([0-9,.KMkm]+)/i,
+    /Crash Count:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i,
+    /Crashes\s*\n\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i,
+    /([0-9,.KMkm]+)\s*crashes/i,
+    /App Crashes:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i
+  ];
   
-  // If not found, try alternate format without change percentage
-  if (!crashesMatch) {
-    crashesMatch = normalizedInput.match(/Crashes:?\s*\??\s*([0-9,.KMkm]+)/i);
+  result.technical = result.technical || {
+    crashes: { value: 0, change: 0 },
+    crashRate: { value: 0, percentile: "" }
+  };
+  
+  for (const pattern of crashPatterns) {
+    const match = normalizedInput.match(pattern);
+    if (match && match[1]) {
+      result.technical.crashes = {
+        value: normalizeValue(match[1]),
+        change: match[2] ? parseInt(match[2]) : 0
+      };
+      console.log('Extracted crashes:', result.technical.crashes);
+      break;
+    }
   }
   
-  // If still not found, try looking for "Crash Count" which is sometimes used
-  if (!crashesMatch) {
-    crashesMatch = normalizedInput.match(/Crash Count:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i);
-  }
-  
-  if (crashesMatch) {
-    result.technical = result.technical || {
-      crashes: { value: 0, change: 0 },
-      crashRate: { value: 0, percentile: "" }
-    };
+  // If crashes not found directly, look for descriptions like "crashes up by X%"
+  if (!result.technical.crashes.value) {
+    const crashChangePatterns = [
+      /crashes up by (\d+)%/i,
+      /crashes increased by (\d+)%/i,
+      /crash count increased by (\d+)%/i
+    ];
     
-    result.technical.crashes = {
-      value: normalizeValue(crashesMatch[1]),
-      change: crashesMatch[2] ? parseInt(crashesMatch[2]) : 0
-    };
-    console.log('Extracted crashes:', result.technical.crashes);
-  }
-  
-  // Extract crash rate
-  const crashRateMatch = normalizedInput.match(/Crash Rate:?\s*\??\s*([\d.]+)%/i);
-  if (crashRateMatch) {
-    result.technical = result.technical || {
-      crashes: { value: 0, change: 0 },
-      crashRate: { value: 0, percentile: "" }
-    };
-    
-    result.technical.crashRate.value = parseFloat(crashRateMatch[1]);
-    
-    // Try to extract percentile information
-    const percentileMatch = normalizedInput.match(/(\d+)(?:th|st|nd|rd) percentile/i);
-    if (percentileMatch) {
-      result.technical.crashRate.percentile = percentileMatch[1];
+    for (const pattern of crashChangePatterns) {
+      const match = normalizedInput.match(pattern);
+      if (match && match[1]) {
+        // Set a default value and the change percentage
+        result.technical.crashes = {
+          value: 100, // Default value
+          change: parseInt(match[1])
+        };
+        console.log('Extracted crashes from description:', result.technical.crashes);
+        break;
+      }
     }
     
-    console.log('Extracted crash rate:', result.technical.crashRate);
+    // Also look for "crashes down by X%"
+    const crashDownPatterns = [
+      /crashes down by (\d+)%/i,
+      /crashes decreased by (\d+)%/i,
+      /crash count decreased by (\d+)%/i
+    ];
+    
+    for (const pattern of crashDownPatterns) {
+      const match = normalizedInput.match(pattern);
+      if (match && match[1]) {
+        // Set a default value and the negative change percentage
+        result.technical.crashes = {
+          value: 100, // Default value
+          change: -parseInt(match[1])
+        };
+        console.log('Extracted crashes decrease from description:', result.technical.crashes);
+        break;
+      }
+    }
+  }
+  
+  // Extract crash rate with various patterns
+  const crashRatePatterns = [
+    /Crash Rate:?\s*\??\s*([\d.]+)%/i,
+    /Crash Rate:?\s*\??\s*([\d.]+)\s*%/i,
+    /Crash Rate\s*\n\s*([\d.]+)%/i,
+    /([\d.]+)%\s*crash rate/i,
+    /crash rate of ([\d.]+)%/i
+  ];
+  
+  for (const pattern of crashRatePatterns) {
+    const match = normalizedInput.match(pattern);
+    if (match && match[1]) {
+      result.technical.crashRate.value = parseFloat(match[1]);
+      console.log('Extracted crash rate:', result.technical.crashRate.value);
+      break;
+    }
+  }
+  
+  // Try to extract percentile information
+  const percentilePatterns = [
+    /(\d+)(?:th|st|nd|rd) percentile/i,
+    /crash rate.*?(\d+)(?:th|st|nd|rd) percentile/i,
+    /crashes.*?(\d+)(?:th|st|nd|rd) percentile/i,
+    /percentile\s*\n\s*(\d+)(?:th|st|nd|rd)/i
+  ];
+  
+  for (const pattern of percentilePatterns) {
+    const match = normalizedInput.match(pattern);
+    if (match && match[1]) {
+      result.technical.crashRate.percentile = match[1];
+      console.log('Extracted crash rate percentile:', result.technical.crashRate.percentile);
+      break;
+    }
   }
   
   // Look for crash information in the benchmarks section
   const benchmarkSection = normalizedInput.match(/Benchmarks[\s\S]*?Crash Rate[\s\S]*?Your crash rate of ([\d.]+)%[\s\S]*?([\d]+)(?:th|st|nd|rd)/i);
   if (benchmarkSection) {
-    result.technical = result.technical || {
-      crashes: { value: 0, change: 0 },
-      crashRate: { value: 0, percentile: "" }
-    };
-    
-    if (benchmarkSection[1]) {
+    if (benchmarkSection[1] && !result.technical.crashRate.value) {
       result.technical.crashRate.value = parseFloat(benchmarkSection[1]);
+      console.log('Extracted crash rate from benchmark section:', result.technical.crashRate.value);
     }
     
-    if (benchmarkSection[2]) {
+    if (benchmarkSection[2] && !result.technical.crashRate.percentile) {
       result.technical.crashRate.percentile = benchmarkSection[2];
+      console.log('Extracted crash rate percentile from benchmark section:', result.technical.crashRate.percentile);
     }
-    
-    console.log('Extracted crash rate from benchmark section:', result.technical.crashRate);
   }
 
   return result;

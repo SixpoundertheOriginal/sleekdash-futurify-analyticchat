@@ -15,8 +15,10 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
     return result;
   }
   
-  // Normalize input - trim whitespace and standardize newlines
-  const normalizedInput = rawInput.replace(/\r\n/g, '\n').trim();
+  // Normalize input - trim whitespace, standardize newlines, and normalize spacing around question marks
+  const normalizedInput = rawInput.replace(/\r\n/g, '\n')
+                                 .replace(/\s*\?\s*/g, ' ? ')
+                                 .trim();
   
   // Initialize acquisition object if it doesn't exist
   result.acquisition = result.acquisition || {
@@ -30,81 +32,89 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
     }
   };
   
-  // Extract impressions - improved pattern with question mark
-  let impressionsMatch = normalizedInput.match(/Impressions:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i);
+  // Try multiple pattern variants for each metric to increase extraction success rate
   
-  // If not found, try alternate format without change percentage
-  if (!impressionsMatch) {
-    impressionsMatch = normalizedInput.match(/Impressions:?\s*\??\s*([0-9,.KMkm]+)/i);
-  }
+  // Extract impressions - improved patterns for different formats
+  const impressionPatterns = [
+    /Impressions:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i,
+    /Impressions:?\s*\??\s*([0-9,.KMkm]+)/i,
+    /Impressions\s*\n\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i,
+    /([0-9,.KMkm]+)\s*impressions/i
+  ];
   
-  if (impressionsMatch) {
-    result.acquisition.impressions = {
-      value: normalizeValue(impressionsMatch[1]),
-      change: impressionsMatch[2] ? parseInt(impressionsMatch[2]) : 0
-    };
-    console.log('Extracted impressions:', result.acquisition.impressions);
-  }
-
-  // Extract page views - improved pattern with "Product" prefix and question mark
-  let pageViewsMatch = normalizedInput.match(/(?:Product )?Page Views:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i);
-  
-  // If not found, try alternate format without change percentage
-  if (!pageViewsMatch) {
-    pageViewsMatch = normalizedInput.match(/(?:Product )?Page Views:?\s*\??\s*([0-9,.KMkm]+)/i);
-  }
-  
-  if (pageViewsMatch) {
-    result.acquisition.pageViews = {
-      value: normalizeValue(pageViewsMatch[1]),
-      change: pageViewsMatch[2] ? parseInt(pageViewsMatch[2]) : 0
-    };
-    console.log('Extracted page views:', result.acquisition.pageViews);
+  for (const pattern of impressionPatterns) {
+    const match = normalizedInput.match(pattern);
+    if (match && match[1]) {
+      result.acquisition.impressions = {
+        value: normalizeValue(match[1]),
+        change: match[2] ? parseInt(match[2]) : 0
+      };
+      console.log('Extracted impressions:', result.acquisition.impressions);
+      break;
+    }
   }
 
-  // Extract conversion rate - improved pattern with question mark
-  let conversionRateMatch = normalizedInput.match(/Conversion Rate:?\s*\??\s*([0-9,.]+%)\s*([+-][0-9]+%)/i);
+  // Extract page views - improved patterns with "Product" prefix and without
+  const pageViewPatterns = [
+    /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i,
+    /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMkm]+)/i,
+    /(?:Product )?Page Views\s*\n\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i,
+    /([0-9,.KMkm]+)\s*(?:product )?page views/i
+  ];
   
-  // If not found, try without the % in the value (we'll add it later)
-  if (!conversionRateMatch) {
-    conversionRateMatch = normalizedInput.match(/Conversion Rate:?\s*\??\s*([0-9,.]+)\s*%\s*([+-][0-9]+%)/i);
-  }
-  
-  // If still not found, try without change percentage
-  if (!conversionRateMatch) {
-    conversionRateMatch = normalizedInput.match(/Conversion Rate:?\s*\??\s*([0-9,.]+)%?/i);
-  }
-  
-  if (conversionRateMatch) {
-    const conversionValue = conversionRateMatch[1].replace('%', '');
-    result.acquisition.conversionRate = {
-      value: parseFloat(conversionValue),
-      change: conversionRateMatch[2] ? parseInt(conversionRateMatch[2]) : 0
-    };
-    console.log('Extracted conversion rate:', result.acquisition.conversionRate);
+  for (const pattern of pageViewPatterns) {
+    const match = normalizedInput.match(pattern);
+    if (match && match[1]) {
+      result.acquisition.pageViews = {
+        value: normalizeValue(match[1]),
+        change: match[2] ? parseInt(match[2]) : 0
+      };
+      console.log('Extracted page views:', result.acquisition.pageViews);
+      break;
+    }
   }
 
-  // Extract downloads - improved pattern with "Total" prefix and "Daily Average" prefix
-  let downloadsMatch = normalizedInput.match(/(?:Daily Average\s*\n)?(?:Total )?Downloads:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i);
+  // Extract conversion rate - improved patterns with more variations
+  const conversionPatterns = [
+    /Conversion Rate:?\s*\??\s*([0-9,.]+)%\s*([+-][0-9]+%)/i,
+    /Conversion Rate:?\s*\??\s*([0-9,.]+)%/i,
+    /Conversion Rate:?\s*\??\s*([0-9,.]+)\s*%\s*([+-][0-9]+%)?/i,
+    /Conversion Rate\s*\n\s*([0-9,.]+)%\s*([+-][0-9]+%)?/i,
+    /([0-9,.]+)%\s*conversion rate/i
+  ];
   
-  // If not found, try alternate format without change percentage
-  if (!downloadsMatch) {
-    downloadsMatch = normalizedInput.match(/(?:Daily Average\s*\n)?(?:Total )?Downloads:?\s*\??\s*([0-9,.KMkm]+)/i);
+  for (const pattern of conversionPatterns) {
+    const match = normalizedInput.match(pattern);
+    if (match && match[1]) {
+      const conversionValue = match[1].replace('%', '');
+      result.acquisition.conversionRate = {
+        value: parseFloat(conversionValue),
+        change: match[2] ? parseInt(match[2]) : 0
+      };
+      console.log('Extracted conversion rate:', result.acquisition.conversionRate);
+      break;
+    }
   }
+
+  // Extract downloads - improved patterns with "Total" prefix and without
+  const downloadPatterns = [
+    /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i,
+    /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMkm]+)/i,
+    /(?:Total )?Downloads\s*\n\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i,
+    /([0-9,.KMkm]+)\s*(?:total )?downloads/i,
+    /([0-9,.KMkm]+)\s*\n\s*Total Downloads/i
+  ];
   
-  if (downloadsMatch) {
-    result.acquisition.downloads = {
-      value: normalizeValue(downloadsMatch[1]),
-      change: downloadsMatch[2] ? parseInt(downloadsMatch[2]) : 0
-    };
-    console.log('Extracted downloads:', result.acquisition.downloads);
-  }
-  
-  // Also look for the total downloads number at the bottom of the section
-  const totalDownloadsMatch = normalizedInput.match(/([0-9,.KMkm]+)\s*\n\s*Total Downloads/i);
-  if (totalDownloadsMatch && !result.acquisition.downloads.value) {
-    result.acquisition.downloads.value = normalizeValue(totalDownloadsMatch[1]);
-    console.log('Extracted total downloads from summary:', result.acquisition.downloads.value);
+  for (const pattern of downloadPatterns) {
+    const match = normalizedInput.match(pattern);
+    if (match && match[1]) {
+      result.acquisition.downloads = {
+        value: normalizeValue(match[1]),
+        change: match[2] ? parseInt(match[2]) : 0
+      };
+      console.log('Extracted downloads:', result.acquisition.downloads);
+      break;
+    }
   }
   
   // Check for benchmark information in the Benchmarks section
@@ -128,6 +138,18 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
     result.acquisition.funnelMetrics.viewsToDownloads = 
       (result.acquisition.downloads.value / result.acquisition.pageViews.value) * 100;
     console.log('Calculated views to downloads rate:', result.acquisition.funnelMetrics.viewsToDownloads);
+  }
+
+  // Look for total downloads section at the bottom if we haven't found it yet
+  if (!result.acquisition.downloads.value) {
+    const territorySection = normalizedInput.match(/Total Downloads by Territory[\s\S]*?See All([\s\S]*?)(?=Total Downloads by|$)/i);
+    if (territorySection) {
+      const totalMatch = normalizedInput.match(/([0-9,.KMkm]+)\s*Total/i);
+      if (totalMatch && totalMatch[1]) {
+        result.acquisition.downloads.value = normalizeValue(totalMatch[1]);
+        console.log('Extracted total downloads from territory section:', result.acquisition.downloads.value);
+      }
+    }
   }
 
   return result;

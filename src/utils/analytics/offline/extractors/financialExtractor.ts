@@ -15,8 +15,10 @@ export const extractFinancialMetrics = (rawInput: any, result: Partial<Processed
     return result;
   }
   
-  // Normalize input - trim whitespace and standardize newlines
-  const normalizedInput = rawInput.replace(/\r\n/g, '\n').trim();
+  // Normalize input - trim whitespace, standardize newlines, and normalize spacing around question marks
+  const normalizedInput = rawInput.replace(/\r\n/g, '\n')
+                                 .replace(/\s*\?\s*/g, ' ? ')
+                                 .trim();
   
   // Initialize financial object if it doesn't exist
   result.financial = result.financial || {
@@ -30,36 +32,47 @@ export const extractFinancialMetrics = (rawInput: any, result: Partial<Processed
     }
   };
   
-  // Extract proceeds - improved patterns to match App Store Connect format with question mark
-  let proceedsMatch = normalizedInput.match(/Proceeds:?\s*\??\s*\$?([0-9,.KMkm]+)\s*([+-][0-9]+%)/i);
+  // Extract proceeds with improved patterns for multiple formats
+  const proceedsPatterns = [
+    /Proceeds:?\s*\??\s*\$?([0-9,.KMkm]+)\s*([+-][0-9]+%)/i,
+    /Proceeds:?\s*\??\s*\$?([0-9,.KMkm]+)/i,
+    /Proceeds\s*\n\s*\$?([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i,
+    /\$?([0-9,.KMkm]+)\s*proceeds/i,
+    /Revenue:?\s*\??\s*\$?([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i
+  ];
   
-  // If not found, try alternate format without change percentage
-  if (!proceedsMatch) {
-    proceedsMatch = normalizedInput.match(/Proceeds:?\s*\??\s*\$?([0-9,.KMkm]+)/i);
-  }
-  
-  if (proceedsMatch) {
-    result.financial.proceeds = {
-      value: normalizeValue(proceedsMatch[1]),
-      change: proceedsMatch[2] ? parseInt(proceedsMatch[2]) : 0
-    };
-    console.log('Extracted proceeds:', result.financial.proceeds);
+  for (const pattern of proceedsPatterns) {
+    const match = normalizedInput.match(pattern);
+    if (match && match[1]) {
+      result.financial.proceeds = {
+        value: normalizeValue(match[1]),
+        change: match[2] ? parseInt(match[2]) : 0
+      };
+      console.log('Extracted proceeds:', result.financial.proceeds);
+      break;
+    }
   }
 
-  // Extract proceeds per user - improved patterns with question mark and optional "Paying" word
-  let proceedsPerUserMatch = normalizedInput.match(/Proceeds per (?:Paying )?User:?\s*\??\s*\$?([0-9,.]+)\s*([+-][0-9.]+%)/i);
+  // Extract proceeds per user with improved patterns for multiple formats
+  const proceedsPerUserPatterns = [
+    /Proceeds per (?:Paying )?User:?\s*\??\s*\$?([0-9,.]+)\s*([+-][0-9.]+%)/i,
+    /Proceeds per (?:Paying )?User:?\s*\??\s*\$?([0-9,.]+)/i,
+    /Proceeds per (?:Paying )?User\s*\n\s*\$?([0-9,.]+)\s*([+-][0-9.]+%)?/i,
+    /\$?([0-9,.]+)\s*proceeds per (?:paying )?user/i,
+    /Average Revenue per User:?\s*\??\s*\$?([0-9,.]+)\s*([+-][0-9.]+%)?/i,
+    /ARPU:?\s*\??\s*\$?([0-9,.]+)\s*([+-][0-9.]+%)?/i
+  ];
   
-  // If not found, try alternate format without change percentage
-  if (!proceedsPerUserMatch) {
-    proceedsPerUserMatch = normalizedInput.match(/Proceeds per (?:Paying )?User:?\s*\??\s*\$?([0-9,.]+)/i);
-  }
-  
-  if (proceedsPerUserMatch) {
-    result.financial.proceedsPerUser = {
-      value: parseFloat(proceedsPerUserMatch[1].replace(/,/g, '')),
-      change: proceedsPerUserMatch[2] ? parseFloat(proceedsPerUserMatch[2]) : 0
-    };
-    console.log('Extracted proceeds per user:', result.financial.proceedsPerUser);
+  for (const pattern of proceedsPerUserPatterns) {
+    const match = normalizedInput.match(pattern);
+    if (match && match[1]) {
+      result.financial.proceedsPerUser = {
+        value: parseFloat(match[1].replace(/,/g, '')),
+        change: match[2] ? parseFloat(match[2]) : 0
+      };
+      console.log('Extracted proceeds per user:', result.financial.proceedsPerUser);
+      break;
+    }
   }
   
   // Check for benchmark information about proceeds per user
@@ -70,6 +83,19 @@ export const extractFinancialMetrics = (rawInput: any, result: Partial<Processed
       result.financial.proceedsPerUser.value = parseFloat(benchmarkSection[1].replace(/,/g, ''));
       console.log('Extracted proceeds per user from benchmark section:', result.financial.proceedsPerUser.value);
     }
+  }
+  
+  // If we have proceeds and downloads data, calculate derived ARPD (Average Revenue Per Download)
+  if (result.financial.proceeds.value > 0 && result?.acquisition?.downloads?.value > 0) {
+    result.financial.derivedMetrics.arpd = result.financial.proceeds.value / result.acquisition.downloads.value;
+    console.log('Calculated ARPD:', result.financial.derivedMetrics.arpd);
+  }
+  
+  // If we have proceeds and impressions data, calculate revenue per impression
+  if (result.financial.proceeds.value > 0 && result?.acquisition?.impressions?.value > 0) {
+    result.financial.derivedMetrics.revenuePerImpression = 
+      result.financial.proceeds.value / result.acquisition.impressions.value;
+    console.log('Calculated revenue per impression:', result.financial.derivedMetrics.revenuePerImpression);
   }
 
   return result;
