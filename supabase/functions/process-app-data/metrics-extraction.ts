@@ -2,37 +2,45 @@
 // Core extraction functionality for metrics from text
 import { metricSchema } from './extractors.ts';
 import { cleanText, normalizeNumber } from './data-cleaning.ts';
+import { validateMetricValue } from './validation.ts';
 
 /**
  * Extract metrics from analysis text
  * @param text The raw text to extract metrics from
- * @returns Extracted metrics record
+ * @returns Extracted metrics record with confidence scores
  */
 export function extractMetrics(text: string): Record<string, any> {
   const cleanedText = cleanText(text);
-  const result: Record<string, number | null> = {};
+  const result: Record<string, any> = {};
+  const confidenceScores: Record<string, number> = {};
+  const extractedValues: Record<string, number | null> = {};
+  const warnings: Record<string, string[]> = {};
   
   console.log("Extracting metrics from cleaned text...");
   
   // Extract each metric with primary and alias patterns
   for (const [metricKey, metricConfig] of Object.entries(metricSchema)) {
     let found = false;
+    let extractedValue: number | null = null;
+    let patternConfidence = 0;
     
     // Try all patterns for this metric
     for (const pattern of metricConfig.patterns) {
       const match = cleanedText.match(pattern);
       if (match && match[1]) {
-        const value = normalizeNumber(match[1], metricConfig.unit);
-        if (!isNaN(value)) {
-          result[metricKey] = value;
+        extractedValue = normalizeNumber(match[1], metricConfig.unit);
+        if (!isNaN(extractedValue)) {
+          extractedValues[metricKey] = extractedValue;
+          // Primary patterns get higher confidence
+          patternConfidence = 75;
           found = true;
-          console.log(`Extracted ${metricKey}: ${value} from pattern ${pattern}`);
+          console.log(`Extracted ${metricKey}: ${extractedValue} from primary pattern ${pattern}`);
           break;
         }
       }
     }
     
-    // If not found, try aliases
+    // If not found, try aliases (lower confidence)
     if (!found && metricConfig.aliases && metricConfig.aliases.length > 0) {
       for (const alias of metricConfig.aliases) {
         const aliasPatterns = [
@@ -44,11 +52,13 @@ export function extractMetrics(text: string): Record<string, any> {
         for (const pattern of aliasPatterns) {
           const match = cleanedText.match(pattern);
           if (match && match[1]) {
-            const value = normalizeNumber(match[1], metricConfig.unit);
-            if (!isNaN(value)) {
-              result[metricKey] = value;
+            extractedValue = normalizeNumber(match[1], metricConfig.unit);
+            if (!isNaN(extractedValue)) {
+              extractedValues[metricKey] = extractedValue;
+              // Alias patterns get lower confidence
+              patternConfidence = 60;
               found = true;
-              console.log(`Extracted ${metricKey} from alias ${alias}: ${value}`);
+              console.log(`Extracted ${metricKey} from alias ${alias}: ${extractedValue}`);
               break;
             }
           }
@@ -59,24 +69,65 @@ export function extractMetrics(text: string): Record<string, any> {
     
     // If still not found, set to null (will be calculated later if possible)
     if (!found) {
-      result[metricKey] = null;
+      extractedValues[metricKey] = null;
       console.log(`No value found for ${metricKey}`);
+    } else {
+      // Validate the extracted value against expected ranges
+      const validation = validateMetricValue(metricKey, extractedValue as number);
+      
+      // Store warnings
+      if (validation.warnings.length > 0) {
+        warnings[metricKey] = validation.warnings;
+      }
+      
+      // Final confidence is average of pattern confidence and value validation confidence
+      confidenceScores[metricKey] = Math.round((patternConfidence + validation.confidence) / 2);
+      
+      // Store the value with metadata
+      result[metricKey] = {
+        value: extractedValue,
+        confidence: confidenceScores[metricKey],
+        warnings: validation.warnings,
+        extracted: true,
+        calculated: false
+      };
     }
   }
   
   // After initial extraction, try to calculate missing values
-  calculateMissingMetrics(result);
+  const calculatedMetrics = calculateMissingMetrics(extractedValues, result, warnings);
   
-  return result;
+  // Combine extracted and calculated results
+  const finalResult = { ...result, ...calculatedMetrics };
+  
+  // Add overall extraction quality metrics
+  const overallConfidence = calculateOverallConfidence(finalResult);
+  finalResult._extraction = {
+    timestamp: Date.now(),
+    overallConfidence,
+    missingRequiredMetrics: getMissingRequiredMetrics(extractedValues),
+    validationWarnings: Object.values(warnings).flat(),
+    inconsistentRelationships: findInconsistentRelationships(finalResult)
+  };
+  
+  return finalResult;
 }
 
 /**
  * Calculate missing metrics based on existing values
  * @param metrics The current metrics record
+ * @param result Object to store results with metadata
+ * @param warnings Object to store validation warnings
+ * @returns Calculated metrics with metadata
  */
-export function calculateMissingMetrics(metrics: Record<string, number | null>): void {
+export function calculateMissingMetrics(
+  metrics: Record<string, number | null>,
+  result: Record<string, any>,
+  warnings: Record<string, string[]>
+): Record<string, any> {
   console.log("Calculating missing metrics...");
   
+  const calculatedResults: Record<string, any> = {};
   let calculatedAtLeastOne = true;
   const maxIterations = 3; // Prevent infinite loops
   let iterations = 0;
@@ -100,6 +151,32 @@ export function calculateMissingMetrics(metrics: Record<string, number | null>):
           const calculatedValue = formula(...inputValues as number[]);
           if (calculatedValue !== null && !isNaN(calculatedValue)) {
             metrics[metricKey] = calculatedValue;
+            
+            // Validate the calculated value
+            const validation = validateMetricValue(
+              metricKey, 
+              calculatedValue, 
+              inputs.reduce((map, key, index) => {
+                map[key] = inputValues[index] as number;
+                return map;
+              }, {} as Record<string, number>)
+            );
+            
+            // Store the calculated value with metadata
+            calculatedResults[metricKey] = {
+              value: calculatedValue,
+              confidence: validation.confidence * 0.8, // Lower confidence for calculated values
+              warnings: validation.warnings,
+              extracted: false,
+              calculated: true,
+              calculatedFrom: inputs
+            };
+            
+            // Store warnings
+            if (validation.warnings.length > 0) {
+              warnings[metricKey] = validation.warnings;
+            }
+            
             calculatedAtLeastOne = true;
             console.log(`Calculated missing ${metricKey}: ${calculatedValue} from ${inputs.join(', ')}`);
           }
@@ -111,4 +188,83 @@ export function calculateMissingMetrics(metrics: Record<string, number | null>):
   }
   
   console.log("Finished calculating missing metrics after", iterations, "iterations");
+  return calculatedResults;
+}
+
+/**
+ * Calculate overall confidence score for the extraction
+ * @param results Extraction results with confidence scores
+ * @returns Overall confidence percentage
+ */
+function calculateOverallConfidence(results: Record<string, any>): number {
+  const confidenceValues: number[] = [];
+  const keyMetrics = ['downloads', 'proceeds', 'conversionRate', 'impressions'];
+  
+  // Get confidence scores for all metrics, weighing key metrics more heavily
+  for (const [key, data] of Object.entries(results)) {
+    if (key.startsWith('_') || typeof data !== 'object' || !('confidence' in data)) continue;
+    
+    const isKeyMetric = keyMetrics.includes(key);
+    const weight = isKeyMetric ? 2 : 1;
+    
+    for (let i = 0; i < weight; i++) {
+      confidenceValues.push(data.confidence);
+    }
+  }
+  
+  // If no confidence values, return 0
+  if (confidenceValues.length === 0) return 0;
+  
+  // Calculate weighted average
+  const avgConfidence = confidenceValues.reduce((sum, val) => sum + val, 0) / confidenceValues.length;
+  return Math.round(avgConfidence);
+}
+
+/**
+ * Get list of missing required metrics
+ * @param metrics Extracted metrics
+ * @returns Array of missing required metric names
+ */
+function getMissingRequiredMetrics(metrics: Record<string, number | null>): string[] {
+  const requiredMetrics = ['downloads', 'proceeds', 'conversionRate', 'impressions'];
+  return requiredMetrics.filter(key => metrics[key] === null);
+}
+
+/**
+ * Find inconsistent relationships between metrics
+ * @param results Extraction results
+ * @returns Array of inconsistency descriptions
+ */
+function findInconsistentRelationships(results: Record<string, any>): string[] {
+  const inconsistencies: string[] = [];
+  
+  // Check if page views > impressions
+  if (results.pageViews?.value > 0 && results.impressions?.value > 0) {
+    if (results.pageViews.value > results.impressions.value) {
+      inconsistencies.push('Page views exceed impressions');
+    }
+  }
+  
+  // Check downloads vs impressions * conversion rate
+  if (results.downloads?.value > 0 && results.impressions?.value > 0 && results.conversionRate?.value > 0) {
+    const expectedDownloads = results.impressions.value * (results.conversionRate.value / 100);
+    const ratio = results.downloads.value / expectedDownloads;
+    
+    if (ratio < 0.5 || ratio > 2.0) {
+      inconsistencies.push(`Downloads inconsistent with impressions * conversion rate`);
+    }
+  }
+  
+  // Check retention decreasing over time
+  const retentionKeys = ['day1Retention', 'day7Retention', 'day14Retention', 'day28Retention'];
+  for (let i = 0; i < retentionKeys.length - 1; i++) {
+    const current = results[retentionKeys[i]]?.value;
+    const next = results[retentionKeys[i+1]]?.value;
+    
+    if (current !== undefined && next !== undefined && current < next) {
+      inconsistencies.push(`${retentionKeys[i+1]} higher than ${retentionKeys[i]}`);
+    }
+  }
+  
+  return inconsistencies;
 }

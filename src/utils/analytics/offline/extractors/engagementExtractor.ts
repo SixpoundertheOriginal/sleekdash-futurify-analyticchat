@@ -25,6 +25,15 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
     retention: {
       day1: { value: 0, benchmark: 0 },
       day7: { value: 0, benchmark: 0 }
+    },
+    confidenceScores: {
+      overall: 0,
+      sessionsPerDevice: 0,
+      retention: 0
+    },
+    validationState: {
+      valid: false,
+      warnings: []
     }
   };
   
@@ -37,6 +46,8 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
     /([0-9,.]+)\s*sessions per (?:active )?device/i
   ];
   
+  let sessionsConfidence = 0;
+  
   for (const pattern of sessionsPatterns) {
     const match = normalizedInput.match(pattern);
     if (match && match[1]) {
@@ -45,12 +56,30 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
         change: match[2] ? parseFloat(match[2]) : 0
       };
       console.log('Extracted sessions per device:', result.engagement.sessionsPerDevice);
+      // Higher confidence for patterns with change value
+      sessionsConfidence = match[2] ? 90 : 75;
       break;
     }
+  }
+  
+  // Apply range validation for sessions per device (typically between 1-10 for most apps)
+  if (result.engagement.sessionsPerDevice.value > 0) {
+    if (result.engagement.sessionsPerDevice.value > 20) {
+      result.engagement.validationState.warnings.push('Sessions per device value unusually high');
+      sessionsConfidence -= 20;
+    } else if (result.engagement.sessionsPerDevice.value < 1) {
+      result.engagement.validationState.warnings.push('Sessions per device value unusually low');
+      sessionsConfidence -= 10;
+    }
+  } else {
+    sessionsConfidence = 0;
   }
 
   // Extract retention data - look for Average Retention section
   const retentionSection = normalizedInput.match(/Average Retention[\s\S]*?(?=Total Downloads by|$)/i);
+  let retentionConfidence = 0;
+  let retentionDataPoints = 0;
+  
   if (retentionSection) {
     // Day 1 retention with multiple patterns
     const day1Patterns = [
@@ -65,6 +94,7 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
       if (match && match[1]) {
         result.engagement.retention.day1.value = parseFloat(match[1]);
         console.log('Extracted day 1 retention:', result.engagement.retention.day1.value);
+        retentionDataPoints++;
         break;
       }
     }
@@ -82,6 +112,7 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
       if (match && match[1]) {
         result.engagement.retention.day7.value = parseFloat(match[1]);
         console.log('Extracted day 7 retention:', result.engagement.retention.day7.value);
+        retentionDataPoints++;
         break;
       }
     }
@@ -103,6 +134,7 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
         }
         result.engagement.retention.day14.value = parseFloat(match[1]);
         console.log('Extracted day 14 retention:', result.engagement.retention.day14.value);
+        retentionDataPoints++;
         break;
       }
     }
@@ -124,8 +156,62 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
         }
         result.engagement.retention.day28.value = parseFloat(match[1]);
         console.log('Extracted day 28 retention:', result.engagement.retention.day28.value);
+        retentionDataPoints++;
         break;
       }
+    }
+  }
+  
+  // Calculate retention confidence based on data points and cross-validation
+  if (retentionDataPoints > 0) {
+    retentionConfidence = Math.min(30 + (retentionDataPoints * 20), 95);
+    
+    // Cross-validate retention metrics (retention should decline over time)
+    if (result.engagement.retention.day1.value > 0 && 
+        result.engagement.retention.day7.value > 0 && 
+        result.engagement.retention.day1.value <= result.engagement.retention.day7.value) {
+      result.engagement.validationState.warnings.push('Inconsistent retention values: Day 7 retention higher than Day 1');
+      retentionConfidence -= 25;
+    }
+    
+    if (result.engagement.retention.day7.value > 0 && 
+        result.engagement.retention.day14 && 
+        result.engagement.retention.day14.value > 0 && 
+        result.engagement.retention.day7.value <= result.engagement.retention.day14.value) {
+      result.engagement.validationState.warnings.push('Inconsistent retention values: Day 14 retention higher than Day 7');
+      retentionConfidence -= 25;
+    }
+    
+    if (result.engagement.retention.day14 && 
+        result.engagement.retention.day14.value > 0 && 
+        result.engagement.retention.day28 && 
+        result.engagement.retention.day28.value > 0 && 
+        result.engagement.retention.day14.value <= result.engagement.retention.day28.value) {
+      result.engagement.validationState.warnings.push('Inconsistent retention values: Day 28 retention higher than Day 14');
+      retentionConfidence -= 25;
+    }
+    
+    // Range checks for retention values (typically between 1-100%)
+    if (result.engagement.retention.day1.value > 100 || result.engagement.retention.day1.value < 0) {
+      result.engagement.validationState.warnings.push('Day 1 retention value out of valid range (0-100%)');
+      retentionConfidence -= 30;
+    }
+    
+    if (result.engagement.retention.day7.value > 100 || result.engagement.retention.day7.value < 0) {
+      result.engagement.validationState.warnings.push('Day 7 retention value out of valid range (0-100%)');
+      retentionConfidence -= 30;
+    }
+    
+    if (result.engagement.retention.day14 && 
+        (result.engagement.retention.day14.value > 100 || result.engagement.retention.day14.value < 0)) {
+      result.engagement.validationState.warnings.push('Day 14 retention value out of valid range (0-100%)');
+      retentionConfidence -= 30;
+    }
+    
+    if (result.engagement.retention.day28 && 
+        (result.engagement.retention.day28.value > 100 || result.engagement.retention.day28.value < 0)) {
+      result.engagement.validationState.warnings.push('Day 28 retention value out of valid range (0-100%)');
+      retentionConfidence -= 30;
     }
   }
   
@@ -145,6 +231,8 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
         result.engagement.retention.day1.value = parseFloat(match[1]);
         result.engagement.retention.day1.benchmark = parseFloat(match[2]);
         console.log('Extracted day 1 retention from benchmark:', result.engagement.retention.day1);
+        // Increase confidence when benchmark is available
+        retentionConfidence += 10;
         break;
       }
     }
@@ -162,6 +250,8 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
         result.engagement.retention.day7.value = parseFloat(match[1]);
         result.engagement.retention.day7.benchmark = parseFloat(match[2]);
         console.log('Extracted day 7 retention from benchmark:', result.engagement.retention.day7);
+        // Increase confidence when benchmark is available
+        retentionConfidence += 10;
         break;
       }
     }
@@ -182,10 +272,30 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
         result.engagement.retention.day28.value = parseFloat(match[1]);
         result.engagement.retention.day28.benchmark = parseFloat(match[2]);
         console.log('Extracted day 28 retention from benchmark:', result.engagement.retention.day28);
+        // Increase confidence when benchmark is available
+        retentionConfidence += 10;
         break;
       }
     }
   }
+
+  // Set confidence scores and validation state
+  result.engagement.confidenceScores = {
+    overall: Math.round((sessionsConfidence + retentionConfidence) / 2),
+    sessionsPerDevice: sessionsConfidence,
+    retention: retentionConfidence
+  };
+  
+  result.engagement.validationState.valid = 
+    (result.engagement.sessionsPerDevice.value > 0 || result.engagement.retention.day1.value > 0) &&
+    result.engagement.validationState.warnings.length < 3 &&
+    result.engagement.confidenceScores.overall > 40;
+  
+  console.log('Engagement metrics validation:', {
+    valid: result.engagement.validationState.valid,
+    warnings: result.engagement.validationState.warnings,
+    confidence: result.engagement.confidenceScores
+  });
 
   return result;
 };
