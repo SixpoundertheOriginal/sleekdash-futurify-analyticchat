@@ -122,7 +122,7 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
         });
       } else {
         toast({
-          variant: "warning",
+          variant: "default",
           title: "Limited Extraction",
           description: "Few or no metrics could be extracted. You may need to edit the data format or enter metrics manually."
         });
@@ -493,3 +493,4 @@ function ExtractedMetricCard({
     </Card>
   );
 }
+
