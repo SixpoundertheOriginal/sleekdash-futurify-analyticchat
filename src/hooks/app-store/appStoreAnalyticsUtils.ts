@@ -59,3 +59,22 @@ export const createDefaultProcessedAnalytics = (): ProcessedAnalytics => {
     }
   };
 };
+
+/**
+ * Create a unified analytics state hook that consolidates multiple state pieces
+ */
+export interface AnalyticsState {
+  analytics: ProcessedAnalytics | null;
+  isLoading: boolean;
+  error: string | null;
+  dateRange: { from: Date | null; to: Date | null } | null;
+}
+
+export const createInitialAnalyticsState = (): AnalyticsState => {
+  return {
+    analytics: null,
+    isLoading: false,
+    error: null,
+    dateRange: null
+  };
+};

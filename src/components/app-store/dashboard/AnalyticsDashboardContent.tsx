@@ -11,6 +11,7 @@ import { useAnalyticsValidation } from "@/hooks/useAnalyticsValidation";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Info } from "lucide-react";
+import { useAppStore } from "@/contexts/AppStoreContext";
 
 interface AnalyticsDashboardContentProps {
   data: ProcessedAnalytics;
@@ -112,7 +113,58 @@ function DashboardContent({
   );
 }
 
+// Create a connected version of the dashboard that pulls from context
+function ConnectedDashboardContent({
+  onRetry,
+  onRefresh
+}: {
+  onRetry?: () => void;
+  onRefresh?: () => void;
+}) {
+  const {
+    processedAnalytics,
+    dateRange,
+    isProcessing,
+    processingError,
+    goToInputTab
+  } = useAppStore();
+  
+  // Use provided callbacks or fallback to context methods
+  const handleRetry = onRetry || goToInputTab;
+  const handleRefresh = onRefresh || goToInputTab;
+  
+  // If no data is available, show error
+  if (!processedAnalytics) {
+    return (
+      <ErrorDisplay 
+        error="No analytics data available" 
+        severity="medium"
+        title="Missing Data"
+        details="Please input your app store data to see analytics."
+        onRetry={handleRetry}
+        variant="default"
+      />
+    );
+  }
+  
+  return (
+    <DashboardContent 
+      data={processedAnalytics}
+      dateRange={dateRange}
+      isProcessing={isProcessing}
+      error={processingError}
+      onRetry={handleRetry}
+      onRefresh={handleRefresh}
+    />
+  );
+}
+
 // Use the HOC to wrap the dashboard content with error boundary
 export const AnalyticsDashboardContent = withErrorBoundary(DashboardContent, {
   onReset: () => console.log('Dashboard error boundary reset'),
+});
+
+// Export the connected version as well
+export const ConnectedAnalyticsDashboardContent = withErrorBoundary(ConnectedDashboardContent, {
+  onReset: () => console.log('Connected dashboard error boundary reset'),
 });

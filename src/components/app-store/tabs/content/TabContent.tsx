@@ -12,7 +12,6 @@ import { createDefaultProcessedAnalytics } from "@/hooks/app-store/appStoreAnaly
 export function TabContent() {
   const {
     activeTab,
-    setActiveTab,
     extractedData,
     analysisResult,
     isProcessing,
@@ -20,13 +19,13 @@ export function TabContent() {
     processedAnalytics,
     directlyExtractedMetrics,
     dateRange,
-    setDateRange,
     processingError,
     handleProcessSuccess,
     handleAnalysisSuccess,
     handleDirectExtractionSuccess,
     setProcessing,
     setAnalyzing,
+    setDateRange,
     threadId,
     assistantId,
     goToInputTab
@@ -51,9 +50,7 @@ export function TabContent() {
       </TabsContent>
       
       <TabsContent value="extraction">
-        <DataExtractionTabContent
-          setActiveTab={setActiveTab}
-        />
+        <DataExtractionTabContent />
       </TabsContent>
       
       <TabsContent value="analysis">

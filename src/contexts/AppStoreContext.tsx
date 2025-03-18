@@ -1,56 +1,99 @@
-import React, { createContext, useContext, ReactNode } from "react";
-import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
-import { DateRange } from "@/components/chat/DateRangePicker";
-import { useAppStoreState } from "@/hooks/app-store/useAppStoreState";
-import { useAppStoreHandlers } from "@/hooks/app-store/useAppStoreHandlers";
-import { useAppStoreAnalysisActions } from "@/hooks/app-store/useAppStoreAnalysisActions";
-import { useAppStoreAnalysisData } from "@/hooks/app-store/useAppStoreAnalysisData";
-import { useMetrics } from "@/hooks/useMetrics";
-import { useThread } from "./thread/ThreadContext";
 
-interface AppStoreContextType {
-  // Tab state
+import React, { createContext, useContext, ReactNode, useReducer, useEffect } from "react";
+import { ProcessedAnalytics } from "@/utils/analytics/types";
+import { DateRange } from "@/components/chat/DateRangePicker";
+import { useThread } from "./thread/ThreadContext";
+import { useMetrics } from "@/hooks/useMetrics";
+import { createDefaultProcessedAnalytics, AnalyticsState, createInitialAnalyticsState } from "@/hooks/app-store/appStoreAnalyticsUtils";
+import { registerAppStoreMetrics } from '@/utils/metrics/adapters/appStoreAdapter';
+
+// Define action types
+type ActionType = 
+  | { type: 'SET_ACTIVE_TAB'; payload: string }
+  | { type: 'SET_EXTRACTED_DATA'; payload: any }
+  | { type: 'SET_ANALYSIS_RESULT'; payload: string | null }
+  | { type: 'SET_PROCESSED_ANALYTICS'; payload: ProcessedAnalytics | null }
+  | { type: 'SET_DIRECTLY_EXTRACTED_METRICS'; payload: Partial<ProcessedAnalytics> | null }
+  | { type: 'SET_DATE_RANGE'; payload: DateRange | null }
+  | { type: 'SET_PROCESSING'; payload: boolean }
+  | { type: 'SET_ANALYZING'; payload: boolean }
+  | { type: 'SET_PROCESSING_ERROR'; payload: string | null }
+  | { type: 'RESET_STATE' };
+
+// Define state structure
+interface AppStoreState {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
-  
-  // Data state
-  extractedData: string | null;
+  extractedData: any;
   analysisResult: string | null;
   processedAnalytics: ProcessedAnalytics | null;
   directlyExtractedMetrics: Partial<ProcessedAnalytics> | null;
-  
-  // Date range state
   dateRange: DateRange | null;
-  setDateRange: (dateRange: DateRange | null) => void;
-  
-  // Processing state
   isProcessing: boolean;
-  setProcessing: (processing: boolean) => void;
   isAnalyzing: boolean;
-  setAnalyzing: (analyzing: boolean) => void;
   processingError: string | null;
-  
-  // Handlers
+}
+
+const initialState: AppStoreState = {
+  activeTab: "input",
+  extractedData: null,
+  analysisResult: null,
+  processedAnalytics: null,
+  directlyExtractedMetrics: null,
+  dateRange: null,
+  isProcessing: false,
+  isAnalyzing: false,
+  processingError: null
+};
+
+// Create reducer
+function appStoreReducer(state: AppStoreState, action: ActionType): AppStoreState {
+  switch (action.type) {
+    case 'SET_ACTIVE_TAB':
+      return { ...state, activeTab: action.payload };
+    case 'SET_EXTRACTED_DATA':
+      return { ...state, extractedData: action.payload };
+    case 'SET_ANALYSIS_RESULT':
+      return { ...state, analysisResult: action.payload };
+    case 'SET_PROCESSED_ANALYTICS':
+      return { ...state, processedAnalytics: action.payload };
+    case 'SET_DIRECTLY_EXTRACTED_METRICS':
+      return { ...state, directlyExtractedMetrics: action.payload };
+    case 'SET_DATE_RANGE':
+      return { ...state, dateRange: action.payload };
+    case 'SET_PROCESSING':
+      return { ...state, isProcessing: action.payload };
+    case 'SET_ANALYZING':
+      return { ...state, isAnalyzing: action.payload };
+    case 'SET_PROCESSING_ERROR':
+      return { ...state, processingError: action.payload };
+    case 'RESET_STATE':
+      return { ...initialState };
+    default:
+      return state;
+  }
+}
+
+// Create context
+interface AppStoreContextType extends AppStoreState {
+  dispatch: React.Dispatch<ActionType>;
+  // Helper methods
   handleProcessSuccess: (data: any) => void;
   handleAnalysisSuccess: (analysisResult: string) => void;
   handleDirectExtractionSuccess: (metrics: Partial<ProcessedAnalytics>) => void;
-  
-  // Thread info
+  setActiveTab: (tab: string) => void;
+  setProcessedAnalytics: (analytics: ProcessedAnalytics | null) => void;
+  setProcessing: (processing: boolean) => void;
+  setAnalyzing: (analyzing: boolean) => void;
+  setDateRange: (dateRange: DateRange | null) => void;
+  goToInputTab: () => void;
   threadId?: string;
   assistantId?: string;
-  
-  // Navigation helpers
-  goToInputTab: () => void;
-  
-  // Data utilities
+  // Computed properties
   getEffectiveAnalytics: () => ProcessedAnalytics | null;
   hasData: () => boolean;
   hasAnalysisData: () => boolean;
   getFormattedDateRange: () => string;
   isLoading: boolean;
-  
-  // Add missing properties
-  setProcessedAnalytics: (analytics: ProcessedAnalytics | null) => void;
 }
 
 const AppStoreContext = createContext<AppStoreContextType | undefined>(undefined);
@@ -61,96 +104,137 @@ interface AppStoreProviderProps {
 }
 
 export function AppStoreProvider({ children, initialData }: AppStoreProviderProps) {
-  // Get state from app store state hook
-  const appStoreState = useAppStoreState(initialData);
+  const [state, dispatch] = useReducer(appStoreReducer, 
+    initialData ? { ...initialState, processedAnalytics: initialData } : initialState
+  );
   
-  // Get thread context
   const { threadId, assistantId } = useThread();
   const { registerMetrics } = useMetrics('appStore');
   
-  // Extract state values for easier access
-  const {
-    activeTab, setActiveTab,
-    extractedData, setExtractedData,
-    analysisResult, setAnalysisResult,
-    processedAnalytics, setProcessedAnalytics,
-    directlyExtractedMetrics, setDirectlyExtractedMetrics,
-    dateRange, setDateRange,
-    isProcessing, setProcessing,
-    isAnalyzing, setAnalyzing,
-    processingError, setProcessingError
-  } = appStoreState;
-
-  // Get handlers for different operations
-  const handlers = useAppStoreHandlers({
-    setProcessing,
-    setAnalyzing,
-    setExtractedData,
-    setAnalysisResult,
-    setProcessedAnalytics,
-    setDirectlyExtractedMetrics,
-    setProcessingError,
-    setActiveTab,
-    registerMetrics
-  });
-
-  // Get analysis actions
-  const actions = useAppStoreAnalysisActions({
-    extractedData,
-    analysisResult,
-    setAnalyzing,
-    handleAnalysisSuccess: handlers.handleAnalysisSuccess,
-    handleAnalysisError: handlers.handleAnalysisError
-  });
-
-  // Get computed data properties
-  const analysisData = useAppStoreAnalysisData({
-    processedAnalytics,
-    initialData: initialData || null,
-    dateRange,
-    isProcessing,
-    isAnalyzing,
-    extractedData,
-    analysisResult
-  });
+  // Register initial metrics if provided
+  useEffect(() => {
+    if (initialData) {
+      registerAppStoreMetrics(initialData, {
+        source: 'initial-data',
+        confidence: 0.9
+      });
+    }
+  }, [initialData]);
+  
+  // Helper action dispatchers
+  const setActiveTab = (tab: string) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tab });
+  const setProcessedAnalytics = (analytics: ProcessedAnalytics | null) => 
+    dispatch({ type: 'SET_PROCESSED_ANALYTICS', payload: analytics });
+  const setProcessing = (processing: boolean) => 
+    dispatch({ type: 'SET_PROCESSING', payload: processing });
+  const setAnalyzing = (analyzing: boolean) => 
+    dispatch({ type: 'SET_ANALYZING', payload: analyzing });
+  const setDateRange = (dateRange: DateRange | null) => 
+    dispatch({ type: 'SET_DATE_RANGE', payload: dateRange });
   
   // Navigation helpers
   const goToInputTab = () => setActiveTab('input');
-
-  // Create the context value object
+  
+  // Complex handlers
+  const handleProcessSuccess = (data: any) => {
+    dispatch({ type: 'SET_EXTRACTED_DATA', payload: data });
+    dispatch({ type: 'SET_PROCESSING', payload: false });
+    dispatch({ type: 'SET_PROCESSING_ERROR', payload: null });
+    dispatch({ type: 'SET_ACTIVE_TAB', payload: 'extraction' });
+  };
+  
+  const handleAnalysisSuccess = (analysisResult: string) => {
+    dispatch({ type: 'SET_ANALYSIS_RESULT', payload: analysisResult });
+    dispatch({ type: 'SET_ANALYZING', payload: false });
+    dispatch({ type: 'SET_PROCESSING_ERROR', payload: null });
+    
+    // Try to extract metrics from the analysis result
+    try {
+      // Extract metrics logic would go here
+      // For now, let's assume we have a processed result
+      const processedResult = state.processedAnalytics || createDefaultProcessedAnalytics();
+      
+      dispatch({ type: 'SET_PROCESSED_ANALYTICS', payload: processedResult });
+      
+      // Register metrics
+      registerMetrics(processedResult, {
+        source: 'analysis',
+        confidence: 0.8
+      });
+      
+      dispatch({ type: 'SET_ACTIVE_TAB', payload: 'dashboard' });
+    } catch (error) {
+      console.error("Error processing analysis result:", error);
+      dispatch({ type: 'SET_PROCESSING_ERROR', payload: "Failed to process analysis result" });
+    }
+  };
+  
+  const handleDirectExtractionSuccess = (metrics: Partial<ProcessedAnalytics>) => {
+    dispatch({ type: 'SET_DIRECTLY_EXTRACTED_METRICS', payload: metrics });
+    dispatch({ type: 'SET_PROCESSING', payload: false });
+    
+    // Merge with existing analytics or create new one
+    const mergedAnalytics = {
+      ...createDefaultProcessedAnalytics(),
+      ...state.processedAnalytics,
+      ...metrics
+    };
+    
+    dispatch({ type: 'SET_PROCESSED_ANALYTICS', payload: mergedAnalytics });
+    
+    // Register metrics
+    registerMetrics(mergedAnalytics, {
+      source: 'direct-extraction',
+      confidence: 0.95
+    });
+    
+    dispatch({ type: 'SET_ACTIVE_TAB', payload: 'dashboard' });
+  };
+  
+  // Computed properties
+  const getEffectiveAnalytics = () => {
+    return state.processedAnalytics || null;
+  };
+  
+  const hasData = () => {
+    return !!state.processedAnalytics || !!state.extractedData;
+  };
+  
+  const hasAnalysisData = () => {
+    return !!state.analysisResult;
+  };
+  
+  const getFormattedDateRange = () => {
+    if (!state.dateRange || !state.dateRange.from || !state.dateRange.to) {
+      return "Not specified";
+    }
+    return `${state.dateRange.from.toLocaleDateString()} to ${state.dateRange.to.toLocaleDateString()}`;
+  };
+  
+  // Combine loading states
+  const isLoading = state.isProcessing || state.isAnalyzing;
+  
   const contextValue: AppStoreContextType = {
-    // Basic state
-    activeTab,
+    ...state,
+    dispatch,
+    handleProcessSuccess,
+    handleAnalysisSuccess,
+    handleDirectExtractionSuccess,
     setActiveTab,
-    extractedData,
-    analysisResult,
-    processedAnalytics,
-    directlyExtractedMetrics,
-    dateRange,
-    setDateRange,
-    isProcessing,
+    setProcessedAnalytics,
     setProcessing,
-    isAnalyzing,
     setAnalyzing,
-    processingError,
-    
-    // Handlers
-    ...handlers,
-    
-    // Thread info
+    setDateRange,
+    goToInputTab,
     threadId,
     assistantId,
-    
-    // Navigation helpers
-    goToInputTab,
-    
-    // Data utilities
-    ...analysisData,
-    
-    // Add the missing property
-    setProcessedAnalytics,
+    getEffectiveAnalytics,
+    hasData,
+    hasAnalysisData,
+    getFormattedDateRange,
+    isLoading
   };
-
+  
   return (
     <AppStoreContext.Provider value={contextValue}>
       {children}
