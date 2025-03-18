@@ -36,7 +36,9 @@ export function useAppStoreHandlers({
     setProcessing(false);
     setExtractedData(extractedData);
     setProcessingError(null);
-    setActiveTab("analysis");
+    
+    // Direct to extraction tab instead of analysis
+    setActiveTab("extraction");
 
     const baseMetrics = extractBaseMetrics(extractedData);
     setDirectlyExtractedMetrics(baseMetrics);
@@ -53,7 +55,7 @@ export function useAppStoreHandlers({
 
     toast({
       title: "Data Processed",
-      description: "Successfully processed the data and extracted base metrics."
+      description: "Your data is ready for KPI extraction."
     });
   }, [setExtractedData, setProcessing, setProcessingError, setActiveTab, setDirectlyExtractedMetrics, setProcessedAnalytics, toast, registerMetrics]);
 

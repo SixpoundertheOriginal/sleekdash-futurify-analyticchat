@@ -1,6 +1,6 @@
 
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, BarChart2, LineChart, Gauge, MessageSquare, Upload, PieChart } from "lucide-react";
+import { FileText, BarChart2, LineChart, Gauge, MessageSquare, Upload, PieChart, Database } from "lucide-react";
 import { useAppStore } from "@/contexts/AppStoreContext";
 
 interface TabTriggersProps {
@@ -13,9 +13,12 @@ export function TabTriggers({ isMobile = false }: TabTriggersProps) {
   // Make triggers responsive based on screen size
   if (isMobile) {
     return (
-      <TabsList className="grid grid-cols-5 w-full">
+      <TabsList className="grid grid-cols-6 w-full">
         <TabsTrigger value="input">
           <Upload className="h-4 w-4" />
+        </TabsTrigger>
+        <TabsTrigger value="extraction">
+          <Database className="h-4 w-4" />
         </TabsTrigger>
         <TabsTrigger value="analysis">
           <FileText className="h-4 w-4" />
@@ -41,6 +44,13 @@ export function TabTriggers({ isMobile = false }: TabTriggersProps) {
       >
         <Upload className="h-4 w-4" />
         Input
+      </TabsTrigger>
+      <TabsTrigger 
+        value="extraction" 
+        className="flex items-center gap-2 data-[state=active]:text-primary"
+      >
+        <Database className="h-4 w-4" />
+        Data Extraction
       </TabsTrigger>
       <TabsTrigger 
         value="analysis" 

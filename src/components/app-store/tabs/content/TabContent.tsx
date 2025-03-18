@@ -4,6 +4,7 @@ import { AnalysisTabContent } from "./AnalysisTabContent";
 import { DashboardTabContent } from "./DashboardTabContent";
 import { AdvancedTabContent } from "./AdvancedTabContent";
 import { ChatTabContent } from "./ChatTabContent";
+import { DataExtractionTabContent } from "./DataExtractionTabContent";
 import { MetricsExtractionPanel } from "@/components/app-store/metrics/MetricsExtractionPanel";
 import { TabsContent } from "@/components/ui/tabs";
 import { useAppStore } from "@/contexts/AppStoreContext";
@@ -11,6 +12,8 @@ import { createDefaultProcessedAnalytics } from "@/hooks/app-store/appStoreAnaly
 
 export function TabContent() {
   const {
+    activeTab,
+    setActiveTab,
     extractedData,
     analysisResult,
     isProcessing,
@@ -45,6 +48,12 @@ export function TabContent() {
           setAnalyzing={setAnalyzing}
           threadId={threadId}
           assistantId={assistantId}
+        />
+      </TabsContent>
+      
+      <TabsContent value="extraction">
+        <DataExtractionTabContent
+          setActiveTab={setActiveTab}
         />
       </TabsContent>
       
