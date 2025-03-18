@@ -20,22 +20,40 @@ export const extractEngagementMetrics = (rawInput: any, result: Partial<Processe
                                  .trim();
   
   // Initialize engagement object if it doesn't exist
-  result.engagement = result.engagement || {
-    sessionsPerDevice: { value: 0, change: 0 },
-    retention: {
-      day1: { value: 0, benchmark: 0 },
-      day7: { value: 0, benchmark: 0 }
-    },
-    confidenceScores: {
-      overall: 0,
-      sessionsPerDevice: 0,
-      retention: 0
-    },
-    validationState: {
-      valid: false,
-      warnings: []
+  if (!result.engagement) {
+    result.engagement = {
+      sessionsPerDevice: { value: 0, change: 0 },
+      retention: {
+        day1: { value: 0, benchmark: 0 },
+        day7: { value: 0, benchmark: 0 }
+      },
+      confidenceScores: {
+        overall: 0,
+        sessionsPerDevice: 0,
+        retention: 0
+      },
+      validationState: {
+        valid: false,
+        warnings: []
+      }
+    };
+  } else {
+    // Ensure validation and confidence properties exist
+    if (!result.engagement.confidenceScores) {
+      result.engagement.confidenceScores = {
+        overall: 0,
+        sessionsPerDevice: 0,
+        retention: 0
+      };
     }
-  };
+    
+    if (!result.engagement.validationState) {
+      result.engagement.validationState = {
+        valid: false,
+        warnings: []
+      };
+    }
+  }
   
   // Extract sessions per device with multiple patterns
   const sessionsPatterns = [

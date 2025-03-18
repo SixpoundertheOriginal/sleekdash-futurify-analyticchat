@@ -33,6 +33,15 @@ export interface ProcessedAnalytics {
       day14?: { value: number; benchmark: number };
       day28?: { value: number; benchmark: number };
     };
+    confidenceScores?: {
+      overall: number;
+      sessionsPerDevice: number;
+      retention: number;
+    };
+    validationState?: {
+      valid: boolean;
+      warnings: string[];
+    };
   };
   technical: {
     crashes: { value: number; change: number };

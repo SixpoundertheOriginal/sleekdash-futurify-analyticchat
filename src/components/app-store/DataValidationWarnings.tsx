@@ -12,6 +12,10 @@ interface DataValidationWarningsProps {
       consistent: boolean;
       issues: string[];
     };
+    confidenceScores?: {
+      overall?: number;
+      [key: string]: number | undefined;
+    };
   };
   showDetails?: boolean;
 }
@@ -50,6 +54,16 @@ export function DataValidationWarnings({ validation, showDetails = false }: Data
             </TooltipTrigger>
             <TooltipContent>
               <p>Confidence score: {validation.confidence}% ({confidenceLevel.label})</p>
+              {validation.confidenceScores && (
+                <div className="mt-1 text-xs">
+                  {Object.entries(validation.confidenceScores)
+                    .filter(([key]) => key !== 'overall')
+                    .map(([key, value]) => (
+                      <div key={key}>{key}: {value}%</div>
+                    ))
+                  }
+                </div>
+              )}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

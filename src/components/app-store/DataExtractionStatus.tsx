@@ -32,7 +32,7 @@ export function DataExtractionStatus({ extractedData, showDetails = false }: Dat
             <p className="text-sm text-white/90">
               {validation.isValid
                 ? `Successfully extracted ${Object.keys(extractedData.data.metrics || {}).length} metric categories.`
-                : `Partially processed. Missing data: ${validation.missingFields.join(', ')}`}
+                : `Partially processed. Missing data: ${validation.missingFields ? validation.missingFields.join(', ') : 'Some metrics'}`}
             </p>
             
             <TooltipProvider>

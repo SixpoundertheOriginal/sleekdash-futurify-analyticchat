@@ -36,6 +36,15 @@ export const createDefaultProcessedAnalytics = (): ProcessedAnalytics => {
       retention: {
         day1: { value: 0, benchmark: 0 },
         day7: { value: 0, benchmark: 0 }
+      },
+      confidenceScores: {
+        overall: 0,
+        sessionsPerDevice: 0,
+        retention: 0
+      },
+      validationState: {
+        valid: false,
+        warnings: []
       }
     },
     technical: {
