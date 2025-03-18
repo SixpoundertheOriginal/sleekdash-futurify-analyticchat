@@ -13,7 +13,7 @@ export function TabTriggers({ isMobile = false }: TabTriggersProps) {
   // Make triggers responsive based on screen size
   if (isMobile) {
     return (
-      <TabsList className="grid grid-cols-6 w-full">
+      <TabsList className="grid grid-cols-5 w-full">
         <TabsTrigger value="input">
           <Upload className="h-4 w-4" />
         </TabsTrigger>
@@ -22,9 +22,6 @@ export function TabTriggers({ isMobile = false }: TabTriggersProps) {
         </TabsTrigger>
         <TabsTrigger value="analysis">
           <FileText className="h-4 w-4" />
-        </TabsTrigger>
-        <TabsTrigger value="metrics">
-          <Gauge className="h-4 w-4" />
         </TabsTrigger>
         <TabsTrigger value="dashboard">
           <BarChart2 className="h-4 w-4" />
@@ -58,13 +55,6 @@ export function TabTriggers({ isMobile = false }: TabTriggersProps) {
       >
         <FileText className="h-4 w-4" />
         Analysis
-      </TabsTrigger>
-      <TabsTrigger 
-        value="metrics" 
-        className="flex items-center gap-2 data-[state=active]:text-primary"
-      >
-        <Gauge className="h-4 w-4" />
-        Metrics
       </TabsTrigger>
       <TabsTrigger 
         value="dashboard" 

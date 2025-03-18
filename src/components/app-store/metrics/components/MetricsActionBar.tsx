@@ -56,7 +56,7 @@ export function MetricsActionBar({
           onClick={goToDashboard}
           className="flex items-center gap-2"
         >
-          Continue to Dashboard
+          View Dashboard
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

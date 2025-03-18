@@ -8,8 +8,8 @@ interface TabNavigationProps {
 }
 
 export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
-  // Define the tab order - added "extraction" tab between input and analysis
-  const tabOrder = ["input", "extraction", "analysis", "metrics", "dashboard", "advanced", "chat"];
+  // Define the tab order - removed "metrics" tab
+  const tabOrder = ["input", "extraction", "analysis", "dashboard", "advanced", "chat"];
   
   // Get the current tab index
   const currentIndex = tabOrder.indexOf(activeTab);

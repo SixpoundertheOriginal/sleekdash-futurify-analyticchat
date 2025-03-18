@@ -5,7 +5,6 @@ import { DashboardTabContent } from "./DashboardTabContent";
 import { AdvancedTabContent } from "./AdvancedTabContent";
 import { ChatTabContent } from "./ChatTabContent";
 import { DataExtractionTabContent } from "./DataExtractionTabContent";
-import { MetricsExtractionPanel } from "@/components/app-store/metrics/MetricsExtractionPanel";
 import { TabsContent } from "@/components/ui/tabs";
 import { useAppStore } from "@/contexts/AppStoreContext";
 import { createDefaultProcessedAnalytics } from "@/hooks/app-store/appStoreAnalyticsUtils";
@@ -63,12 +62,6 @@ export function TabContent() {
           isAnalyzing={isAnalyzing}
           dateRange={dateRange}
         />
-      </TabsContent>
-      
-      <TabsContent value="metrics">
-        <div className="py-4">
-          <MetricsExtractionPanel />
-        </div>
       </TabsContent>
       
       <TabsContent value="dashboard">

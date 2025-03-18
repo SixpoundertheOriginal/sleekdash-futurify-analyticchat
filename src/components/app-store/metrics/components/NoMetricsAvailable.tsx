@@ -13,13 +13,13 @@ export function NoMetricsAvailable({ onGoToAnalysis }: NoMetricsAvailableProps) 
       <div className="text-center text-white/60">
         <AlertTriangle className="h-10 w-10 mx-auto mb-4 text-amber-500" />
         <h3 className="text-lg font-semibold mb-2">No Metrics Available</h3>
-        <p>Please process your data in the Analysis tab first.</p>
+        <p>Please process your data in the Data Extraction tab first.</p>
         <Button 
           variant="outline" 
           onClick={onGoToAnalysis} 
           className="mt-4"
         >
-          Go to Analysis
+          Go to Data Extraction
         </Button>
       </div>
     </Card>
