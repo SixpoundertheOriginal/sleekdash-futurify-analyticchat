@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode } from "react";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { DateRange } from "@/components/chat/DateRangePicker";
@@ -49,6 +48,9 @@ interface AppStoreContextType {
   hasAnalysisData: () => boolean;
   getFormattedDateRange: () => string;
   isLoading: boolean;
+  
+  // Add missing properties
+  setProcessedAnalytics: (analytics: ProcessedAnalytics | null) => void;
 }
 
 const AppStoreContext = createContext<AppStoreContextType | undefined>(undefined);
@@ -143,7 +145,10 @@ export function AppStoreProvider({ children, initialData }: AppStoreProviderProp
     goToInputTab,
     
     // Data utilities
-    ...analysisData
+    ...analysisData,
+    
+    // Add the missing property
+    setProcessedAnalytics,
   };
 
   return (
