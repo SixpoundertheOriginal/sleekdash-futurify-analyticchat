@@ -7,7 +7,13 @@ import { ProcessedAnalytics } from "../../types";
 /**
  * Extract geographical distribution data from raw input
  */
-export const extractGeographicalData = (rawInput: string, result: Partial<ProcessedAnalytics>) => {
+export const extractGeographicalData = (rawInput: any, result: Partial<ProcessedAnalytics>) => {
+  // Ensure rawInput is a string before attempting to use match
+  if (typeof rawInput !== 'string') {
+    console.log('Input to extractGeographicalData is not a string:', typeof rawInput);
+    return result;
+  }
+  
   // Extract territory data
   const territorySection = rawInput.match(/Total Downloads by Territory[\s\S]*?See All([\s\S]*?)(?=Total Downloads by|$)/i);
   if (territorySection && territorySection[1]) {

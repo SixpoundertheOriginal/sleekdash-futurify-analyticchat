@@ -8,7 +8,13 @@ import { normalizeValue } from "../normalization";
 /**
  * Extract financial metrics from raw input
  */
-export const extractFinancialMetrics = (rawInput: string, result: Partial<ProcessedAnalytics>) => {
+export const extractFinancialMetrics = (rawInput: any, result: Partial<ProcessedAnalytics>) => {
+  // Ensure rawInput is a string before attempting to use match
+  if (typeof rawInput !== 'string') {
+    console.log('Input to extractFinancialMetrics is not a string:', typeof rawInput);
+    return result;
+  }
+  
   // Extract proceeds
   const proceedsMatch = rawInput.match(/Proceeds:?\s*\??\s*\$?([0-9,.KM]+)\s*([+-][0-9]+%)/i);
   if (proceedsMatch) {

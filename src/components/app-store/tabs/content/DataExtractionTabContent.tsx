@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,21 +29,18 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
   const [activeMetricTab, setActiveMetricTab] = useState("acquisition");
   const [extractionConfidence, setExtractionConfidence] = useState(0);
 
-  // Automatically extract metrics when component mounts or extractedData changes
   useEffect(() => {
     if (extractedData) {
       extractMetricsFromText(extractedData);
     }
   }, [extractedData]);
 
-  // Calculate confidence score for extraction
   const calculateExtractionConfidence = (metrics: Partial<ProcessedAnalytics>): number => {
     if (!metrics) return 0;
     
     let totalFields = 0;
     let filledFields = 0;
     
-    // Check acquisition metrics
     if (metrics.acquisition) {
       if (metrics.acquisition.downloads?.value > 0) filledFields++;
       if (metrics.acquisition.impressions?.value > 0) filledFields++;
@@ -53,14 +49,12 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
       totalFields += 4;
     }
     
-    // Check financial metrics
     if (metrics.financial) {
       if (metrics.financial.proceeds?.value > 0) filledFields++;
       if (metrics.financial.proceedsPerUser?.value > 0) filledFields++;
       totalFields += 2;
     }
     
-    // Check engagement metrics
     if (metrics.engagement) {
       if (metrics.engagement.sessionsPerDevice?.value > 0) filledFields++;
       if (metrics.engagement.retention?.day1?.value > 0) filledFields++;
@@ -70,20 +64,67 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
     return totalFields > 0 ? (filledFields / totalFields) * 100 : 0;
   };
 
-  // Extract metrics from text
-  const extractMetricsFromText = (text: string) => {
+  const extractMetricsFromText = (inputData: any) => {
     try {
-      const metrics = extractDirectMetrics(text);
+      console.log("Attempting to extract metrics from input data:", typeof inputData);
+      
+      if (!inputData) {
+        console.warn("No input data provided for extraction");
+        toast({
+          variant: "destructive",
+          title: "Extraction Failed",
+          description: "No data available for extraction."
+        });
+        return;
+      }
+      
+      let textToExtract: string;
+      if (typeof inputData === 'string') {
+        textToExtract = inputData;
+      } else if (inputData && typeof inputData === 'object') {
+        if (inputData.rawContent) {
+          textToExtract = inputData.rawContent;
+        } else if (inputData.data && inputData.data.rawContent) {
+          textToExtract = inputData.data.rawContent;
+        } else if (inputData.text || inputData.content) {
+          textToExtract = inputData.text || inputData.content;
+        } else {
+          textToExtract = JSON.stringify(inputData);
+        }
+      } else {
+        textToExtract = String(inputData || '');
+      }
+      
+      if (!textToExtract || textToExtract.trim().length === 0) {
+        console.warn("Empty text content for extraction");
+        toast({
+          variant: "destructive",
+          title: "Extraction Failed",
+          description: "Input data is empty or in an unsupported format."
+        });
+        return;
+      }
+      
+      console.log("Extracting from text content of length:", textToExtract.length);
+      const metrics = extractDirectMetrics(textToExtract);
       setExtractedMetrics(metrics);
       
-      // Calculate confidence score
       const confidence = calculateExtractionConfidence(metrics);
       setExtractionConfidence(confidence);
       
-      if (metrics && Object.keys(metrics).length > 0) {
+      const filledCount = filledFieldsCount(metrics);
+      console.log(`Extracted ${filledCount} fields with confidence ${confidence.toFixed(0)}%`);
+      
+      if (metrics && filledCount > 0) {
         toast({
           title: "Metrics Extracted",
-          description: `Successfully extracted ${filledFieldsCount(metrics)} metrics from your data.`
+          description: `Successfully extracted ${filledCount} metrics from your data.`
+        });
+      } else {
+        toast({
+          variant: "warning",
+          title: "Limited Extraction",
+          description: "Few or no metrics could be extracted. You may need to edit the data format or enter metrics manually."
         });
       }
     } catch (error) {
@@ -95,8 +136,7 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
       });
     }
   };
-  
-  // Count number of filled metrics
+
   const filledFieldsCount = (metrics: Partial<ProcessedAnalytics>): number => {
     let count = 0;
     
@@ -120,7 +160,6 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
     return count;
   };
 
-  // Apply extracted metrics
   const applyExtractedMetrics = () => {
     if (extractedMetrics) {
       const baseMetrics = createDefaultProcessedAnalytics();
@@ -139,14 +178,12 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
     }
   };
 
-  // Merge extracted metrics with default values
   const mergeWithDefaults = (
     extracted: Partial<ProcessedAnalytics>, 
     defaults: ProcessedAnalytics
   ): ProcessedAnalytics => {
     const result = { ...defaults };
     
-    // Merge acquisition metrics
     if (extracted.acquisition) {
       result.acquisition = {
         ...result.acquisition,
@@ -154,7 +191,6 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
       };
     }
     
-    // Merge financial metrics
     if (extracted.financial) {
       result.financial = {
         ...result.financial,
@@ -162,7 +198,6 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
       };
     }
     
-    // Merge engagement metrics
     if (extracted.engagement) {
       result.engagement = {
         ...result.engagement,
@@ -170,7 +205,6 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
       };
     }
     
-    // Merge technical metrics
     if (extracted.technical) {
       result.technical = {
         ...result.technical,
@@ -178,7 +212,6 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
       };
     }
     
-    // Merge summary
     if (extracted.summary) {
       result.summary = {
         ...result.summary,
@@ -191,13 +224,11 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
     return result;
   };
 
-  // Continue to analysis
   const continueToAnalysis = () => {
     applyExtractedMetrics();
     setActiveTab("analysis");
   };
 
-  // Go back to input
   const goBackToInput = () => {
     setActiveTab("input");
   };
@@ -382,7 +413,6 @@ export function DataExtractionTabContent({ setActiveTab }: DataExtractionTabCont
   );
 }
 
-// Component to display extracted metric
 interface ExtractedMetricCardProps {
   label: string;
   value?: number;
@@ -400,7 +430,6 @@ function ExtractedMetricCard({
   isPercentage = false,
   isCurrency = false 
 }: ExtractedMetricCardProps) {
-  // Format the value based on type
   const formatValue = (val: number | undefined): string => {
     if (val === undefined || isNaN(Number(val))) return "Not extracted";
     
@@ -419,7 +448,6 @@ function ExtractedMetricCard({
     return new Intl.NumberFormat('en-US').format(val);
   };
   
-  // Get color for change values
   const getChangeColor = (changeVal: number | undefined): string => {
     if (changeVal === undefined) return "text-muted-foreground";
     if (changeVal > 0) return "text-green-500";

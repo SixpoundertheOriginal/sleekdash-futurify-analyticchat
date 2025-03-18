@@ -7,7 +7,13 @@ import { ProcessedAnalytics } from "../../types";
 /**
  * Extract engagement metrics from raw input
  */
-export const extractEngagementMetrics = (rawInput: string, result: Partial<ProcessedAnalytics>) => {
+export const extractEngagementMetrics = (rawInput: any, result: Partial<ProcessedAnalytics>) => {
+  // Ensure rawInput is a string before attempting to use match
+  if (typeof rawInput !== 'string') {
+    console.log('Input to extractEngagementMetrics is not a string:', typeof rawInput);
+    return result;
+  }
+  
   // Extract sessions per device
   const sessionsMatch = rawInput.match(/Sessions per Active Device:?\s*\??\s*([0-9,.]+)\s*([+-][0-9]+%)/i);
   if (sessionsMatch) {

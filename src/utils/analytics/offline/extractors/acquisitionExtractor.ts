@@ -8,7 +8,13 @@ import { normalizeValue } from "../normalization";
 /**
  * Extract acquisition metrics from raw input
  */
-export const extractAcquisitionMetrics = (rawInput: string, result: Partial<ProcessedAnalytics>) => {
+export const extractAcquisitionMetrics = (rawInput: any, result: Partial<ProcessedAnalytics>) => {
+  // Ensure rawInput is a string before attempting to use match
+  if (typeof rawInput !== 'string') {
+    console.log('Input to extractAcquisitionMetrics is not a string:', typeof rawInput);
+    return result;
+  }
+  
   // Extract impressions
   const impressionsMatch = rawInput.match(/Impressions:?\s*\??\s*([0-9,.KM]+)\s*([+-][0-9]+%)/i);
   if (impressionsMatch) {
