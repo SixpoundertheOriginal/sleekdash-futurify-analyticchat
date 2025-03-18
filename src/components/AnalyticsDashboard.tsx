@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCcw, Calendar } from "lucide-react";
@@ -14,7 +15,7 @@ import { ComparativeAnalysis } from "./analytics/ComparativeAnalysis";
 import { ImpressionAnalytics } from "./analytics/ImpressionAnalytics";
 import { ProceedsAnalysis } from "./analytics/ProceedsAnalysis";
 import { EngagementMetrics } from "./analytics/EngagementMetrics";
-import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { format } from "date-fns";
 import { CollapsibleSection } from "./analytics/CollapsibleSection";
@@ -88,6 +89,13 @@ export function AnalyticsDashboard({ data, dateRange, onRefresh }: AnalyticsDash
         { type: "iPhone", count: 89230, percentage: 69.3 },
         { type: "iPad", count: 38360, percentage: 29.8 },
         { type: "iPod", count: 1160, percentage: 0.9 }
+      ],
+      sources: [
+        { source: "App Store Search", downloads: 58250, percentage: 45.2 },
+        { source: "App Store Browse", downloads: 24320, percentage: 18.9 },
+        { source: "Web Referral", downloads: 18540, percentage: 14.4 },
+        { source: "App Referral", downloads: 15450, percentage: 12.0 },
+        { source: "Other", downloads: 12190, percentage: 9.5 }
       ]
     }
   };
