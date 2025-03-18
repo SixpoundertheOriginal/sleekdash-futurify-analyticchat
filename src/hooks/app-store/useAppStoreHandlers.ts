@@ -98,6 +98,9 @@ export function useAppStoreHandlers({
           source: 'ai-analysis',
           confidence: 0.95
         });
+        
+        // Change: Redirect to metrics tab instead of dashboard
+        setActiveTab("metrics");
       }
     } catch (error) {
       console.error("Error processing analysis result:", error);
@@ -105,9 +108,9 @@ export function useAppStoreHandlers({
     
     toast({
       title: "Analysis Complete",
-      description: "Successfully analyzed the data and extracted insights."
+      description: "Review extracted metrics in the Metrics tab before visualization."
     });
-  }, [setAnalyzing, setAnalysisResult, setProcessedAnalytics, toast, registerMetrics]);
+  }, [setAnalyzing, setAnalysisResult, setProcessedAnalytics, toast, registerMetrics, setActiveTab]);
 
   const handleDirectExtractionSuccess = useCallback((metrics: Partial<ProcessedAnalytics>) => {
     try {
@@ -131,9 +134,12 @@ export function useAppStoreHandlers({
         confidence: 0.8
       });
       
+      // Change: Redirect to metrics tab
+      setActiveTab("metrics");
+      
       toast({
         title: "Direct Extraction Complete",
-        description: "Successfully extracted metrics directly from the data."
+        description: "Review extracted metrics in the Metrics tab before visualization."
       });
     } catch (error: any) {
       console.error("Error during direct metric extraction:", error);
@@ -144,7 +150,7 @@ export function useAppStoreHandlers({
         description: "Failed to extract metrics directly from the data."
       });
     }
-  }, [setAnalysisResult, setProcessedAnalytics, setProcessingError, toast, registerMetrics]);
+  }, [setAnalysisResult, setProcessedAnalytics, setProcessingError, toast, registerMetrics, setActiveTab]);
 
   const handleProcessError = useCallback((error: string) => {
     setProcessing(false);

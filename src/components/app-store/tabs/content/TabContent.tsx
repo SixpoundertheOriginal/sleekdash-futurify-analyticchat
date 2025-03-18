@@ -4,6 +4,8 @@ import { AnalysisTabContent } from "./AnalysisTabContent";
 import { DashboardTabContent } from "./DashboardTabContent";
 import { AdvancedTabContent } from "./AdvancedTabContent";
 import { ChatTabContent } from "./ChatTabContent";
+import { MetricsExtractionPanel } from "@/components/app-store/metrics/MetricsExtractionPanel";
+import { TabsContent } from "@/components/ui/tabs";
 import { useAppStore } from "@/contexts/AppStoreContext";
 import { createDefaultProcessedAnalytics } from "@/hooks/app-store/appStoreAnalyticsUtils";
 
@@ -30,45 +32,61 @@ export function TabContent() {
 
   return (
     <>
-      <InputTabContent 
-        isProcessing={isProcessing}
-        isAnalyzing={isAnalyzing}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-        onProcessSuccess={handleProcessSuccess}
-        onAnalysisSuccess={handleAnalysisSuccess}
-        onDirectExtractionSuccess={handleDirectExtractionSuccess}
-        setProcessing={setProcessing}
-        setAnalyzing={setAnalyzing}
-        threadId={threadId}
-        assistantId={assistantId}
-      />
+      <TabsContent value="input">
+        <InputTabContent 
+          isProcessing={isProcessing}
+          isAnalyzing={isAnalyzing}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          onProcessSuccess={handleProcessSuccess}
+          onAnalysisSuccess={handleAnalysisSuccess}
+          onDirectExtractionSuccess={handleDirectExtractionSuccess}
+          setProcessing={setProcessing}
+          setAnalyzing={setAnalyzing}
+          threadId={threadId}
+          assistantId={assistantId}
+        />
+      </TabsContent>
       
-      <AnalysisTabContent
-        analysisResult={analysisResult}
-        isAnalyzing={isAnalyzing}
-        dateRange={dateRange}
-      />
+      <TabsContent value="analysis">
+        <AnalysisTabContent
+          analysisResult={analysisResult}
+          isAnalyzing={isAnalyzing}
+          dateRange={dateRange}
+        />
+      </TabsContent>
       
-      <DashboardTabContent
-        processedAnalytics={processedAnalytics}
-        initialData={processedAnalytics || createDefaultProcessedAnalytics()}
-        isProcessing={isProcessing}
-        processingError={processingError}
-        dateRange={dateRange}
-        onRetry={goToInputTab}
-        onRefresh={goToInputTab}
-      />
+      <TabsContent value="metrics">
+        <div className="py-4">
+          <MetricsExtractionPanel />
+        </div>
+      </TabsContent>
       
-      <AdvancedTabContent
-        processedAnalytics={processedAnalytics}
-        initialData={processedAnalytics}
-        isLoading={isProcessing || isAnalyzing}
-        dateRange={dateRange}
-        onGoToInput={goToInputTab}
-      />
+      <TabsContent value="dashboard">
+        <DashboardTabContent
+          processedAnalytics={processedAnalytics}
+          initialData={processedAnalytics || createDefaultProcessedAnalytics()}
+          isProcessing={isProcessing}
+          processingError={processingError}
+          dateRange={dateRange}
+          onRetry={goToInputTab}
+          onRefresh={goToInputTab}
+        />
+      </TabsContent>
       
-      <ChatTabContent />
+      <TabsContent value="advanced">
+        <AdvancedTabContent
+          processedAnalytics={processedAnalytics}
+          initialData={processedAnalytics}
+          isLoading={isProcessing || isAnalyzing}
+          dateRange={dateRange}
+          onGoToInput={goToInputTab}
+        />
+      </TabsContent>
+      
+      <TabsContent value="chat">
+        <ChatTabContent />
+      </TabsContent>
     </>
   );
 }
