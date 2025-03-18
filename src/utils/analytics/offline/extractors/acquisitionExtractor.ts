@@ -36,10 +36,11 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
   
   // Extract impressions - improved patterns for different formats
   const impressionPatterns = [
-    /Impressions:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i,
-    /Impressions:?\s*\??\s*([0-9,.KMkm]+)/i,
-    /Impressions\s*\n\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i,
-    /([0-9,.KMkm]+)\s*impressions/i
+    /Impressions:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
+    /Impressions:?\s*\??\s*([0-9,.KMBkmb]+)/i,
+    /Impressions\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
+    /([0-9,.KMBkmb]+)\s*impressions/i,
+    /Impressions\s*\n\s*([0-9,.KMBkmb]+)/i
   ];
   
   for (const pattern of impressionPatterns) {
@@ -56,10 +57,11 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
 
   // Extract page views - improved patterns with "Product" prefix and without
   const pageViewPatterns = [
-    /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i,
-    /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMkm]+)/i,
-    /(?:Product )?Page Views\s*\n\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i,
-    /([0-9,.KMkm]+)\s*(?:product )?page views/i
+    /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
+    /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMBkmb]+)/i,
+    /(?:Product )?Page Views\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
+    /([0-9,.KMBkmb]+)\s*(?:product )?page views/i,
+    /(?:Product )?Page Views\s*\n\s*([0-9,.KMBkmb]+)/i
   ];
   
   for (const pattern of pageViewPatterns) {
@@ -80,7 +82,8 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
     /Conversion Rate:?\s*\??\s*([0-9,.]+)%/i,
     /Conversion Rate:?\s*\??\s*([0-9,.]+)\s*%\s*([+-][0-9]+%)?/i,
     /Conversion Rate\s*\n\s*([0-9,.]+)%\s*([+-][0-9]+%)?/i,
-    /([0-9,.]+)%\s*conversion rate/i
+    /([0-9,.]+)%\s*conversion rate/i,
+    /Conversion Rate\s*\n\s*([0-9,.]+)%/i
   ];
   
   for (const pattern of conversionPatterns) {
@@ -98,11 +101,12 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
 
   // Extract downloads - improved patterns with "Total" prefix and without
   const downloadPatterns = [
-    /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)/i,
-    /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMkm]+)/i,
-    /(?:Total )?Downloads\s*\n\s*([0-9,.KMkm]+)\s*([+-][0-9]+%)?/i,
-    /([0-9,.KMkm]+)\s*(?:total )?downloads/i,
-    /([0-9,.KMkm]+)\s*\n\s*Total Downloads/i
+    /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
+    /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMBkmb]+)/i,
+    /(?:Total )?Downloads\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
+    /([0-9,.KMBkmb]+)\s*(?:total )?downloads/i,
+    /([0-9,.KMBkmb]+)\s*\n\s*Total Downloads/i,
+    /(?:Total )?Downloads\s*\n\s*([0-9,.KMBkmb]+)/i
   ];
   
   for (const pattern of downloadPatterns) {
@@ -144,7 +148,7 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
   if (!result.acquisition.downloads.value) {
     const territorySection = normalizedInput.match(/Total Downloads by Territory[\s\S]*?See All([\s\S]*?)(?=Total Downloads by|$)/i);
     if (territorySection) {
-      const totalMatch = normalizedInput.match(/([0-9,.KMkm]+)\s*Total/i);
+      const totalMatch = normalizedInput.match(/([0-9,.KMBkmb]+)\s*Total/i);
       if (totalMatch && totalMatch[1]) {
         result.acquisition.downloads.value = normalizeValue(totalMatch[1]);
         console.log('Extracted total downloads from territory section:', result.acquisition.downloads.value);

@@ -8,29 +8,34 @@ import { isAppStoreFormat, parseAppStoreSections, parseTabularData, preprocessAp
  * @returns A structured CSV-like format for further processing
  */
 export function processAppStoreText(text: string): string {
+  if (!text || typeof text !== 'string') {
+    console.log('[FileProcessor] Invalid input: not a string or empty');
+    return '';
+  }
+  
   console.log('[FileProcessor] Processing App Store text, length:', text.length);
   
   // Use our specialized preprocessing for App Store format
   const preprocessedText = preprocessAppStoreData(text);
   
   // Parse sections to extract structured data
-  const sections = parseAppStoreSections(text);
+  const sections = parseAppStoreSections(preprocessedText);
   
   // Extract date range which is usually at the top
-  const dateRangeMatch = text.match(/([A-Za-z]+\s+\d+[-–]\w+\s+\d+)/i);
+  const dateRangeMatch = preprocessedText.match(/([A-Za-z]+\s+\d+[-–]\w+\s+\d+)/i);
   const dateRange = dateRangeMatch ? dateRangeMatch[1] : "Unknown date range";
   console.log('[FileProcessor] Extracted date range:', dateRange);
   
-  // Extract core metrics
+  // Extract core metrics with improved patterns
   const metrics = [
-    extractMetric(text, "Impressions", "\\?\\s*([\\d.,K]+)\\s*([+\\-]\\d+%)"),
-    extractMetric(text, "Product Page Views", "\\?\\s*([\\d.,K]+)\\s*([+\\-]\\d+%)"),
-    extractMetric(text, "Conversion Rate", "\\?\\s*([\\d.,]+%)\\s*([+\\-]\\d+%)"),
-    extractMetric(text, "Total Downloads", "\\?\\s*([\\d.,K]+)\\s*([+\\-]\\d+%)"),
-    extractMetric(text, "Proceeds", "\\?\\s*\\$?([\\d.,K]+)\\s*([+\\-]\\d+%)"),
-    extractMetric(text, "Proceeds per Paying User", "\\?\\s*\\$?([\\d.,]+)\\s*([+\\-]\\d+%)"),
-    extractMetric(text, "Sessions per Active Device", "\\?\\s*([\\d.,]+)\\s*([+\\-]\\d+%)"),
-    extractMetric(text, "Crashes", "\\?\\s*([\\d.,]+)\\s*([+\\-]\\d+%)")
+    extractMetric(preprocessedText, "Impressions", "\\?\\s*([\\d.,KMBkmb]+)\\s*([+\\-]\\d+%)"),
+    extractMetric(preprocessedText, "Product Page Views", "\\?\\s*([\\d.,KMBkmb]+)\\s*([+\\-]\\d+%)"),
+    extractMetric(preprocessedText, "Conversion Rate", "\\?\\s*([\\d.,]+%)\\s*([+\\-]\\d+%)"),
+    extractMetric(preprocessedText, "Total Downloads", "\\?\\s*([\\d.,KMBkmb]+)\\s*([+\\-]\\d+%)"),
+    extractMetric(preprocessedText, "Proceeds", "\\?\\s*\\$?([\\d.,KMBkmb]+)\\s*([+\\-]\\d+%)"),
+    extractMetric(preprocessedText, "Proceeds per Paying User", "\\?\\s*\\$?([\\d.,]+)\\s*([+\\-]\\d+%)"),
+    extractMetric(preprocessedText, "Sessions per Active Device", "\\?\\s*([\\d.,]+)\\s*([+\\-]\\d+%)"),
+    extractMetric(preprocessedText, "Crashes", "\\?\\s*([\\d.,KMBkmb]+)\\s*([+\\-]\\d+%)")
   ];
   
   // Use specialized tabular data parsing for territories, devices, and sources
@@ -40,21 +45,21 @@ export function processAppStoreText(text: string): string {
     territoryData = parseTabularData(sections.territories, 'territories');
   } else {
     // Fallback to old method if section parsing fails
-    territoryData = extractTerritory(text);
+    territoryData = extractTerritory(preprocessedText);
   }
   
   if (sections.devices) {
     deviceData = parseTabularData(sections.devices, 'devices');
   } else {
     // Fallback to old method if section parsing fails
-    deviceData = extractDevice(text);
+    deviceData = extractDevice(preprocessedText);
   }
   
   if (sections.sources) {
     sourcesData = parseTabularData(sections.sources, 'sources');
   } else {
-    // Use retention data for backward compatibility
-    const retentionData = extractRetention(text);
+    // Fallback to old method if sections doesn't contain sources
+    const retentionData = extractRetention(preprocessedText);
   }
   
   // Convert to a CSV-like format for consistency with our existing processing

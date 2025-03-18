@@ -7,11 +7,17 @@
  * @returns Cleaned text
  */
 export function cleanText(text: string): string {
+  if (!text || typeof text !== 'string') {
+    console.log('Invalid input to cleanText: not a string or empty');
+    return '';
+  }
+  
   console.log("Original text length:", text.length);
   
   // Handle special characters while preserving important data markers
   let cleaned = text
-    .replace(/[^\w\s.,:%$+\-\n]/g, " ")  // Keep newlines for format detection
+    .replace(/\r\n/g, '\n')  // Normalize newlines
+    .replace(/[^\w\s.,:%$+\-\n?]/g, " ")  // Keep newlines and question marks for format detection
     .replace(/\s+/g, " ")
     .trim();
   
@@ -26,7 +32,10 @@ export function cleanText(text: string): string {
  * @returns Normalized number value
  */
 export function normalizeNumber(numStr: string, unit: string = 'count'): number {
-  if (!numStr) return NaN;
+  if (!numStr || typeof numStr !== 'string') {
+    console.log('Invalid input to normalizeNumber:', numStr);
+    return NaN;
+  }
   
   console.log("Normalizing number:", numStr, "with unit:", unit);
   
@@ -54,7 +63,36 @@ export function normalizeNumber(numStr: string, unit: string = 'count'): number 
     normalized = normalized.slice(0, -1);
   }
   
+  // Safety check for non-numeric values
+  if (isNaN(parseFloat(normalized))) {
+    console.log('Non-numeric value after normalization:', normalized);
+    return 0;
+  }
+  
   const result = parseFloat(normalized);
   console.log("Normalized result:", result);
   return result;
+}
+
+/**
+ * Preprocess text input to normalize formatting specifically for analytics extraction
+ * @param text The input text to normalize
+ * @returns Preprocessed text with consistent formatting
+ */
+export function preprocessAnalyticsText(text: string): string {
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+  
+  // Apply multi-step normalization
+  return text
+    .replace(/\r\n/g, '\n')  // Standardize line breaks
+    .replace(/\n{3,}/g, '\n\n')  // Reduce excessive line breaks
+    .replace(/\s{2,}/g, ' ')  // Reduce multiple spaces
+    .replace(/(\d),(\d)/g, '$1$2')  // Remove commas from numbers (e.g. 1,000 -> 1000)
+    .replace(/\s*\?\s*/g, ' ? ')  // Normalize spacing around question marks
+    .replace(/(\d)([KMBkmb])(\s|$)/g, '$1$2$3')  // Ensure consistent spacing for K/M/B suffixes
+    .replace(/(\d)%/g, '$1 %')  // Add space before percentage
+    .replace(/\$(\d)/g, '$ $1')  // Add space after dollar sign
+    .trim();
 }

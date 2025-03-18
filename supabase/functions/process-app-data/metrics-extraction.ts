@@ -1,7 +1,6 @@
-
 // Core extraction functionality for metrics from text
 import { metricSchema } from './extractors.ts';
-import { cleanText, normalizeNumber } from './data-cleaning.ts';
+import { cleanText, normalizeNumber, preprocessAnalyticsText } from './data-cleaning.ts';
 import { validateMetricValue } from './validation.ts';
 
 /**
@@ -10,7 +9,22 @@ import { validateMetricValue } from './validation.ts';
  * @returns Extracted metrics record with confidence scores
  */
 export function extractMetrics(text: string): Record<string, any> {
-  const cleanedText = cleanText(text);
+  if (!text || typeof text !== 'string') {
+    console.error("Invalid input to extractMetrics: not a string or empty");
+    return { _extraction: { error: "Invalid input" } };
+  }
+  
+  // First, preprocess the text for better extraction
+  const preprocessedText = preprocessAnalyticsText(text);
+  
+  // Then clean the text for extraction
+  const cleanedText = cleanText(preprocessedText);
+  
+  if (!cleanedText) {
+    console.error("Cleaning resulted in empty text");
+    return { _extraction: { error: "Cleaning resulted in empty text" } };
+  }
+  
   const result: Record<string, any> = {};
   const confidenceScores: Record<string, number> = {};
   const extractedValues: Record<string, number | null> = {};
@@ -44,9 +58,9 @@ export function extractMetrics(text: string): Record<string, any> {
     if (!found && metricConfig.aliases && metricConfig.aliases.length > 0) {
       for (const alias of metricConfig.aliases) {
         const aliasPatterns = [
-          new RegExp(`${alias}[:\\s]+([0-9,.]+[kmb]?)`, 'i'),
-          new RegExp(`([0-9,.]+[kmb]?)[\\s]*${alias}`, 'i'),
-          new RegExp(`${alias}\\s*\\n?\\s*([0-9,.]+[kmb]?)`, 'i')
+          new RegExp(`${alias}[:\\s]+([0-9,.KMBkmb]+)`, 'i'),
+          new RegExp(`([0-9,.KMBkmb]+)[\\s]*${alias}`, 'i'),
+          new RegExp(`${alias}\\s*\\n?\\s*([0-9,.KMBkmb]+)`, 'i')
         ];
         
         for (const pattern of aliasPatterns) {
