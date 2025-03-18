@@ -38,7 +38,8 @@ export const createBaseMetricsStructure = (): Partial<ProcessedAnalytics> => {
       sessionsPerDevice: { value: 0, change: 0 },
       retention: {
         day1: { value: 0, benchmark: 0 },
-        day7: { value: 0, benchmark: 0 }
+        day7: { value: 0, benchmark: 0 },
+        day14: { value: 0, benchmark: 0 }
       },
       confidenceScores: {
         overall: 0,

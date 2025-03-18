@@ -1,13 +1,16 @@
 
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
-import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
+import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { ErrorDisplay } from "../ErrorDisplay";
 import { LoadingOverlay } from "../LoadingOverlay";
 import { SkeletonWrapper } from "@/components/ui/skeleton-wrapper";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { withErrorBoundary } from "@/components/ui/with-error-boundary";
-import { hasValidMetrics } from "@/utils/analytics/validation";
+import { useAnalyticsValidation } from "@/hooks/useAnalyticsValidation";
+import { useEffect, useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle, Info } from "lucide-react";
 
 interface AnalyticsDashboardContentProps {
   data: ProcessedAnalytics;
@@ -26,16 +29,58 @@ function DashboardContent({
   onRetry,
   onRefresh
 }: AnalyticsDashboardContentProps) {
-  // Check if we have valid metrics for visualization
-  const hasValidVisualizationData = hasValidMetrics(data);
+  const { validateAnalytics } = useAnalyticsValidation();
+  const [validationResult, setValidationResult] = useState<ReturnType<typeof validateAnalytics> | null>(null);
+  
+  // Validate the data whenever it changes
+  useEffect(() => {
+    if (data) {
+      const result = validateAnalytics(data);
+      setValidationResult(result);
+      console.log('Analytics validation result:', result);
+    }
+  }, [data]);
 
   if (error) {
     return <ErrorDisplay error={error} onRetry={onRetry} />;
   }
 
+  // Check if we have valid metrics for visualization
+  const hasValidVisualizationData = data && data.acquisition && 
+    (data.acquisition.downloads?.value > 0 || data.acquisition.impressions?.value > 0);
+  
+  // Show validation warnings if there are any
+  const showValidationWarnings = validationResult && 
+    (validationResult.warnings.length > 0 || validationResult.suspiciousValues.length > 0);
+
   return (
     <div className="relative rounded-lg overflow-hidden transition-all duration-300">
       {isProcessing && <LoadingOverlay message="Processing analytics data..." />}
+      
+      {/* Show validation warnings */}
+      {showValidationWarnings && !isProcessing && (
+        <Alert variant={validationResult.severity === 'high' ? "destructive" : 
+               validationResult.severity === 'medium' ? "warning" : "default"}
+              className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Data Quality Warning</AlertTitle>
+          <AlertDescription>
+            <div className="text-sm">
+              {validationResult.warnings.length > 0 && (
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  {validationResult.warnings.map((warning, index) => (
+                    <li key={index}>{warning}</li>
+                  ))}
+                </ul>
+              )}
+              <div className="mt-2 flex items-center gap-1.5">
+                <Info className="h-3.5 w-3.5" />
+                <span>Confidence score: {validationResult.confidence}%</span>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <SkeletonWrapper 
         isLoading={isProcessing} 

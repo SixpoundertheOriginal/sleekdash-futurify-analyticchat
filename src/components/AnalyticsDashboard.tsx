@@ -71,6 +71,15 @@ export function AnalyticsDashboard({ data, dateRange, onRefresh }: AnalyticsDash
         day1: { value: 42.5, benchmark: 35.0 },
         day7: { value: 28.3, benchmark: 22.0 },
         day14: { value: 22.1, benchmark: 18.5 }
+      },
+      confidenceScores: {
+        overall: 85,
+        sessionsPerDevice: 90,
+        retention: 80
+      },
+      validationState: {
+        valid: true,
+        warnings: []
       }
     },
     technical: {

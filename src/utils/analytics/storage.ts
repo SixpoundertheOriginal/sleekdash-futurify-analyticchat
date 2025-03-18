@@ -1,4 +1,3 @@
-
 import { ProcessedAnalytics } from './types';
 
 // Key for localStorage
@@ -161,6 +160,14 @@ export const mergeAnalyticsData = (
       retention: {
         ...result.engagement?.retention,
         ...overlay.engagement.retention
+      },
+      confidenceScores: {
+        ...result.engagement?.confidenceScores,
+        ...overlay.engagement?.confidenceScores
+      },
+      validationState: {
+        ...result.engagement?.validationState,
+        ...overlay.engagement?.validationState
       }
     };
   }
