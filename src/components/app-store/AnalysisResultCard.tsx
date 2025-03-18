@@ -1,6 +1,6 @@
 
 import { Card } from "@/components/ui/card";
-import { Loader2, Sparkles, ChevronDown, ChevronUp, Download, Share2, BarChart } from "lucide-react";
+import { Loader2, Sparkles, ChevronDown, ChevronUp, Download, Share2, BarChart, AlertTriangle, Info } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageContent } from "@/components/chat/MessageContent";
@@ -15,6 +15,7 @@ export interface AnalysisResultCardProps {
   dateRange?: DateRange | null;
   title?: string;
   onViewDashboard?: () => void;
+  extractionQuality?: 'high' | 'medium' | 'low';
 }
 
 export function AnalysisResultCard({ 
@@ -23,7 +24,8 @@ export function AnalysisResultCard({
   isAnalyzing = false,
   dateRange,
   title = "Analysis Report",
-  onViewDashboard 
+  onViewDashboard,
+  extractionQuality = 'medium' 
 }: AnalysisResultCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   
@@ -73,6 +75,38 @@ export function AnalysisResultCard({
 
   // Extract a title from the analysis if one exists
   const extractedTitle = analysisResult.match(/^#\s+(.*?)(?:\n|$)/m)?.[1] || title;
+  
+  // Get quality indicator styles
+  const getQualityIndicator = () => {
+    switch (extractionQuality) {
+      case 'high':
+        return { 
+          color: 'text-emerald-500', 
+          bg: 'bg-emerald-500/20',
+          border: 'border-emerald-500/30',
+          icon: <Sparkles className="h-3.5 w-3.5" />,
+          text: 'High-quality analysis'
+        };
+      case 'low':
+        return { 
+          color: 'text-amber-500', 
+          bg: 'bg-amber-500/20',
+          border: 'border-amber-500/30',
+          icon: <AlertTriangle className="h-3.5 w-3.5" />,
+          text: 'Limited analysis (improve data quality)'
+        };
+      default:
+        return { 
+          color: 'text-blue-500', 
+          bg: 'bg-blue-500/20',
+          border: 'border-blue-500/30',
+          icon: <Info className="h-3.5 w-3.5" />,
+          text: 'Standard analysis'
+        };
+    }
+  };
+  
+  const qualityIndicator = getQualityIndicator();
 
   return (
     <Card className="mt-4 bg-white/5 border-white/10 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
@@ -119,6 +153,11 @@ export function AnalysisResultCard({
         </div>
       </div>
       
+      <div className={`px-4 py-2 flex items-center gap-2 text-xs ${qualityIndicator.bg} ${qualityIndicator.color} border-b ${qualityIndicator.border}`}>
+        {qualityIndicator.icon}
+        <span>{qualityIndicator.text}</span>
+      </div>
+      
       <AnimatePresence initial={false}>
         {isExpanded && (
           <motion.div
@@ -154,6 +193,15 @@ export function AnalysisResultCard({
             <BarChart className="h-4 w-4" />
             View Dashboard
           </Button>
+        </div>
+      )}
+      
+      {extractionQuality === 'low' && (
+        <div className="p-3 border-t border-white/10 bg-amber-500/10">
+          <p className="text-xs text-amber-400 flex items-center gap-1.5">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            <span>Analysis quality could be improved with more complete data</span>
+          </p>
         </div>
       )}
     </Card>

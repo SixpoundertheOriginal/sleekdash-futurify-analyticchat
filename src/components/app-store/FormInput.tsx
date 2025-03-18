@@ -60,6 +60,27 @@ export function FormInput({ value, onChange, disabled, placeholder }: FormInputP
       <div id="input-description" className="sr-only">
         Paste your App Store data to generate analytics and performance insights.
       </div>
+      
+      {value.length > 0 && value.length < 100 && (
+        <div className="p-2 bg-amber-500/20 border border-amber-500/30 rounded text-sm text-amber-400">
+          <p className="flex items-center gap-1.5">
+            <span className="text-amber-500">!</span>
+            <span>Your input seems too short. For best results, paste your complete App Store Connect data.</span>
+          </p>
+        </div>
+      )}
+      
+      {!value && !disabled && (
+        <div className="p-3 bg-gray-800/50 border border-gray-700/50 rounded-md">
+          <p className="text-sm text-white/70 font-medium mb-1">Format Tips for Best Results:</p>
+          <ul className="text-xs text-white/60 space-y-1 list-disc pl-4">
+            <li>Include metric names and their values (e.g., "Downloads: 25,000")</li>
+            <li>Include percentage changes where available (e.g., "+5% week-over-week")</li>
+            <li>Include date ranges (e.g., "June 1 - June 30, 2023")</li>
+            <li>Copy complete sections for Acquisition, Engagement, and Financial metrics</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DataValidationWarningsProps {
@@ -50,7 +50,7 @@ export function DataValidationWarnings({ validation, showDetails = false }: Data
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Info size={14} className="text-gray-400 cursor-help" />
+              <HelpCircle size={14} className="text-gray-400 cursor-help" />
             </TooltipTrigger>
             <TooltipContent>
               <p>Confidence score: {validation.confidence}% ({confidenceLevel.label})</p>
@@ -92,6 +92,21 @@ export function DataValidationWarnings({ validation, showDetails = false }: Data
               </ul>
             </div>
           )}
+        </div>
+      )}
+      
+      {!validation.isValid && (
+        <div className="mt-3 p-2 bg-gray-800 rounded-md border border-gray-700 text-xs">
+          <div className="flex items-center gap-1 mb-1 text-blue-400">
+            <Info size={12} />
+            <span className="font-medium">Tips for Better Extraction</span>
+          </div>
+          <ul className="pl-4 list-disc text-gray-300 space-y-1">
+            <li>Include complete sections for all metric categories</li>
+            <li>Use clear labels for each value (e.g., "Downloads: 10,000")</li>
+            <li>Include percentage changes when available</li>
+            <li>Make sure all important metrics are in your input data</li>
+          </ul>
         </div>
       )}
     </div>

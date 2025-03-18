@@ -1,5 +1,7 @@
 
 import { Input } from "@/components/ui/input";
+import { InfoCircle, AlertTriangle } from "lucide-react";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface MetricInputProps {
   label: string;
@@ -9,6 +11,8 @@ interface MetricInputProps {
   onChangeValueUpdate?: (value: string) => void;
   benchmark?: number;
   formatter?: (value: number) => string;
+  description?: string;
+  isRequired?: boolean;
 }
 
 export function MetricInput({ 
@@ -18,7 +22,9 @@ export function MetricInput({
   changeValue, 
   onChangeValueUpdate,
   benchmark,
-  formatter = (val) => val.toString() 
+  formatter = (val) => val.toString(),
+  description,
+  isRequired = false
 }: MetricInputProps) {
   const getChangeColor = (change: number) => {
     if (change > 0) return "text-green-500";
@@ -26,10 +32,29 @@ export function MetricInput({
     return "text-white/60";
   };
   
+  const isEmpty = value === '' || value === '0';
+  
   return (
-    <div className="bg-white/5 p-3 rounded-md border border-white/10">
+    <div className={`bg-white/5 p-3 rounded-md border ${isEmpty && isRequired ? 'border-amber-500/40' : 'border-white/10'}`}>
       <div className="flex justify-between items-start mb-2">
-        <label className="text-sm font-medium">{label}</label>
+        <div className="flex items-center gap-1.5">
+          <label className="text-sm font-medium">{label}</label>
+          {isRequired && <span className="text-amber-500 text-xs">*</span>}
+          
+          {description && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <InfoCircle className="h-3.5 w-3.5 text-white/40" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[250px] text-xs">
+                  {description}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+        
         {benchmark !== undefined && (
           <div className="text-xs text-white/60">
             Benchmark: {formatter(benchmark)}
@@ -41,8 +66,16 @@ export function MetricInput({
         <Input 
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="bg-white/10 border-white/20"
+          className={`bg-white/10 border-white/20 ${isEmpty && isRequired ? 'border-amber-500/40' : ''}`}
+          placeholder={`Enter ${label.toLowerCase()}`}
         />
+        
+        {isEmpty && isRequired && (
+          <div className="flex items-center gap-1.5 text-xs text-amber-500">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Required for accurate analysis</span>
+          </div>
+        )}
         
         {changeValue !== undefined && onChangeValueUpdate && (
           <div className="flex items-center gap-2">
@@ -51,6 +84,7 @@ export function MetricInput({
               value={changeValue.toString()}
               onChange={(e) => onChangeValueUpdate(e.target.value)}
               className="bg-white/10 border-white/20 h-7 text-xs"
+              placeholder="% change"
             />
             <span className={`text-xs ${getChangeColor(changeValue)}`}>
               {changeValue > 0 ? "+" : ""}{changeValue}%
