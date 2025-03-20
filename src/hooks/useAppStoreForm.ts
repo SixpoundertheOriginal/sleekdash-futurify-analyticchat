@@ -6,6 +6,7 @@ import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { extractBaseMetrics } from "@/utils/analytics/offline/directExtraction";
 import { isAppStoreFormat, preprocessAppStoreData } from "@/utils/analytics/offline/appStoreFormatDetector";
 import { handleEdgeFunctionError } from "@/services/api";
+import { extractorService } from "@/utils/analytics/extractors/ExtractorService";
 
 export interface UseAppStoreFormProps {
   onProcessSuccess: (data: any) => void;
@@ -38,19 +39,33 @@ export function useAppStoreForm({
 
   // Handle direct extraction of metrics from the input text
   const extractMetricsFromText = (text: string) => {
-    if (onDirectExtractionSuccess) {
-      try {
-        // Preprocess App Store format if detected
-        const processedText = isAppStoreFormat(text) ? preprocessAppStoreData(text) : text;
-        
-        const extractedMetrics = extractBaseMetrics(processedText);
-        if (extractedMetrics && Object.keys(extractedMetrics).length > 0) {
-          console.log('Extracted metrics directly from text:', extractedMetrics);
-          onDirectExtractionSuccess(extractedMetrics);
-        }
-      } catch (error) {
-        console.error('Error extracting metrics directly:', error);
+    if (!text.trim() || !onDirectExtractionSuccess) return;
+    
+    try {
+      console.log('Attempting direct extraction from text...');
+      
+      // Preprocess App Store format if detected
+      const processedText = isAppStoreFormat(text) ? preprocessAppStoreData(text) : text;
+      
+      // First try to extract using the extraction pipeline for better results
+      const pipelineResult = extractorService.processAppStoreData(processedText);
+      
+      if (pipelineResult.success && pipelineResult.data) {
+        console.log('Extracted metrics using pipeline:', pipelineResult.data);
+        onDirectExtractionSuccess(pipelineResult.data);
+        return;
       }
+      
+      // Fallback to basic extraction if pipeline fails
+      const extractedMetrics = extractBaseMetrics(processedText);
+      if (extractedMetrics && Object.keys(extractedMetrics).length > 0) {
+        console.log('Extracted metrics directly from text:', extractedMetrics);
+        onDirectExtractionSuccess(extractedMetrics);
+      } else {
+        console.log('No metrics could be extracted directly');
+      }
+    } catch (error) {
+      console.error('Error extracting metrics directly:', error);
     }
   };
 

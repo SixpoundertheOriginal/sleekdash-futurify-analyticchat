@@ -6,13 +6,27 @@ import { RetentionExtractor } from './RetentionExtractor';
 import { GeographicalExtractor } from './GeographicalExtractor';
 import { ProcessedAnalytics } from '../types';
 import { BaseExtractor, ExtractionResult } from './BaseExtractor';
+import { calculateDerivedMetrics } from '../offline/extractors/derivedMetricsCalculator';
+
+/**
+ * Specialized pipeline for App Store data with derived metrics calculation
+ */
+class AppStoreExtractionPipeline extends ExtractionPipeline<ProcessedAnalytics> {
+  /**
+   * Override to calculate App Store specific derived metrics
+   */
+  protected calculateDerivedMetrics(data: Partial<ProcessedAnalytics>): Partial<ProcessedAnalytics> {
+    // Use the specialized calculator for App Store metrics
+    return calculateDerivedMetrics(data);
+  }
+}
 
 /**
  * Service to manage and coordinate data extraction
  */
 export class ExtractorService {
   private static instance: ExtractorService;
-  private appStorePipeline: ExtractionPipeline<ProcessedAnalytics>;
+  private appStorePipeline: AppStoreExtractionPipeline;
   
   /**
    * Create a new extractor service with default extractors
@@ -21,12 +35,12 @@ export class ExtractorService {
     // Initialize pipeline with appropriate config
     const pipelineConfig: PipelineConfig = {
       debug: process.env.NODE_ENV !== 'production',
-      stopOnFirstSuccess: false,
+      stopOnFirstSuccess: false, // Explicitly set to false to ensure all extractors run
       runValidation: true
     };
     
-    // Create the pipeline
-    this.appStorePipeline = new ExtractionPipeline<ProcessedAnalytics>(pipelineConfig);
+    // Create the specialized pipeline
+    this.appStorePipeline = new AppStoreExtractionPipeline(pipelineConfig);
     
     // Register default extractors
     this.appStorePipeline.registerExtractor(new AppStoreExtractor());

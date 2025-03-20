@@ -1,4 +1,3 @@
-
 import { BaseExtractor, ExtractorConfig, ExtractionResult } from './BaseExtractor';
 
 /**
@@ -25,7 +24,7 @@ export class ExtractionPipeline<T> {
   constructor(config: PipelineConfig = {}) {
     this.config = {
       debug: false,
-      stopOnFirstSuccess: true,
+      stopOnFirstSuccess: false,
       runValidation: true,
       trackPerformance: true,
       ...config
@@ -111,6 +110,10 @@ export class ExtractionPipeline<T> {
       console.log(`[ExtractionPipeline] Preprocessing completed: ${preprocessingTime}ms`);
     }
     
+    // Store all successful extraction results instead of just the first one
+    const successfulResults: ExtractionResult<T>[] = [];
+    let lastError = '';
+    
     // Try each extractor in order
     for (const extractor of this.extractors) {
       const extractorStartTime = this.config.trackPerformance ? performance.now() : 0;
@@ -160,15 +163,8 @@ export class ExtractionPipeline<T> {
           if (!isValid) continue;
         }
         
-        // If we get here, extraction was successful
-        const endTime = this.config.trackPerformance ? performance.now() : 0;
-        const totalTime = endTime - startTime;
-        
-        if (this.config.debug) {
-          console.log(`[ExtractionPipeline] Successful extraction with ${extractor.name} in ${totalTime}ms`);
-        }
-        
-        return {
+        // Add successful result to our collection
+        successfulResults.push({
           data,
           success: true,
           metadata: {
@@ -176,23 +172,143 @@ export class ExtractionPipeline<T> {
             executionTime: extractionTime,
             preprocessingTime,
             validationTime,
-            confidence: 1.0 // Default confidence
+            confidence: extractor.confidenceLevel || 0.8
           }
-        };
+        });
+        
+        if (this.config.debug) {
+          console.log(`[ExtractionPipeline] Successful extraction with ${extractor.name} in ${extractionTime}ms`);
+        }
+        
+        // If configured to stop at first success, exit the loop
+        if (this.config.stopOnFirstSuccess && successfulResults.length > 0) {
+          break;
+        }
       } catch (error) {
         if (this.config.debug) {
           console.error(`[ExtractionPipeline] Error in extractor ${extractor.name}:`, error);
         }
-        // Continue to the next extractor
+        lastError = error instanceof Error ? error.message : String(error);
       }
+    }
+    
+    // If we have successful results, merge them
+    if (successfulResults.length > 0) {
+      const mergedResult = this.mergeResults(successfulResults);
+      const endTime = this.config.trackPerformance ? performance.now() : 0;
+      const totalTime = endTime - startTime;
+      
+      if (this.config.debug) {
+        console.log(`[ExtractionPipeline] Merged ${successfulResults.length} successful extractions in ${totalTime}ms`);
+      }
+      
+      return mergedResult;
     }
     
     // If we get here, all extractors failed
     return {
       data: null,
       success: false,
-      error: 'All extractors failed to extract data'
+      error: lastError || 'All extractors failed to extract data'
     };
+  }
+  
+  /**
+   * Merge multiple extraction results into a single result
+   * Prioritizes data from extractors with higher confidence
+   */
+  private mergeResults(results: ExtractionResult<T>[]): ExtractionResult<T> {
+    if (results.length === 0) {
+      return {
+        data: null,
+        success: false,
+        error: 'No results to merge'
+      };
+    }
+    
+    if (results.length === 1) {
+      return results[0];
+    }
+    
+    // Sort results by confidence (highest first)
+    results.sort((a, b) => {
+      const confA = a.metadata?.confidence || 0;
+      const confB = b.metadata?.confidence || 0;
+      return confB - confA;
+    });
+    
+    // Use the highest confidence result as the base
+    const baseResult = results[0];
+    const mergedData = { ...baseResult.data } as any;
+    
+    // Track which fields came from which extractor for debugging
+    const fieldSources: Record<string, string> = {};
+    const baseExtractorId = baseResult.metadata?.extractorId || 'unknown';
+    
+    // Add fields from base result
+    if (baseResult.data) {
+      Object.keys(baseResult.data as object).forEach(key => {
+        fieldSources[key] = baseExtractorId;
+      });
+    }
+    
+    // Merge in data from other results, checking against existing data
+    for (let i = 1; i < results.length; i++) {
+      const result = results[i];
+      const extractorId = result.metadata?.extractorId || `extractor-${i}`;
+      const resultData = result.data as any;
+      
+      if (!resultData) continue;
+      
+      // For each field in this result
+      Object.keys(resultData).forEach(key => {
+        // If the field doesn't exist in merged data yet, add it
+        if (mergedData[key] === undefined || mergedData[key] === null) {
+          mergedData[key] = resultData[key];
+          fieldSources[key] = extractorId;
+        } 
+        // If the field exists but is an object, recursively merge
+        else if (typeof mergedData[key] === 'object' && mergedData[key] !== null && 
+                 typeof resultData[key] === 'object' && resultData[key] !== null) {
+          // Merge nested objects
+          Object.keys(resultData[key]).forEach(nestedKey => {
+            if (mergedData[key][nestedKey] === undefined || mergedData[key][nestedKey] === null) {
+              mergedData[key][nestedKey] = resultData[key][nestedKey];
+              fieldSources[`${key}.${nestedKey}`] = extractorId;
+            }
+          });
+        }
+        // Otherwise, leave existing value (from higher confidence extractor)
+      });
+    }
+    
+    // Calculate derived metrics if the data format supports it
+    const derivedData = this.calculateDerivedMetrics(mergedData);
+    
+    // Create merged metadata
+    const mergedMetadata = {
+      ...baseResult.metadata,
+      mergedFrom: results.map(r => r.metadata?.extractorId).filter(Boolean),
+      fieldSources,
+      totalExtractors: results.length,
+      calculatedFields: Object.keys(derivedData).filter(k => !(k in mergedData))
+    };
+    
+    return {
+      data: derivedData as T,
+      success: true,
+      metadata: mergedMetadata
+    };
+  }
+  
+  /**
+   * Calculate derived metrics based on extracted base metrics
+   * This is a generic method that will be specialized by subclasses
+   */
+  protected calculateDerivedMetrics(data: any): any {
+    // Default implementation just returns the data unchanged
+    // Specialized pipelines will override this
+    return data;
   }
   
   /**
