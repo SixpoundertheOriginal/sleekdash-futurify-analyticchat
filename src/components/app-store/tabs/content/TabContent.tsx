@@ -28,7 +28,8 @@ export function TabContent() {
     setDateRange,
     threadId,
     assistantId,
-    goToInputTab
+    goToInputTab,
+    setActiveTab
   } = useAppStore();
 
   return (
@@ -50,7 +51,9 @@ export function TabContent() {
       </TabsContent>
       
       <TabsContent value="extraction">
-        <DataExtractionTabContent />
+        <DataExtractionTabContent 
+          setActiveTab={setActiveTab}
+        />
       </TabsContent>
       
       <TabsContent value="analysis">

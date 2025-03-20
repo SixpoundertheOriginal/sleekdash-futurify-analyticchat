@@ -493,4 +493,3 @@ function ExtractedMetricCard({
     </Card>
   );
 }
-

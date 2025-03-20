@@ -3,6 +3,7 @@ import { MetricsProcessor } from '../MetricsProcessor';
 import { MetricsRegistry } from '../MetricsRegistry';
 import { metricExtractors } from '@/utils/analytics/extractors';
 import { ProcessedAnalytics } from '@/utils/analytics/types';
+import { MetricProcessorResult } from '../MetricsProcessor';
 
 /**
  * Adapter to convert App Store metrics to the standardized format
@@ -16,7 +17,7 @@ export function registerAppStoreMetrics(
   
   const registry = MetricsRegistry.getInstance();
   const processor = new MetricsProcessor('appStore', metricExtractors);
-  const standardizedMetrics: Record<string, any> = {};
+  const standardizedMetrics: Record<string, MetricProcessorResult> = {};
   
   // Process acquisition metrics
   if (analytics.acquisition) {

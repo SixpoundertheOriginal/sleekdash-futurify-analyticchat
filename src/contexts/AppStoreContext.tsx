@@ -114,6 +114,7 @@ export function AppStoreProvider({ children, initialData }: AppStoreProviderProp
   // Register initial metrics if provided
   useEffect(() => {
     if (initialData) {
+      // We use the adapter instead of direct registration
       registerAppStoreMetrics(initialData, {
         source: 'initial-data',
         confidence: 0.9
@@ -156,8 +157,8 @@ export function AppStoreProvider({ children, initialData }: AppStoreProviderProp
       
       dispatch({ type: 'SET_PROCESSED_ANALYTICS', payload: processedResult });
       
-      // Register metrics
-      registerMetrics(processedResult, {
+      // Register metrics via the adapter instead of directly
+      registerAppStoreMetrics(processedResult, {
         source: 'analysis',
         confidence: 0.8
       });
@@ -182,8 +183,8 @@ export function AppStoreProvider({ children, initialData }: AppStoreProviderProp
     
     dispatch({ type: 'SET_PROCESSED_ANALYTICS', payload: mergedAnalytics });
     
-    // Register metrics
-    registerMetrics(mergedAnalytics, {
+    // Register metrics via the adapter instead of directly
+    registerAppStoreMetrics(mergedAnalytics, {
       source: 'direct-extraction',
       confidence: 0.95
     });
