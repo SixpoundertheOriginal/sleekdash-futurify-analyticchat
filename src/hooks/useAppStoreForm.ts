@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ProcessedAnalytics } from "@/utils/analytics/processAnalysis";
 import { extractBaseMetrics } from "@/utils/analytics/offline/directExtraction";
 import { isAppStoreFormat, preprocessAppStoreData } from "@/utils/analytics/offline/appStoreFormatDetector";
+import { handleEdgeFunctionError } from "@/services/api";
 
 export interface UseAppStoreFormProps {
   onProcessSuccess: (data: any) => void;
@@ -160,7 +161,8 @@ export function useAppStoreForm({
       });
       
       if (error) {
-        throw new Error(`Analysis failed: ${error.message}`);
+        const errorMessage = handleEdgeFunctionError(error);
+        throw new Error(`Analysis failed: ${errorMessage}`);
       }
       
       if (!data || !data.analysis) {
@@ -180,10 +182,25 @@ export function useAppStoreForm({
       });
     } catch (error) {
       console.error("Error analyzing app data:", error);
+      
+      // Provide more helpful error messages based on the error type
+      let errorMessage = "Failed to analyze App Store data";
+      
+      if (error instanceof Error) {
+        // Check for common Edge Function errors
+        if (error.message.includes("Can't add messages to thread") && error.message.includes("while a run")) {
+          errorMessage = "Analysis is already in progress. Please wait for it to complete.";
+        } else if (error.message.includes("Edge Function")) {
+          errorMessage = "Connection issue with the analysis service. Please try again in a moment.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         variant: "destructive",
         title: "Analysis Failed",
-        description: error instanceof Error ? error.message : "Failed to analyze App Store data"
+        description: errorMessage
       });
     } finally {
       setAnalyzing(false);
