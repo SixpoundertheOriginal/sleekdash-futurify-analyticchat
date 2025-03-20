@@ -3,7 +3,7 @@
  * Extractor for acquisition-related metrics
  */
 import { ProcessedAnalytics } from "../../types";
-import { normalizeValue } from "../normalization";
+import { normalizeValue, normalizePercentChange } from "../normalization";
 
 /**
  * Extract acquisition metrics from raw input
@@ -32,126 +32,183 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
     }
   };
   
-  // Try multiple pattern variants for each metric to increase extraction success rate
+  // Extract impressions - App Store Connect specific patterns
+  const appStoreImpressionsPatterns = [
+    // App Store Connect format with question mark on separate line
+    /Impressions\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
+    /Impressions\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i
+  ];
   
-  // Extract impressions - improved patterns for different formats
-  const impressionPatterns = [
+  // Standard patterns for impressions
+  const standardImpressionsPatterns = [
     /Impressions:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
     /Impressions:?\s*\??\s*([0-9,.KMBkmb]+)/i,
     /Impressions\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
-    /([0-9,.KMBkmb]+)\s*impressions/i,
-    /Impressions\s*\n\s*([0-9,.KMBkmb]+)/i
+    /([0-9,.KMBkmb]+)\s*impressions/i
   ];
   
-  for (const pattern of impressionPatterns) {
+  // Try App Store Connect patterns first
+  let matchFound = false;
+  for (const pattern of appStoreImpressionsPatterns) {
     const match = normalizedInput.match(pattern);
     if (match && match[1]) {
       result.acquisition.impressions = {
         value: normalizeValue(match[1]),
-        change: match[2] ? parseInt(match[2]) : 0
+        change: match[2] ? normalizePercentChange(match[2]) : 0
       };
-      console.log('Extracted impressions:', result.acquisition.impressions);
+      console.log('Extracted App Store impressions:', result.acquisition.impressions);
+      matchFound = true;
       break;
     }
   }
-
-  // Extract page views - improved patterns with "Product" prefix and without
-  const pageViewPatterns = [
+  
+  // If no match found, try standard patterns
+  if (!matchFound) {
+    for (const pattern of standardImpressionsPatterns) {
+      const match = normalizedInput.match(pattern);
+      if (match && match[1]) {
+        result.acquisition.impressions = {
+          value: normalizeValue(match[1]),
+          change: match[2] ? normalizePercentChange(match[2]) : 0
+        };
+        console.log('Extracted standard impressions:', result.acquisition.impressions);
+        break;
+      }
+    }
+  }
+  
+  // Extract page views - App Store Connect specific patterns
+  const appStorePageViewsPatterns = [
+    // App Store Connect format with question mark on separate line
+    /(?:Product )?Page Views\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
+    /(?:Product )?Page Views\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i
+  ];
+  
+  // Standard patterns for page views
+  const standardPageViewsPatterns = [
     /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
     /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMBkmb]+)/i,
     /(?:Product )?Page Views\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
-    /([0-9,.KMBkmb]+)\s*(?:product )?page views/i,
-    /(?:Product )?Page Views\s*\n\s*([0-9,.KMBkmb]+)/i
+    /([0-9,.KMBkmb]+)\s*(?:product )?page views/i
   ];
   
-  for (const pattern of pageViewPatterns) {
+  // Try App Store Connect patterns first for page views
+  matchFound = false;
+  for (const pattern of appStorePageViewsPatterns) {
     const match = normalizedInput.match(pattern);
     if (match && match[1]) {
       result.acquisition.pageViews = {
         value: normalizeValue(match[1]),
-        change: match[2] ? parseInt(match[2]) : 0
+        change: match[2] ? normalizePercentChange(match[2]) : 0
       };
-      console.log('Extracted page views:', result.acquisition.pageViews);
+      console.log('Extracted App Store page views:', result.acquisition.pageViews);
+      matchFound = true;
       break;
     }
   }
-
-  // Extract conversion rate - improved patterns with more variations
-  const conversionPatterns = [
+  
+  // If no match found, try standard patterns for page views
+  if (!matchFound) {
+    for (const pattern of standardPageViewsPatterns) {
+      const match = normalizedInput.match(pattern);
+      if (match && match[1]) {
+        result.acquisition.pageViews = {
+          value: normalizeValue(match[1]),
+          change: match[2] ? normalizePercentChange(match[2]) : 0
+        };
+        console.log('Extracted standard page views:', result.acquisition.pageViews);
+        break;
+      }
+    }
+  }
+  
+  // Extract conversion rate - App Store Connect specific patterns
+  const appStoreConversionPatterns = [
+    // App Store Connect format with question mark on separate line
+    /Conversion Rate\s*\n\s*\?\s*\n\s*([0-9,.]+)%\s*\n\s*([+-][0-9]+%)/i,
+    /Conversion Rate\s*\n\s*\?\s*\n\s*([0-9,.]+)%/i
+  ];
+  
+  // Standard patterns for conversion rate
+  const standardConversionPatterns = [
     /Conversion Rate:?\s*\??\s*([0-9,.]+)%\s*([+-][0-9]+%)/i,
     /Conversion Rate:?\s*\??\s*([0-9,.]+)%/i,
     /Conversion Rate:?\s*\??\s*([0-9,.]+)\s*%\s*([+-][0-9]+%)?/i,
     /Conversion Rate\s*\n\s*([0-9,.]+)%\s*([+-][0-9]+%)?/i,
-    /([0-9,.]+)%\s*conversion rate/i,
-    /Conversion Rate\s*\n\s*([0-9,.]+)%/i
+    /([0-9,.]+)%\s*conversion rate/i
   ];
   
-  for (const pattern of conversionPatterns) {
+  // Try App Store Connect patterns first for conversion rate
+  matchFound = false;
+  for (const pattern of appStoreConversionPatterns) {
     const match = normalizedInput.match(pattern);
     if (match && match[1]) {
-      const conversionValue = match[1].replace('%', '');
       result.acquisition.conversionRate = {
-        value: parseFloat(conversionValue),
-        change: match[2] ? parseInt(match[2]) : 0
+        value: parseFloat(match[1]),
+        change: match[2] ? normalizePercentChange(match[2]) : 0
       };
-      console.log('Extracted conversion rate:', result.acquisition.conversionRate);
+      console.log('Extracted App Store conversion rate:', result.acquisition.conversionRate);
+      matchFound = true;
       break;
     }
   }
-
-  // Extract downloads - improved patterns with "Total" prefix and without
-  const downloadPatterns = [
+  
+  // If no match found, try standard patterns for conversion rate
+  if (!matchFound) {
+    for (const pattern of standardConversionPatterns) {
+      const match = normalizedInput.match(pattern);
+      if (match && match[1]) {
+        result.acquisition.conversionRate = {
+          value: parseFloat(match[1]),
+          change: match[2] ? normalizePercentChange(match[2]) : 0
+        };
+        console.log('Extracted standard conversion rate:', result.acquisition.conversionRate);
+        break;
+      }
+    }
+  }
+  
+  // Extract downloads - App Store Connect specific patterns
+  const appStoreDownloadsPatterns = [
+    // App Store Connect format with question mark on separate line
+    /(?:Total )?Downloads\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
+    /(?:Total )?Downloads\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i
+  ];
+  
+  // Standard patterns for downloads
+  const standardDownloadsPatterns = [
     /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
     /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMBkmb]+)/i,
     /(?:Total )?Downloads\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
-    /([0-9,.KMBkmb]+)\s*(?:total )?downloads/i,
-    /([0-9,.KMBkmb]+)\s*\n\s*Total Downloads/i,
-    /(?:Total )?Downloads\s*\n\s*([0-9,.KMBkmb]+)/i
+    /([0-9,.KMBkmb]+)\s*(?:total )?downloads/i
   ];
   
-  for (const pattern of downloadPatterns) {
+  // Try App Store Connect patterns first for downloads
+  matchFound = false;
+  for (const pattern of appStoreDownloadsPatterns) {
     const match = normalizedInput.match(pattern);
     if (match && match[1]) {
       result.acquisition.downloads = {
         value: normalizeValue(match[1]),
-        change: match[2] ? parseInt(match[2]) : 0
+        change: match[2] ? normalizePercentChange(match[2]) : 0
       };
-      console.log('Extracted downloads:', result.acquisition.downloads);
+      console.log('Extracted App Store downloads:', result.acquisition.downloads);
+      matchFound = true;
       break;
     }
   }
   
-  // Check for benchmark information in the Benchmarks section
-  const benchmarkSection = normalizedInput.match(/Benchmarks[\s\S]*?Conversion Rate/i);
-  if (benchmarkSection) {
-    const conversionBenchmarkMatch = normalizedInput.match(/Your conversion rate of ([0-9.]+)%/i);
-    if (conversionBenchmarkMatch && !result.acquisition.conversionRate.value) {
-      result.acquisition.conversionRate.value = parseFloat(conversionBenchmarkMatch[1]);
-      console.log('Extracted conversion rate from benchmark:', result.acquisition.conversionRate.value);
-    }
-  }
-
-  // Calculate funnel metrics if we have the necessary data
-  if (result.acquisition.impressions.value > 0 && result.acquisition.pageViews.value > 0) {
-    result.acquisition.funnelMetrics.impressionsToViews = 
-      (result.acquisition.pageViews.value / result.acquisition.impressions.value) * 100;
-    console.log('Calculated impressions to views rate:', result.acquisition.funnelMetrics.impressionsToViews);
-  }
-  
-  if (result.acquisition.pageViews.value > 0 && result.acquisition.downloads.value > 0) {
-    result.acquisition.funnelMetrics.viewsToDownloads = 
-      (result.acquisition.downloads.value / result.acquisition.pageViews.value) * 100;
-    console.log('Calculated views to downloads rate:', result.acquisition.funnelMetrics.viewsToDownloads);
-  }
-
-  // Look for total downloads section at the bottom if we haven't found it yet
-  if (!result.acquisition.downloads.value) {
-    const territorySection = normalizedInput.match(/Total Downloads by Territory[\s\S]*?See All([\s\S]*?)(?=Total Downloads by|$)/i);
-    if (territorySection) {
-      const totalMatch = normalizedInput.match(/([0-9,.KMBkmb]+)\s*Total/i);
-      if (totalMatch && totalMatch[1]) {
-        result.acquisition.downloads.value = normalizeValue(totalMatch[1]);
-        console.log('Extracted total downloads from territory section:', result.acquisition.downloads.value);
+  // If no match found, try standard patterns for downloads
+  if (!matchFound) {
+    for (const pattern of standardDownloadsPatterns) {
+      const match = normalizedInput.match(pattern);
+      if (match && match[1]) {
+        result.acquisition.downloads = {
+          value: normalizeValue(match[1]),
+          change: match[2] ? normalizePercentChange(match[2]) : 0
+        };
+        console.log('Extracted standard downloads:', result.acquisition.downloads);
+        break;
       }
     }
   }

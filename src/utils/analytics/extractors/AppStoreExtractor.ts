@@ -65,6 +65,24 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       /Proceeds\s*\n\s*\$?([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
       /\$?([0-9,.KMBkmb]+)\s*proceeds/i
     ],
+    proceedsPerUser: [
+      // App Store Connect format with question mark on separate line
+      /Proceeds per (?:Paying )?User\s*\n\s*\?\s*\n\s*\$?([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9,.]+%)/i,
+      /Proceeds per (?:Paying )?User\s*\n\s*\?\s*\n\s*\$?([0-9,.KMBkmb]+)/i,
+      // Standard patterns
+      /Proceeds per (?:Paying )?User:?\s*\??\s*\$?([0-9,.KMBkmb]+)\s*([+-][0-9,.]+%)/i,
+      /Proceeds per (?:Paying )?User:?\s*\??\s*\$?([0-9,.KMBkmb]+)/i,
+      /\$?([0-9,.KMBkmb]+)\s*proceeds per (?:paying )?user/i
+    ],
+    sessionsPerDevice: [
+      // App Store Connect format with question mark on separate line
+      /Sessions per (?:Active )?Device\s*\n\s*\?\s*\n\s*([0-9,.]+)\s*\n\s*([+-][0-9,.]+%)/i,
+      /Sessions per (?:Active )?Device\s*\n\s*\?\s*\n\s*([0-9,.]+)/i,
+      // Standard patterns
+      /Sessions per (?:Active )?Device:?\s*\??\s*([0-9,.]+)\s*([+-][0-9,.]+%)/i,
+      /Sessions per (?:Active )?Device:?\s*\??\s*([0-9,.]+)/i,
+      /([0-9,.]+)\s*sessions per (?:active )?device/i
+    ],
     crashes: [
       // App Store Connect format with question mark on separate line
       /Crashes\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
@@ -140,17 +158,24 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
         }
       };
       
+      // Normalize input - trim whitespace, standardize newlines, and normalize spacing around question marks
+      const normalizedInput = input.replace(/\r\n/g, '\n')
+                                  .replace(/\s*\?\s*/g, ' ? ')
+                                  .trim();
+      
       // Extract key metrics
-      this.extractMetric(input, 'impressions', result);
-      this.extractMetric(input, 'pageViews', result);
-      this.extractMetric(input, 'conversionRate', result);
-      this.extractMetric(input, 'downloads', result);
-      this.extractMetric(input, 'proceeds', result);
-      this.extractMetric(input, 'crashes', result);
+      this.extractMetric(normalizedInput, 'impressions', result);
+      this.extractMetric(normalizedInput, 'pageViews', result);
+      this.extractMetric(normalizedInput, 'conversionRate', result);
+      this.extractMetric(normalizedInput, 'downloads', result);
+      this.extractMetric(normalizedInput, 'proceeds', result);
+      this.extractMetric(normalizedInput, 'proceedsPerUser', result);
+      this.extractMetric(normalizedInput, 'sessionsPerDevice', result);
+      this.extractMetric(normalizedInput, 'crashes', result);
       
       // Extract date range
       for (const pattern of this.patterns.dateRange) {
-        const match = input.match(pattern);
+        const match = normalizedInput.match(pattern);
         if (match && match[1]) {
           result.summary.dateRange = match[1].trim();
           break;
@@ -225,9 +250,9 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
         let change = 0;
         if (match[2] && typeof match[2] === 'string') {
           // Handle the change value that might be on a separate line
-          const changeMatch = match[2].match(/([+-]?\d+)%/);
+          const changeMatch = match[2].match(/([+-]?\d+(?:\.\d+)?)%/);
           if (changeMatch && changeMatch[1]) {
-            change = parseInt(changeMatch[1], 10);
+            change = parseFloat(changeMatch[1]);
           }
         }
         
@@ -247,6 +272,12 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
             break;
           case 'proceeds':
             result.financial.proceeds = { value, change };
+            break;
+          case 'proceedsPerUser':
+            result.financial.proceedsPerUser = { value, change };
+            break;
+          case 'sessionsPerDevice':
+            result.engagement.sessionsPerDevice = { value, change };
             break;
           case 'crashes':
             result.technical.crashes = { value, change };
@@ -288,8 +319,9 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       
     const hasFinancialMetrics = result.financial.proceeds.value > 0;
     const hasTechnicalMetrics = result.technical.crashes.value > 0;
+    const hasEngagementMetrics = result.engagement.sessionsPerDevice.value > 0;
     
     // At least one category of metrics should have data
-    return hasAcquisitionMetrics || hasFinancialMetrics || hasTechnicalMetrics;
+    return hasAcquisitionMetrics || hasFinancialMetrics || hasTechnicalMetrics || hasEngagementMetrics;
   }
 }
