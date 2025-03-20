@@ -30,9 +30,9 @@ export function TechnicalMetricsTab({
         />
         <MetricInput
           label="Crash-Free Users (%)"
-          value={(technicalMetrics.crashFreeUsers ? technicalMetrics.crashFreeUsers.value : 0).toString()}
+          value={technicalMetrics.crashFreeUsers.value.toString()}
           onChange={(value) => handleMetricChange("technical", "crashFreeUsers", "value", value)}
-          changeValue={technicalMetrics.crashFreeUsers ? technicalMetrics.crashFreeUsers.change : 0}
+          changeValue={technicalMetrics.crashFreeUsers.change}
           onChangeValueUpdate={(value) => handleMetricChange("technical", "crashFreeUsers", "change", value)}
           formatter={formatPercentage}
         />

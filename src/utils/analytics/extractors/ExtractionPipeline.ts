@@ -1,3 +1,4 @@
+
 import { BaseExtractor, ExtractorConfig, ExtractionResult } from './BaseExtractor';
 
 /**
@@ -110,7 +111,7 @@ export class ExtractionPipeline<T> {
       console.log(`[ExtractionPipeline] Preprocessing completed: ${preprocessingTime}ms`);
     }
     
-    // Store all successful extraction results instead of just the first one
+    // Store all successful extraction results
     const successfulResults: ExtractionResult<T>[] = [];
     let lastError = '';
     
@@ -194,12 +195,19 @@ export class ExtractionPipeline<T> {
     
     // If we have successful results, merge them
     if (successfulResults.length > 0) {
+      // Log how many successful extractions we found
+      if (this.config.debug) {
+        console.log(`[ExtractionPipeline] Found ${successfulResults.length} successful extractions to merge`);
+      }
+      
+      // Merge all successful results
       const mergedResult = this.mergeResults(successfulResults);
       const endTime = this.config.trackPerformance ? performance.now() : 0;
       const totalTime = endTime - startTime;
       
       if (this.config.debug) {
         console.log(`[ExtractionPipeline] Merged ${successfulResults.length} successful extractions in ${totalTime}ms`);
+        console.log(`[ExtractionPipeline] Final merged data:`, mergedResult.data);
       }
       
       return mergedResult;
