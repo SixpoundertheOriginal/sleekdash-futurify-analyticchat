@@ -1,7 +1,7 @@
 
 import { MetricExtractor, normalizeValue } from "../analytics/metricTypes";
-import { MetricType, MetricCategory, getMetricCategory } from "../analytics/offline/metricTypes";
-import { formatMetricValue, formatPercentage, formatCurrency } from "./standardizedMetrics";
+import { formatMetricValue, formatPercentage, formatCurrency } from "./formatting/formatters";
+import { MetricCategory } from "./formatting/types";
 
 /**
  * Unified metrics processor for extracting, formatting, and managing metrics
