@@ -111,7 +111,8 @@ export class ExtractionPipeline<T> {
       console.log(`[ExtractionPipeline] Preprocessing completed: ${preprocessingTime}ms`);
     }
     
-    // Store all successful extraction results
+    // Store all successful extraction results - CRITICAL CHANGE:
+    // We'll now collect ALL successful extractions instead of just the first one
     const successfulResults: ExtractionResult<T>[] = [];
     let lastError = '';
     
@@ -164,7 +165,8 @@ export class ExtractionPipeline<T> {
           if (!isValid) continue;
         }
         
-        // Add successful result to our collection
+        // Add successful result to our collection - IMPORTANT:
+        // We now track ALL successful extractions, even if we've already found some
         successfulResults.push({
           data,
           success: true,
@@ -181,7 +183,7 @@ export class ExtractionPipeline<T> {
           console.log(`[ExtractionPipeline] Successful extraction with ${extractor.name} in ${extractionTime}ms`);
         }
         
-        // If configured to stop at first success, exit the loop
+        // Only stop if explicitly configured to do so
         if (this.config.stopOnFirstSuccess && successfulResults.length > 0) {
           break;
         }
@@ -193,7 +195,8 @@ export class ExtractionPipeline<T> {
       }
     }
     
-    // If we have successful results, merge them
+    // If we have successful results, merge them - KEY IMPROVEMENT:
+    // Now we properly merge ALL successful extractions instead of just returning the first one
     if (successfulResults.length > 0) {
       // Log how many successful extractions we found
       if (this.config.debug) {

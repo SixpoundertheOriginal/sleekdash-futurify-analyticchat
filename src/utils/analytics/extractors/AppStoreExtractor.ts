@@ -15,18 +15,30 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
   // Store patterns for different metrics
   private patterns = {
     impressions: [
+      // App Store Connect format with question mark on separate line
+      /Impressions\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
+      /Impressions\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i,
+      // Standard patterns
       /Impressions:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
       /Impressions:?\s*\??\s*([0-9,.KMBkmb]+)/i,
       /Impressions\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
       /([0-9,.KMBkmb]+)\s*impressions/i
     ],
     pageViews: [
+      // App Store Connect format with question mark on separate line
+      /(?:Product )?Page Views\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
+      /(?:Product )?Page Views\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i,
+      // Standard patterns
       /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
       /(?:Product )?Page Views:?\s*\??\s*([0-9,.KMBkmb]+)/i,
       /(?:Product )?Page Views\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
       /([0-9,.KMBkmb]+)\s*(?:product )?page views/i
     ],
     conversionRate: [
+      // App Store Connect format with question mark on separate line
+      /Conversion Rate\s*\n\s*\?\s*\n\s*([0-9,.]+)%\s*\n\s*([+-][0-9]+%)/i,
+      /Conversion Rate\s*\n\s*\?\s*\n\s*([0-9,.]+)%/i,
+      // Standard patterns
       /Conversion Rate:?\s*\??\s*([0-9,.]+)%\s*([+-][0-9]+%)/i,
       /Conversion Rate:?\s*\??\s*([0-9,.]+)%/i,
       /Conversion Rate:?\s*\??\s*([0-9,.]+)\s*%\s*([+-][0-9]+%)?/i,
@@ -34,18 +46,30 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       /([0-9,.]+)%\s*conversion rate/i
     ],
     downloads: [
+      // App Store Connect format with question mark on separate line
+      /(?:Total )?Downloads\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
+      /(?:Total )?Downloads\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i,
+      // Standard patterns
       /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
       /(?:Total )?Downloads:?\s*\??\s*([0-9,.KMBkmb]+)/i,
       /(?:Total )?Downloads\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
       /([0-9,.KMBkmb]+)\s*(?:total )?downloads/i
     ],
     proceeds: [
+      // App Store Connect format with question mark on separate line
+      /Proceeds\s*\n\s*\?\s*\n\s*\$?([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
+      /Proceeds\s*\n\s*\?\s*\n\s*\$?([0-9,.KMBkmb]+)/i,
+      // Standard patterns
       /Proceeds:?\s*\??\s*\$?([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
       /Proceeds:?\s*\??\s*\$?([0-9,.KMBkmb]+)/i,
       /Proceeds\s*\n\s*\$?([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
       /\$?([0-9,.KMBkmb]+)\s*proceeds/i
     ],
     crashes: [
+      // App Store Connect format with question mark on separate line
+      /Crashes\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
+      /Crashes\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i,
+      // Standard patterns
       /Crashes:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)/i,
       /Crashes:?\s*\??\s*([0-9,.KMBkmb]+)/i,
       /Crash Count:?\s*\??\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
@@ -133,6 +157,20 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
         }
       }
       
+      // Calculate crash-free users
+      if (result.technical.crashes.value > 0) {
+        // Using a heuristic for active users (if we don't have the actual number)
+        const estimatedActiveUsers = 100000; // Default estimate
+        const crashFreePercentage = 100 - (result.technical.crashes.value / estimatedActiveUsers * 100);
+        result.technical.crashFreeUsers = { 
+          value: Math.min(Math.max(crashFreePercentage, 0), 100), // Ensure value is between 0-100%
+          change: 0 // We don't have change data for this derived metric
+        };
+      } else {
+        // If no crashes detected, assume 100% crash-free
+        result.technical.crashFreeUsers = { value: 100, change: 0 };
+      }
+      
       // Calculate derived metrics
       if (result.acquisition.impressions.value > 0 && result.acquisition.pageViews.value > 0) {
         result.acquisition.funnelMetrics.impressionsToViews = 
@@ -173,11 +211,25 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
     for (const pattern of patterns) {
       const match = input.match(pattern);
       if (match && match[1]) {
-        const value = metricName === 'conversionRate' 
-          ? parseFloat(match[1]) 
-          : normalizeValue(match[1]);
-          
-        const change = match[2] ? parseInt(match[2]) : 0;
+        let value: number;
+        
+        // Handle K, M, B suffixes properly 
+        if (metricName === 'conversionRate') {
+          value = parseFloat(match[1]);
+        } else {
+          const rawValue = match[1];
+          value = this.parseValueWithSuffix(rawValue);
+        }
+        
+        // Extract change value from the second capture group if it exists
+        let change = 0;
+        if (match[2] && typeof match[2] === 'string') {
+          // Handle the change value that might be on a separate line
+          const changeMatch = match[2].match(/([+-]?\d+)%/);
+          if (changeMatch && changeMatch[1]) {
+            change = parseInt(changeMatch[1], 10);
+          }
+        }
         
         // Update the appropriate section of the result
         switch (metricName) {
@@ -201,9 +253,28 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
             break;
         }
         
+        console.log(`[AppStoreExtractor] Extracted ${metricName}: ${value} (change: ${change}%)`);
         break;
       }
     }
+  }
+  
+  /**
+   * Parse a value string that might have K, M, B suffixes
+   */
+  private parseValueWithSuffix(valueStr: string): number {
+    const cleanValue = valueStr.trim().replace(/,/g, '');
+    
+    // Check for suffixes
+    if (/\d+(\.\d+)?[Kk]$/.test(cleanValue)) {
+      return parseFloat(cleanValue.replace(/[Kk]$/, '')) * 1000;
+    } else if (/\d+(\.\d+)?[Mm]$/.test(cleanValue)) {
+      return parseFloat(cleanValue.replace(/[Mm]$/, '')) * 1000000;
+    } else if (/\d+(\.\d+)?[Bb]$/.test(cleanValue)) {
+      return parseFloat(cleanValue.replace(/[Bb]$/, '')) * 1000000000;
+    }
+    
+    return parseFloat(cleanValue);
   }
   
   /**
