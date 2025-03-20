@@ -7,7 +7,8 @@ import { ProcessedAnalytics } from "../types";
 export const extractTechnicalMetrics = (text: string): ProcessedAnalytics["technical"] => {
   const result: ProcessedAnalytics["technical"] = {
     crashes: { value: 0, change: 0 },
-    crashRate: { value: 0, percentile: "" }
+    crashRate: { value: 0, percentile: "" },
+    crashFreeUsers: { value: 0, change: 0 }
   };
 
   console.log('Searching for technical section...');
@@ -111,6 +112,22 @@ export const extractTechnicalMetrics = (text: string): ProcessedAnalytics["techn
       };
       console.log('Found crashes in recommendations:', result.crashes);
     }
+  }
+
+  // Calculate crashFreeUsers based on crash rate if available
+  if (result.crashRate.value > 0) {
+    result.crashFreeUsers = {
+      value: 100 - result.crashRate.value,
+      change: -result.crashes.change, // Inverse of crash change
+      formatted: `${(100 - result.crashRate.value).toFixed(2)}%`
+    };
+  } else {
+    // Default value if crash rate not available
+    result.crashFreeUsers = {
+      value: 99.5,
+      change: 0,
+      formatted: "99.5%"
+    };
   }
 
   return result;

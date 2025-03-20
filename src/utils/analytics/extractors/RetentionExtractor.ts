@@ -1,4 +1,3 @@
-
 import { BaseExtractor } from './BaseExtractor';
 import { ProcessedAnalytics } from '../types';
 
@@ -9,6 +8,7 @@ export class RetentionExtractor implements BaseExtractor<ProcessedAnalytics> {
   id = 'retention-extractor';
   name = 'User Retention Extractor';
   priority = 70; // Lower priority than main extractors
+  confidence = 0.75;
   
   private patterns = {
     day1: {
@@ -122,7 +122,8 @@ export class RetentionExtractor implements BaseExtractor<ProcessedAnalytics> {
         },
         technical: {
           crashes: { value: 0, change: 0 },
-          crashRate: { value: 0, percentile: "" }
+          crashRate: { value: 0, percentile: "" },
+          crashFreeUsers: { value: 0, change: 0 }
         },
         geographical: {
           markets: [],

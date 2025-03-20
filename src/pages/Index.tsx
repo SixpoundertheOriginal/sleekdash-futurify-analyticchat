@@ -45,7 +45,8 @@ const demoData: ProcessedAnalytics = {
   },
   technical: {
     crashes: { value: 53, change: -25.8 },
-    crashRate: { value: 0.12, percentile: "top 25%" }
+    crashRate: { value: 0.12, percentile: "top 25%" },
+    crashFreeUsers: { value: 99.88, change: 25.8, formatted: "99.88%" }
   },
   geographical: {
     markets: [

@@ -84,7 +84,8 @@ export function AnalyticsDashboard({ data, dateRange, onRefresh }: AnalyticsDash
     },
     technical: {
       crashes: { value: 42, change: -32.5 },
-      crashRate: { value: 0.08, percentile: "top 15%" }
+      crashRate: { value: 0.08, percentile: "top 15%" },
+      crashFreeUsers: { value: 99.92, change: 32.5, formatted: "99.92%" }
     },
     geographical: {
       markets: [

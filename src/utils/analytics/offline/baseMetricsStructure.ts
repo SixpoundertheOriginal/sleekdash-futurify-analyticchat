@@ -53,7 +53,8 @@ export const createBaseMetricsStructure = (): Partial<ProcessedAnalytics> => {
     },
     technical: {
       crashes: { value: 0, change: 0 },
-      crashRate: { value: 0, percentile: "average" }
+      crashRate: { value: 0, percentile: "average" },
+      crashFreeUsers: { value: 0, change: 0 }
     },
     geographical: {
       markets: [],

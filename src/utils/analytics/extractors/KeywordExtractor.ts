@@ -1,4 +1,3 @@
-
 import { BaseExtractor, ExtractionResult } from './BaseExtractor';
 import { ProcessedAnalytics } from '../types';
 
@@ -9,6 +8,7 @@ export class KeywordExtractor implements BaseExtractor<ProcessedAnalytics> {
   id = 'keyword-extractor';
   name = 'Keyword Data Extractor';
   priority = 80; // Lower priority than the main AppStore extractor
+  confidence = 0.7;
   
   private patterns = {
     keywords: [
@@ -67,7 +67,8 @@ export class KeywordExtractor implements BaseExtractor<ProcessedAnalytics> {
         },
         technical: {
           crashes: { value: 0, change: 0 },
-          crashRate: { value: 0, percentile: "" }
+          crashRate: { value: 0, percentile: "" },
+          crashFreeUsers: { value: 0, change: 0 }
         },
         geographical: {
           markets: [],

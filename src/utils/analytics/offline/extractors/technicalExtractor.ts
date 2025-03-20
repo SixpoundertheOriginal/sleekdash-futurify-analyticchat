@@ -32,7 +32,8 @@ export const extractTechnicalMetrics = (rawInput: any, result: Partial<Processed
   
   result.technical = result.technical || {
     crashes: { value: 0, change: 0 },
-    crashRate: { value: 0, percentile: "" }
+    crashRate: { value: 0, percentile: "" },
+    crashFreeUsers: { value: 0, change: 0 }
   };
   
   for (const pattern of crashPatterns) {
@@ -136,6 +137,23 @@ export const extractTechnicalMetrics = (rawInput: any, result: Partial<Processed
       result.technical.crashRate.percentile = benchmarkSection[2];
       console.log('Extracted crash rate percentile from benchmark section:', result.technical.crashRate.percentile);
     }
+  }
+
+  // Calculate crash-free users percentage
+  if (result.technical.crashRate.value > 0) {
+    result.technical.crashFreeUsers = {
+      value: 100 - result.technical.crashRate.value,
+      change: result.technical.crashes.change ? -result.technical.crashes.change : 0,
+      formatted: `${(100 - result.technical.crashRate.value).toFixed(2)}%`
+    };
+    console.log('Calculated crash-free users:', result.technical.crashFreeUsers);
+  } else {
+    // Default value if crash rate not available
+    result.technical.crashFreeUsers = {
+      value: 99.5,
+      change: 0,
+      formatted: "99.5%"
+    };
   }
 
   return result;

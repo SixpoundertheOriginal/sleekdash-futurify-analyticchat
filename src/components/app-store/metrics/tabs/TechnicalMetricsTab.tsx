@@ -28,6 +28,14 @@ export function TechnicalMetricsTab({
           onChange={(value) => handleMetricChange("technical", "crashRate", "value", value)}
           formatter={formatPercentage}
         />
+        <MetricInput
+          label="Crash-Free Users (%)"
+          value={(technicalMetrics.crashFreeUsers ? technicalMetrics.crashFreeUsers.value : 0).toString()}
+          onChange={(value) => handleMetricChange("technical", "crashFreeUsers", "value", value)}
+          changeValue={technicalMetrics.crashFreeUsers ? technicalMetrics.crashFreeUsers.change : 0}
+          onChangeValueUpdate={(value) => handleMetricChange("technical", "crashFreeUsers", "change", value)}
+          formatter={formatPercentage}
+        />
       </div>
     </div>
   );

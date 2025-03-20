@@ -1,4 +1,3 @@
-
 import { BaseExtractor } from './BaseExtractor';
 import { ProcessedAnalytics } from '../types';
 
@@ -9,6 +8,7 @@ export class GeographicalExtractor implements BaseExtractor<ProcessedAnalytics> 
   id = 'geographical-extractor';
   name = 'Geographical Data Extractor';
   priority = 60; // Lower priority than main extractors
+  confidence = 0.7;
   
   private patterns = {
     territorySections: [
@@ -77,7 +77,8 @@ export class GeographicalExtractor implements BaseExtractor<ProcessedAnalytics> 
         },
         technical: {
           crashes: { value: 0, change: 0 },
-          crashRate: { value: 0, percentile: "" }
+          crashRate: { value: 0, percentile: "" },
+          crashFreeUsers: { value: 0, change: 0 }
         },
         geographical: {
           markets: [],

@@ -10,6 +10,7 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
   id = 'app-store-extractor';
   name = 'App Store Extractor';
   priority = 100;
+  confidence = 0.8;
   
   // Store patterns for different metrics
   private patterns = {
@@ -105,7 +106,8 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
         },
         technical: {
           crashes: { value: 0, change: 0 },
-          crashRate: { value: 0, percentile: "" }
+          crashRate: { value: 0, percentile: "" },
+          crashFreeUsers: { value: 0, change: 0 }
         },
         geographical: {
           markets: [],
