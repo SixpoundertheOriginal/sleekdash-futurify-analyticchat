@@ -4,6 +4,7 @@ import { MetricsRegistry } from '../MetricsRegistry';
 import { metricExtractors } from '@/utils/analytics/extractors';
 import { ProcessedAnalytics } from '@/utils/analytics/types';
 import { MetricProcessorResult } from '../MetricsProcessor';
+import { MetricCategory } from '../formatting/types';
 
 /**
  * Adapter to convert App Store metrics to the standardized format
@@ -30,7 +31,7 @@ export function registerAppStoreMetrics(
         change: analytics.acquisition.downloads.change,
         metadata: {
           domain: 'appStore',
-          category: 'acquisition',
+          category: MetricCategory.ACQUISITION,
           metricKey: 'downloads',
           ...options
         }
@@ -45,7 +46,7 @@ export function registerAppStoreMetrics(
         change: analytics.acquisition.impressions.change,
         metadata: {
           domain: 'appStore',
-          category: 'acquisition',
+          category: MetricCategory.ACQUISITION,
           metricKey: 'impressions',
           ...options
         }
@@ -60,7 +61,7 @@ export function registerAppStoreMetrics(
         change: analytics.acquisition.pageViews.change,
         metadata: {
           domain: 'appStore',
-          category: 'acquisition',
+          category: MetricCategory.ACQUISITION,
           metricKey: 'pageViews',
           ...options
         }
@@ -75,7 +76,7 @@ export function registerAppStoreMetrics(
         change: analytics.acquisition.conversionRate.change,
         metadata: {
           domain: 'appStore',
-          category: 'acquisition',
+          category: MetricCategory.ACQUISITION,
           metricKey: 'conversionRate',
           ...options
         }
@@ -93,7 +94,7 @@ export function registerAppStoreMetrics(
         change: analytics.financial.proceeds.change,
         metadata: {
           domain: 'appStore',
-          category: 'financial',
+          category: MetricCategory.FINANCIAL,
           metricKey: 'proceeds',
           ...options
         }
@@ -111,7 +112,7 @@ export function registerAppStoreMetrics(
         change: analytics.technical.crashes.change,
         metadata: {
           domain: 'appStore',
-          category: 'technical',
+          category: MetricCategory.TECHNICAL,
           metricKey: 'crashes',
           ...options
         }
