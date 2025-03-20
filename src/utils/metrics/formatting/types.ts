@@ -39,7 +39,7 @@ export type MetricMetadata = {
   source?: string;
   confidence?: number;
   domain?: string;
-  category?: string;
+  category?: MetricCategory;
   metricKey?: string;
   timestamp?: Date;
   dateRange?: { from: Date; to: Date };

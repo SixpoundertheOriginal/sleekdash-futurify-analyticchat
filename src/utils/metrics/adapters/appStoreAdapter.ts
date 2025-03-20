@@ -31,7 +31,7 @@ export function registerAppStoreMetrics(
         change: analytics.acquisition.downloads.change,
         metadata: {
           domain: 'appStore',
-          category: MetricCategory.ACQUISITION as string,
+          category: MetricCategory.ACQUISITION,
           metricKey: 'downloads',
           ...options
         }
@@ -46,7 +46,7 @@ export function registerAppStoreMetrics(
         change: analytics.acquisition.impressions.change,
         metadata: {
           domain: 'appStore',
-          category: MetricCategory.ACQUISITION as string,
+          category: MetricCategory.ACQUISITION,
           metricKey: 'impressions',
           ...options
         }
@@ -61,7 +61,7 @@ export function registerAppStoreMetrics(
         change: analytics.acquisition.pageViews.change,
         metadata: {
           domain: 'appStore',
-          category: MetricCategory.ACQUISITION as string,
+          category: MetricCategory.ACQUISITION,
           metricKey: 'pageViews',
           ...options
         }
@@ -76,7 +76,7 @@ export function registerAppStoreMetrics(
         change: analytics.acquisition.conversionRate.change,
         metadata: {
           domain: 'appStore',
-          category: MetricCategory.ACQUISITION as string,
+          category: MetricCategory.ACQUISITION,
           metricKey: 'conversionRate',
           ...options
         }
@@ -94,7 +94,7 @@ export function registerAppStoreMetrics(
         change: analytics.financial.proceeds.change,
         metadata: {
           domain: 'appStore',
-          category: MetricCategory.FINANCIAL as string,
+          category: MetricCategory.FINANCIAL,
           metricKey: 'proceeds',
           ...options
         }
@@ -112,7 +112,7 @@ export function registerAppStoreMetrics(
         change: analytics.technical.crashes.change,
         metadata: {
           domain: 'appStore',
-          category: MetricCategory.TECHNICAL as string,
+          category: MetricCategory.TECHNICAL,
           metricKey: 'crashes',
           ...options
         }
