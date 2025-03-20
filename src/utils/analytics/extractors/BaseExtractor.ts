@@ -15,6 +15,9 @@ export interface BaseExtractor<T> {
   /** Priority for this extractor (higher runs first) */
   priority: number;
   
+  /** Confidence level of this extractor (0-1) */
+  confidence?: number;
+  
   /** Optional validation function */
   validate?: (result: T) => boolean;
 }

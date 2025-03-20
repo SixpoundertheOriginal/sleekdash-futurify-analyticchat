@@ -16,44 +16,65 @@ export const calculateDerivedMetrics = (metrics: Partial<ProcessedAnalytics>): P
   // Ensure all required structures exist
   if (!result.acquisition) {
     result.acquisition = {
-      downloads: { value: 0 },
-      impressions: { value: 0 },
-      pageViews: { value: 0 },
-      conversionRate: { value: 0 },
-      funnelMetrics: {},
+      downloads: { value: 0, change: 0 },
+      impressions: { value: 0, change: 0 },
+      pageViews: { value: 0, change: 0 },
+      conversionRate: { value: 0, change: 0 },
+      funnelMetrics: {
+        impressionsToViews: 0,
+        viewsToDownloads: 0
+      },
       sources: {}
     };
   }
   
   if (!result.financial) {
     result.financial = {
-      proceeds: { value: 0 },
-      proceedsPerUser: { value: 0 },
-      derivedMetrics: {}
+      proceeds: { value: 0, change: 0 },
+      proceedsPerUser: { value: 0, change: 0 },
+      derivedMetrics: {
+        arpd: 0,
+        revenuePerImpression: 0,
+        monetizationEfficiency: 0,
+        payingUserPercentage: 0
+      }
     };
   }
   
   if (!result.engagement) {
     result.engagement = {
-      sessionsPerDevice: { value: 0 },
-      retention: { day1: { value: 0 }, day7: { value: 0 }, day28: { value: 0 } }
+      sessionsPerDevice: { value: 0, change: 0 },
+      retention: { 
+        day1: { value: 0, benchmark: 0 }, 
+        day7: { value: 0, benchmark: 0 }, 
+        day28: { value: 0, benchmark: 0 } 
+      }
     };
   }
   
   if (!result.technical) {
     result.technical = {
-      crashes: { value: 0 },
-      crashFreeUsers: { value: 0 }
+      crashes: { value: 0, change: 0 },
+      crashRate: { value: 0, percentile: "average" },
+      crashFreeUsers: { value: 0, change: 0 }
     };
   }
 
   // Ensure structures for derived metrics exist
   if (!result.acquisition.funnelMetrics) {
-    result.acquisition.funnelMetrics = {};
+    result.acquisition.funnelMetrics = {
+      impressionsToViews: 0,
+      viewsToDownloads: 0
+    };
   }
   
   if (!result.financial.derivedMetrics) {
-    result.financial.derivedMetrics = {};
+    result.financial.derivedMetrics = {
+      arpd: 0,
+      revenuePerImpression: 0,
+      monetizationEfficiency: 0,
+      payingUserPercentage: 0
+    };
   }
   
   // Now calculate derived metrics
@@ -90,7 +111,8 @@ export const calculateDerivedMetrics = (metrics: Partial<ProcessedAnalytics>): P
     
     if (estimatedActiveUsers > 0) {
       result.financial.proceedsPerUser = { 
-        value: result.financial.proceeds.value / estimatedActiveUsers 
+        value: result.financial.proceeds.value / estimatedActiveUsers,
+        change: 0 
       };
       console.log('Calculated proceeds per user:', result.financial.proceedsPerUser.value);
     }
@@ -106,8 +128,14 @@ export const calculateDerivedMetrics = (metrics: Partial<ProcessedAnalytics>): P
       const crashFreeSessions = Math.max(0, estimatedTotalSessions - result.technical.crashes.value);
       const crashFreePercentage = (crashFreeSessions / estimatedTotalSessions) * 100;
       
+      // Make sure crashFreeUsers exists in the technical object
+      if (!result.technical.crashFreeUsers) {
+        result.technical.crashFreeUsers = { value: 0, change: 0 };
+      }
+      
       result.technical.crashFreeUsers = { 
         value: crashFreePercentage,
+        change: 0,
         formatted: `${crashFreePercentage.toFixed(2)}%`
       };
       console.log('Calculated crash-free percentage:', result.technical.crashFreeUsers.value);
@@ -124,7 +152,7 @@ export const calculateDerivedMetrics = (metrics: Partial<ProcessedAnalytics>): P
     if (conversionRateFraction > 0) {
       result.acquisition.impressions = {
         value: result.acquisition.pageViews.value / conversionRateFraction,
-        derived: true
+        change: 0
       };
       console.log('Calculated missing impressions:', result.acquisition.impressions.value);
     }
@@ -139,7 +167,7 @@ export const calculateDerivedMetrics = (metrics: Partial<ProcessedAnalytics>): P
     const conversionRateFraction = result.acquisition.conversionRate.value / 100;
     result.acquisition.downloads = {
       value: result.acquisition.pageViews.value * conversionRateFraction,
-      derived: true
+      change: 0
     };
     console.log('Calculated missing downloads:', result.acquisition.downloads.value);
   }
@@ -154,7 +182,7 @@ export const calculateDerivedMetrics = (metrics: Partial<ProcessedAnalytics>): P
     if (conversionRateFraction > 0) {
       result.acquisition.pageViews = {
         value: result.acquisition.downloads.value / conversionRateFraction,
-        derived: true
+        change: 0
       };
       console.log('Calculated missing pageViews:', result.acquisition.pageViews.value);
     }
@@ -168,7 +196,7 @@ export const calculateDerivedMetrics = (metrics: Partial<ProcessedAnalytics>): P
     // Conversion Rate = (Downloads / Page Views) * 100
     result.acquisition.conversionRate = {
       value: (result.acquisition.downloads.value / result.acquisition.pageViews.value) * 100,
-      derived: true
+      change: 0
     };
     console.log('Calculated missing conversionRate:', result.acquisition.conversionRate.value);
   }

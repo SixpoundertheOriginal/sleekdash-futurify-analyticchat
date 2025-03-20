@@ -17,6 +17,9 @@ export interface ProcessedAnalytics {
       impressionsToViews: number;
       viewsToDownloads: number;
     };
+    sources?: {
+      [key: string]: any;
+    };
   };
   financial: {
     proceeds: MetricWithChange;
@@ -52,6 +55,9 @@ export interface ProcessedAnalytics {
       value: number;
       percentile: string;
     };
+    crashFreeUsers: MetricWithChange & {
+      formatted?: string;
+    };
   };
   geographical: {
     markets: Territory[];
@@ -66,6 +72,7 @@ export interface ProcessedAnalytics {
 export interface MetricWithChange {
   value: number;
   change: number;
+  formatted?: string;
 }
 
 export interface RetentionMetric {

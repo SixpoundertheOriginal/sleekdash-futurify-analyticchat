@@ -172,7 +172,7 @@ export class ExtractionPipeline<T> {
             executionTime: extractionTime,
             preprocessingTime,
             validationTime,
-            confidence: extractor.confidenceLevel || 0.8
+            confidence: extractor.confidence || 0.8
           }
         });
         
