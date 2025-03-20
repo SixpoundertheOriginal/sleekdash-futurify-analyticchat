@@ -19,6 +19,7 @@ export function registerAppStoreMetrics(
   const registry = MetricsRegistry.getInstance();
   const processor = new MetricsProcessor('appStore', metricExtractors);
   const standardizedMetrics: Record<string, MetricProcessorResult> = {};
+  const currentTimestamp = Date.now();
   
   // Process acquisition metrics
   if (analytics.acquisition) {
@@ -33,6 +34,7 @@ export function registerAppStoreMetrics(
           domain: 'appStore',
           category: MetricCategory.ACQUISITION,
           metricKey: 'downloads',
+          timestamp: currentTimestamp,
           ...options
         }
       };
@@ -48,6 +50,7 @@ export function registerAppStoreMetrics(
           domain: 'appStore',
           category: MetricCategory.ACQUISITION,
           metricKey: 'impressions',
+          timestamp: currentTimestamp,
           ...options
         }
       };
@@ -63,6 +66,7 @@ export function registerAppStoreMetrics(
           domain: 'appStore',
           category: MetricCategory.ACQUISITION,
           metricKey: 'pageViews',
+          timestamp: currentTimestamp,
           ...options
         }
       };
@@ -78,6 +82,7 @@ export function registerAppStoreMetrics(
           domain: 'appStore',
           category: MetricCategory.ACQUISITION,
           metricKey: 'conversionRate',
+          timestamp: currentTimestamp,
           ...options
         }
       };
@@ -96,6 +101,7 @@ export function registerAppStoreMetrics(
           domain: 'appStore',
           category: MetricCategory.FINANCIAL,
           metricKey: 'proceeds',
+          timestamp: currentTimestamp,
           ...options
         }
       };
@@ -114,6 +120,7 @@ export function registerAppStoreMetrics(
           domain: 'appStore',
           category: MetricCategory.TECHNICAL,
           metricKey: 'crashes',
+          timestamp: currentTimestamp,
           ...options
         }
       };
