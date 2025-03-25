@@ -2,7 +2,7 @@
 import { StateCreator } from 'zustand';
 import { ProcessedAnalytics } from '@/utils/analytics/types';
 import { DateRange } from '@/components/chat/DateRangePicker';
-import { createDefaultProcessedAnalytics } from '@/utils/analytics/processAnalysis';
+import { createDefaultProcessedAnalytics } from '@/hooks/app-store/appStoreAnalyticsUtils';
 
 export interface AnalyticsSlice {
   // State
