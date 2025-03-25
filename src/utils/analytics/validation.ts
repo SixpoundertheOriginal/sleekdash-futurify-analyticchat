@@ -1,75 +1,53 @@
 
-export const validateAnalysisText = (analysisText: string): boolean => {
-  if (!analysisText) {
-    console.log('Analysis text is empty');
-    throw new Error('Analysis text is empty');
-  }
-  
-  console.log('Validating analysis text:', analysisText);
-  
-  // Highly flexible validation to account for different AI output formats
-  // Check for indicators that this is a performance report using multiple patterns
-  const performanceIndicators = [
-    // Downloads indicators
-    /total downloads:?\s*[\d,.k]+/i,
-    /downloads:?\s*[\d,.k]+/i,
-    /\b[\d,.k]+ downloads\b/i,
-    
-    // Revenue/proceeds indicators
-    /total proceeds:?\s*\$?[\d,.k]+/i,
-    /proceeds:?\s*\$?[\d,.k]+/i,
-    /revenue:?\s*\$?[\d,.k]+/i,
-    
-    // Report type indicators
-    /performance (report|analysis)/i,
-    /monthly (report|analysis)/i,
-    /key metrics/i,
-    /user acquisition/i,
-    /financial performance/i
-  ];
-  
-  // Check if at least 2 performance indicators are found to confirm it's a performance report
-  const matchCount = performanceIndicators.filter(pattern => 
-    pattern.test(analysisText)
-  ).length;
-  
-  if (matchCount < 2) {
-    console.log('Not a performance report - insufficient performance indicators found');
-    throw new Error('Not a performance report - missing key metrics');
-  }
-
-  return true;
-};
+import { ProcessedAnalytics } from "./types";
 
 /**
- * Checks if the processed analytics data has valid metrics for visualization
- * @param data The processed analytics data to validate
- * @returns Boolean indicating if the data has sufficient valid metrics
+ * Validates if the analytics data has the minimal metrics required for visualization
  */
-export const hasValidMetrics = (data: any): boolean => {
-  if (!data) {
-    console.log('No data to validate metrics');
-    return false;
-  }
+export function hasValidMetrics(data: ProcessedAnalytics | null): boolean {
+  if (!data) return false;
   
-  // Check for essential metrics needed for visualization
-  const requiredMetrics = [
-    'impressions',
-    'pageViews',
-    'downloads',
-    'conversionRate'
+  // Check if we have at least one of these key metrics
+  const hasDownloads = data.acquisition?.downloads?.value > 0;
+  const hasProceeds = data.financial?.proceeds?.value > 0;
+  const hasSessions = data.engagement?.sessionsPerDevice?.value > 0;
+  
+  return hasDownloads || hasProceeds || hasSessions;
+}
+
+/**
+ * Deep comparison utility for verifying state equivalence during migration
+ */
+export function compareAnalyticsState(contextState: any, zustandState: any): {
+  equivalent: boolean;
+  differences: Array<{path: string, contextValue: any, zustandValue: any}>
+} {
+  const differences: Array<{path: string, contextValue: any, zustandValue: any}> = [];
+  
+  // Only compare specific fields we care about for migration
+  const fieldsToCompare = [
+    'processedAnalytics',
+    'dateRange',
+    'activeTab',
+    'isProcessing',
+    'isAnalyzing',
+    'processingError',
+    'extractedData',
+    'analysisResult',
   ];
   
-  // Count how many required metrics are present and have valid values
-  const validMetricsCount = requiredMetrics.filter(metric => {
-    const value = data.metrics?.[metric];
-    return value !== undefined && value !== null && !isNaN(Number(value));
-  }).length;
+  let equivalent = true;
   
-  // We consider the data valid if it has at least 60% of required metrics
-  const validThreshold = Math.ceil(requiredMetrics.length * 0.6);
-  const isValid = validMetricsCount >= validThreshold;
+  fieldsToCompare.forEach(field => {
+    if (JSON.stringify(contextState[field]) !== JSON.stringify(zustandState[field])) {
+      equivalent = false;
+      differences.push({
+        path: field,
+        contextValue: contextState[field],
+        zustandValue: zustandState[field]
+      });
+    }
+  });
   
-  console.log(`Metrics validation: ${validMetricsCount}/${requiredMetrics.length} valid metrics, threshold: ${validThreshold}`);
-  return isValid;
-};
+  return { equivalent, differences };
+}

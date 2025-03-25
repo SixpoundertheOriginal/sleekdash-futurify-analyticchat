@@ -1,9 +1,8 @@
 
 import { StateCreator } from 'zustand';
 import { ProcessedAnalytics } from '@/utils/analytics/types';
-import { createDefaultProcessedAnalytics } from '@/hooks/app-store/appStoreAnalyticsUtils';
-import { registerAppStoreMetrics } from '@/utils/metrics/adapters/appStoreAdapter';
 import { DateRange } from '@/components/chat/DateRangePicker';
+import { createDefaultProcessedAnalytics } from '@/utils/analytics/processAnalysis';
 
 export interface AnalyticsSlice {
   // State
@@ -35,10 +34,19 @@ export const createAnalyticsSlice: StateCreator<
   directlyExtractedMetrics: null,
   dateRange: null,
   
-  // Derived state (getters)
-  hasData: () => !!get().processedAnalytics || !!get().directlyExtractedMetrics,
-  hasAnalysisData: () => !!get().processedAnalytics,
-  getEffectiveAnalytics: () => get().processedAnalytics || null,
+  // Derived state
+  hasData: () => {
+    return !!get().processedAnalytics;
+  },
+  
+  hasAnalysisData: () => {
+    return !!get().processedAnalytics?.summary?.executiveSummary;
+  },
+  
+  getEffectiveAnalytics: () => {
+    return get().processedAnalytics;
+  },
+  
   getFormattedDateRange: () => {
     const { dateRange } = get();
     if (!dateRange || !dateRange.from || !dateRange.to) {
@@ -48,40 +56,11 @@ export const createAnalyticsSlice: StateCreator<
   },
   
   // Actions
-  setProcessedAnalytics: (analytics) => {
-    set({ processedAnalytics: analytics });
-    
-    // Side effect: register metrics for tracking
-    if (analytics) {
-      registerAppStoreMetrics(analytics, {
-        source: 'store-update',
-        confidence: 0.9
-      });
-    }
-  },
-  
-  setDirectlyExtractedMetrics: (metrics) => {
-    set({ directlyExtractedMetrics: metrics });
-    
-    // If we have metrics and processedAnalytics is null, create a merged analytics object
-    if (metrics && !get().processedAnalytics) {
-      const mergedAnalytics = {
-        ...createDefaultProcessedAnalytics(),
-        ...metrics
-      };
-      
-      get().setProcessedAnalytics(mergedAnalytics);
-    }
-  },
-  
-  setDateRange: (dateRange) => {
-    set({ dateRange });
-  },
-  
-  resetAnalytics: () => {
-    set({
-      processedAnalytics: null,
-      directlyExtractedMetrics: null
-    });
-  }
+  setProcessedAnalytics: (analytics) => set({ processedAnalytics: analytics }),
+  setDirectlyExtractedMetrics: (metrics) => set({ directlyExtractedMetrics: metrics }),
+  setDateRange: (dateRange) => set({ dateRange }),
+  resetAnalytics: () => set({ 
+    processedAnalytics: null,
+    directlyExtractedMetrics: null
+  })
 });
