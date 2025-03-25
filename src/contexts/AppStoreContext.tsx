@@ -4,7 +4,7 @@ import { ProcessedAnalytics } from "@/utils/analytics/types";
 import { DateRange } from "@/components/chat/DateRangePicker";
 import { useThread } from "./thread/ThreadContext";
 import { useMetrics } from "@/hooks/useMetrics";
-import { createDefaultProcessedAnalytics, AnalyticsState, createInitialAnalyticsState } from "@/hooks/app-store/appStoreAnalyticsUtils";
+import { createDefaultProcessedAnalytics } from "@/hooks/app-store/appStoreAnalyticsUtils";
 import { registerAppStoreMetrics } from '@/utils/metrics/adapters/appStoreAdapter';
 
 // Define action types

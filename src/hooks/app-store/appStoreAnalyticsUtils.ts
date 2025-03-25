@@ -2,6 +2,35 @@
 import { ProcessedAnalytics } from '@/utils/analytics/types';
 
 /**
+ * Analytics state interface
+ */
+export interface AnalyticsState {
+  processedAnalytics: ProcessedAnalytics | null;
+  directlyExtractedMetrics: Partial<ProcessedAnalytics> | null;
+  dateRange: {
+    from: Date | null;
+    to: Date | null;
+  } | null;
+  isProcessing: boolean;
+  isAnalyzing: boolean;
+  processingError: string | null;
+}
+
+/**
+ * Creates a default initial state for analytics
+ */
+export function createInitialAnalyticsState(): AnalyticsState {
+  return {
+    processedAnalytics: null,
+    directlyExtractedMetrics: null,
+    dateRange: null,
+    isProcessing: false,
+    isAnalyzing: false,
+    processingError: null
+  };
+}
+
+/**
  * Creates a default ProcessedAnalytics object with empty/zero values
  * Useful for initializing state or providing fallbacks
  */

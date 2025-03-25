@@ -1,7 +1,7 @@
-
 import { extractorService } from './extractors/ExtractorService';
 import { ProcessedAnalytics } from './types';
 import { isAppStoreFormat } from './offline/appStoreFormatDetector';
+import { createDefaultProcessedAnalytics } from '@/hooks/app-store/appStoreAnalyticsUtils';
 
 /**
  * Service for processing various file formats
@@ -32,8 +32,13 @@ export class FileProcessingService {
       return '';
     }
     
+    // Ensure we have a complete ProcessedAnalytics object by merging with defaults
+    const completeData = result.data 
+      ? { ...createDefaultProcessedAnalytics(), ...result.data }
+      : null;
+    
     // Convert the extracted data to CSV format
-    return this.convertToCsv(result.data);
+    return this.convertToCsv(completeData);
   }
   
   /**
