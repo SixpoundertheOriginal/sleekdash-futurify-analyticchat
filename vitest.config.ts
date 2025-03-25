@@ -9,10 +9,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    // Add React 18 specific testing configurations
-    alias: {
-      '@testing-library/react-hooks': '@testing-library/react',
-    }
+    // We don't need the alias as all imports have been updated
   },
   resolve: {
     alias: {
