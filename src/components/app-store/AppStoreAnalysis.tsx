@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
 import { useAppStore } from "@/contexts/AppStoreContext";
+import { AppStoreContextBridge } from "./AppStoreContextBridge";
 
 interface AppStoreAnalysisProps {
   initialData?: ProcessedAnalytics;
@@ -18,7 +19,10 @@ export function AppStoreAnalysis({ initialData }: AppStoreAnalysisProps) {
       fallback={<AppAnalysisErrorFallback />}
     >
       <AppStoreProvider initialData={initialData}>
-        <AppStoreAnalysisContent />
+        {/* Bridge to sync context with Zustand store */}
+        <AppStoreContextBridge>
+          <AppStoreAnalysisContent />
+        </AppStoreContextBridge>
       </AppStoreProvider>
     </ErrorBoundary>
   );
