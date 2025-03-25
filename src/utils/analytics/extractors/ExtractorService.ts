@@ -1,232 +1,283 @@
 
-import { ProcessedAnalytics } from "../types";
-import { AppStoreMetricsExtractor } from "./MetricsExtractor";
-import { hasValidMetrics } from "../validation";
+import { AppStoreExtractor } from './AppStoreExtractor';
+import { ProcessedAnalytics } from '../types';
 
 /**
- * Result of app store data processing
+ * Extraction result interface
  */
-interface AppStoreProcessingResult {
+export interface ExtractionResult<T> {
   success: boolean;
-  data: Partial<ProcessedAnalytics> | null;
-  warnings: string[];
-  metadata?: {
-    completeness: number;
-    extractionTime: number;
-    extractorUsed: string;
-    overallConfidence: number;
-  };
+  data: T | null;
   error?: string;
+  metadata?: {
+    confidence: number;
+    extractedFields: string[];
+    missingFields: string[];
+    warnings: string[];
+  };
 }
 
 /**
- * Service to coordinate extraction from multiple sources
+ * Service that orchestrates different extractors
  */
-export class ExtractorService {
-  private metricExtractor: AppStoreMetricsExtractor;
-  
-  constructor() {
-    this.metricExtractor = new AppStoreMetricsExtractor();
-  }
+class ExtractorService {
+  private extractors = [
+    new AppStoreExtractor()
+  ];
   
   /**
-   * Process App Store data into a structured format
+   * Process App Store data using available extractors
+   * @param text Raw text input
+   * @returns Extraction result with processed data or error
    */
-  processAppStoreData(inputText: string, options = {}): AppStoreProcessingResult {
-    try {
-      if (!inputText) {
-        return {
-          success: false,
-          data: null,
-          warnings: ['Empty input provided'],
-          error: 'No data to process'
-        };
-      }
-      
-      console.log(`[ExtractorService] Processing App Store data, length: ${inputText.length}`);
-      
-      // Extract metrics using the App Store extractor
-      const extractionResult = this.metricExtractor.extract(inputText, {
-        allowPartialExtraction: true,
-        calculateDerivedMetrics: true,
-        multipleOccurrenceStrategy: 'first'
-      });
-      
-      // When we have extracted metrics, convert to our standard format
-      if (extractionResult.success && extractionResult.metrics) {
-        const processedData = this.convertToProcessedAnalytics(extractionResult.metrics);
-        
-        // Validate if we have enough metrics for visualization
-        if (hasValidMetrics(processedData)) {
-          return {
-            success: true,
-            data: processedData,
-            warnings: extractionResult.warnings,
-            metadata: {
-              completeness: extractionResult.metadata.completeness,
-              extractionTime: extractionResult.metadata.extractionTime,
-              extractorUsed: 'AppStoreMetricsExtractor',
-              overallConfidence: extractionResult.metadata.overallConfidence
-            }
-          };
-        } else {
-          return {
-            success: false,
-            data: processedData, // Still return the data, even if incomplete
-            warnings: [...extractionResult.warnings, 'Insufficient metrics for visualization'],
-            metadata: {
-              completeness: extractionResult.metadata.completeness,
-              extractionTime: extractionResult.metadata.extractionTime,
-              extractorUsed: 'AppStoreMetricsExtractor', 
-              overallConfidence: extractionResult.metadata.overallConfidence
-            },
-            error: 'Extracted data does not contain minimum required metrics'
-          };
-        }
-      }
-      
+  public processAppStoreData(text: string): ExtractionResult<Partial<ProcessedAnalytics>> {
+    if (!text || typeof text !== 'string') {
       return {
         success: false,
         data: null,
-        warnings: extractionResult.warnings,
-        error: 'Failed to extract sufficient metrics'
+        error: 'Invalid input: not a string or empty',
+        metadata: {
+          confidence: 0,
+          extractedFields: [],
+          missingFields: ['all'],
+          warnings: ['Invalid input provided']
+        }
+      };
+    }
+    
+    console.log('[ExtractorService] Processing App Store data, length:', text.length);
+    
+    try {
+      // Find the most appropriate extractor by confidence
+      let bestResult: ExtractionResult<Partial<ProcessedAnalytics>> | null = null;
+      let highestConfidence = -1;
+      
+      for (const extractor of this.extractors) {
+        try {
+          console.log(`[ExtractorService] Trying extractor: ${extractor.name}`);
+          
+          const extractionData = extractor.extract(text);
+          if (!extractionData) {
+            console.log(`[ExtractorService] No data extracted by ${extractor.name}`);
+            continue;
+          }
+          
+          // Calculate confidence and completeness
+          const confidence = this.calculateConfidence(extractionData);
+          console.log(`[ExtractorService] Extraction confidence: ${confidence}%`);
+          
+          if (confidence > highestConfidence) {
+            const extractedFields = this.getExtractedFieldsList(extractionData);
+            const missingFields = this.getMissingFieldsList(extractionData);
+            
+            // Create extraction result
+            bestResult = {
+              success: true,
+              data: extractionData,
+              metadata: {
+                confidence,
+                extractedFields,
+                missingFields,
+                warnings: missingFields.length > 0 ? 
+                  [`Missing ${missingFields.length} fields: ${missingFields.slice(0, 3).join(', ')}${missingFields.length > 3 ? '...' : ''}`] : 
+                  []
+              }
+            };
+            
+            highestConfidence = confidence;
+          }
+        } catch (error) {
+          console.error(`[ExtractorService] Error with extractor ${extractor.name}:`, error);
+        }
+      }
+      
+      if (bestResult) {
+        return bestResult;
+      }
+      
+      // No successful extraction
+      return {
+        success: false,
+        data: null,
+        error: 'No extractors were able to process the input',
+        metadata: {
+          confidence: 0,
+          extractedFields: [],
+          missingFields: ['all'],
+          warnings: ['Could not extract any data from the input']
+        }
       };
     } catch (error) {
-      console.error('[ExtractorService] Error processing data:', error);
+      console.error('[ExtractorService] Error processing App Store data:', error);
+      
       return {
         success: false,
         data: null,
-        warnings: ['Unexpected error during extraction'],
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error during extraction',
+        metadata: {
+          confidence: 0,
+          extractedFields: [],
+          missingFields: ['all'],
+          warnings: ['Exception during extraction process']
+        }
       };
     }
   }
   
   /**
-   * Convert extracted metrics to our standard analytics format
+   * Calculate extraction confidence based on data completeness
    */
-  private convertToProcessedAnalytics(metrics: any): ProcessedAnalytics {
-    // Create the base structure
-    const result: ProcessedAnalytics = {
-      summary: {
-        title: "App Store Analytics",
-        dateRange: metrics.dateRange || "Unknown date range",
-        executiveSummary: "Metrics extracted directly from App Store data."
-      },
-      acquisition: {
-        impressions: { 
-          value: metrics.impressions?.value || 0,
-          change: metrics.impressions?.change || 0 
-        },
-        pageViews: { 
-          value: metrics.pageViews?.value || 0,
-          change: metrics.pageViews?.change || 0 
-        },
-        conversionRate: { 
-          value: metrics.conversionRate?.value || 0,
-          change: metrics.conversionRate?.change || 0 
-        },
-        downloads: { 
-          value: metrics.downloads?.value || 0,
-          change: metrics.downloads?.change || 0 
-        },
-        funnelMetrics: {
-          impressionsToViews: 0,
-          viewsToDownloads: 0
-        }
-      },
-      financial: {
-        proceeds: { 
-          value: metrics.proceeds?.value || 0,
-          change: metrics.proceeds?.change || 0 
-        },
-        proceedsPerUser: { 
-          value: metrics.proceedsPerUser?.value || 0,
-          change: metrics.proceedsPerUser?.change || 0 
-        },
-        derivedMetrics: {
-          arpd: 0,
-          revenuePerImpression: 0,
-          monetizationEfficiency: 0,
-          payingUserPercentage: 0
-        }
-      },
-      engagement: {
-        sessionsPerDevice: { 
-          value: metrics.sessionsPerDevice?.value || 0,
-          change: metrics.sessionsPerDevice?.change || 0 
-        },
-        retention: {
-          day1: { value: 0, benchmark: 0 },
-          day7: { value: 0, benchmark: 0 }
-        }
-      },
-      technical: {
-        crashes: { 
-          value: metrics.crashes?.value || 0,
-          change: metrics.crashes?.change || 0 
-        },
-        crashRate: { value: 0, percentile: "" },
-        crashFreeUsers: { value: 0, change: 0 }
-      },
-      geographical: {
-        markets: [],
-        devices: [],
-        sources: []
-      }
+  private calculateConfidence(data: Partial<ProcessedAnalytics>): number {
+    const requiredFields = [
+      'acquisition.downloads.value',
+      'acquisition.impressions.value',
+      'acquisition.conversionRate.value',
+      'financial.proceeds.value'
+    ];
+    
+    const weightedFields = {
+      // Acquisition metrics (40% weight)
+      'acquisition.downloads.value': 15,
+      'acquisition.impressions.value': 10,
+      'acquisition.pageViews.value': 5,
+      'acquisition.conversionRate.value': 10,
+      
+      // Financial metrics (30% weight)
+      'financial.proceeds.value': 20,
+      'financial.proceedsPerUser.value': 10,
+      
+      // Engagement metrics (15% weight)
+      'engagement.sessionsPerDevice.value': 5,
+      'engagement.retention.day1.value': 5,
+      'engagement.retention.day7.value': 5,
+      
+      // Technical metrics (15% weight)
+      'technical.crashes.value': 10,
+      'technical.crashRate.value': 5
     };
     
-    // Calculate derived metrics if we have the necessary data
+    let totalWeight = 0;
+    let filledWeight = 0;
     
-    // Funnel metrics
-    if (result.acquisition.impressions.value > 0 && result.acquisition.pageViews.value > 0) {
-      result.acquisition.funnelMetrics.impressionsToViews = 
-        (result.acquisition.pageViews.value / result.acquisition.impressions.value) * 100;
-    }
-    
-    if (result.acquisition.pageViews.value > 0 && result.acquisition.downloads.value > 0) {
-      result.acquisition.funnelMetrics.viewsToDownloads = 
-        (result.acquisition.downloads.value / result.acquisition.pageViews.value) * 100;
-    }
-    
-    // Financial derived metrics
-    if (result.financial.proceeds.value > 0 && result.acquisition.downloads.value > 0) {
-      result.financial.derivedMetrics.arpd = 
-        result.financial.proceeds.value / result.acquisition.downloads.value;
-    }
-    
-    if (result.financial.proceeds.value > 0 && result.acquisition.impressions.value > 0) {
-      result.financial.derivedMetrics.revenuePerImpression = 
-        result.financial.proceeds.value / result.acquisition.impressions.value;
-    }
-    
-    // Technical derived metrics
-    if (result.technical.crashes.value > 0 && result.acquisition.downloads.value > 0) {
-      // Estimate crash rate per download (a rough proxy for active users)
-      result.technical.crashRate.value = 
-        (result.technical.crashes.value / result.acquisition.downloads.value) * 100;
+    // Check presence of each field
+    for (const [field, weight] of Object.entries(weightedFields)) {
+      totalWeight += weight;
       
-      // Set percentile based on crash rate
-      if (result.technical.crashRate.value < 0.1) {
-        result.technical.crashRate.percentile = "Top 10%";
-      } else if (result.technical.crashRate.value < 0.5) {
-        result.technical.crashRate.percentile = "Top 25%";
-      } else if (result.technical.crashRate.value < 1) {
-        result.technical.crashRate.percentile = "Average";
-      } else {
-        result.technical.crashRate.percentile = "Below Average";
+      const pathParts = field.split('.');
+      let currentObj: any = data;
+      
+      // Navigate the object path
+      let pathExists = true;
+      for (const part of pathParts) {
+        if (!currentObj || !currentObj[part]) {
+          pathExists = false;
+          break;
+        }
+        currentObj = currentObj[part];
       }
       
-      // Estimate crash-free users percentage (simplified)
-      result.technical.crashFreeUsers.value = 100 - Math.min(result.technical.crashRate.value * 10, 100);
-    } else {
-      // If no crashes reported, assume high crash-free rate
-      result.technical.crashFreeUsers.value = 99.5;
+      // If path exists and value is not zero, add to filled weight
+      if (pathExists && currentObj !== 0) {
+        filledWeight += weight;
+      }
     }
     
-    return result;
+    // Calculate confidence percentage
+    const confidence = totalWeight > 0 ? Math.round((filledWeight / totalWeight) * 100) : 0;
+    
+    // Penalize if any required fields are missing
+    for (const requiredField of requiredFields) {
+      const pathParts = requiredField.split('.');
+      let currentObj: any = data;
+      
+      // Navigate the object path
+      let pathExists = true;
+      for (const part of pathParts) {
+        if (!currentObj || !currentObj[part]) {
+          pathExists = false;
+          break;
+        }
+        currentObj = currentObj[part];
+      }
+      
+      // Apply penalty for missing required field
+      if (!pathExists || currentObj === 0) {
+        return Math.max(confidence - 20, 0); // 20% penalty per missing required field
+      }
+    }
+    
+    return confidence;
+  }
+  
+  /**
+   * Get list of successfully extracted fields
+   */
+  private getExtractedFieldsList(data: Partial<ProcessedAnalytics>): string[] {
+    const extractedFields: string[] = [];
+    
+    // Check acquisition metrics
+    if (data.acquisition) {
+      if (data.acquisition.impressions?.value) extractedFields.push('impressions');
+      if (data.acquisition.pageViews?.value) extractedFields.push('pageViews');
+      if (data.acquisition.conversionRate?.value) extractedFields.push('conversionRate');
+      if (data.acquisition.downloads?.value) extractedFields.push('downloads');
+    }
+    
+    // Check financial metrics
+    if (data.financial) {
+      if (data.financial.proceeds?.value) extractedFields.push('proceeds');
+      if (data.financial.proceedsPerUser?.value) extractedFields.push('proceedsPerUser');
+    }
+    
+    // Check engagement metrics
+    if (data.engagement) {
+      if (data.engagement.sessionsPerDevice?.value) extractedFields.push('sessionsPerDevice');
+      if (data.engagement.retention?.day1?.value) extractedFields.push('retention.day1');
+      if (data.engagement.retention?.day7?.value) extractedFields.push('retention.day7');
+      if (data.engagement.retention?.day14?.value) extractedFields.push('retention.day14');
+      if (data.engagement.retention?.day28?.value) extractedFields.push('retention.day28');
+    }
+    
+    // Check technical metrics
+    if (data.technical) {
+      if (data.technical.crashes?.value) extractedFields.push('crashes');
+      if (data.technical.crashRate?.value) extractedFields.push('crashRate');
+    }
+    
+    // Check geographical metrics
+    if (data.geographical) {
+      if (data.geographical.markets?.length) extractedFields.push('markets');
+      if (data.geographical.devices?.length) extractedFields.push('devices');
+      if (data.geographical.sources?.length) extractedFields.push('sources');
+    }
+    
+    return extractedFields;
+  }
+  
+  /**
+   * Get list of missing fields
+   */
+  private getMissingFieldsList(data: Partial<ProcessedAnalytics>): string[] {
+    const missingFields: string[] = [];
+    const allPossibleFields = [
+      'impressions', 'pageViews', 'conversionRate', 'downloads',
+      'proceeds', 'proceedsPerUser',
+      'sessionsPerDevice', 'retention.day1', 'retention.day7',
+      'crashes', 'crashRate',
+      'markets', 'devices', 'sources'
+    ];
+    
+    const extractedFields = this.getExtractedFieldsList(data);
+    
+    for (const field of allPossibleFields) {
+      if (!extractedFields.includes(field)) {
+        missingFields.push(field);
+      }
+    }
+    
+    return missingFields;
   }
 }
 
-// Create a singleton instance
+// Export singleton instance
 export const extractorService = new ExtractorService();

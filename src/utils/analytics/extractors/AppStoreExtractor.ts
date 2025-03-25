@@ -1,7 +1,7 @@
 
-import { BaseExtractor, ExtractionResult } from './BaseExtractor';
-import { normalizeValue } from '../offline/normalization';
-import { ProcessedAnalytics } from '../types';
+import { BaseExtractor } from './BaseExtractor';
+import { normalizeValue } from '../metricTypes';
+import { ProcessedAnalytics, MarketBreakdown, DeviceBreakdown, SourceBreakdown } from '../types';
 
 /**
  * App Store metrics extractor
@@ -15,7 +15,7 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
   // Store patterns for different metrics
   private patterns = {
     impressions: [
-      // App Store Connect format with question mark on separate line
+      // App Store Connect format with question mark
       /Impressions\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
       /Impressions\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i,
       // Standard patterns
@@ -25,7 +25,7 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       /([0-9,.KMBkmb]+)\s*impressions/i
     ],
     pageViews: [
-      // App Store Connect format with question mark on separate line
+      // App Store Connect format
       /(?:Product )?Page Views\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
       /(?:Product )?Page Views\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i,
       // Standard patterns
@@ -35,7 +35,7 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       /([0-9,.KMBkmb]+)\s*(?:product )?page views/i
     ],
     conversionRate: [
-      // App Store Connect format with question mark on separate line
+      // App Store Connect format
       /Conversion Rate\s*\n\s*\?\s*\n\s*([0-9,.]+)%\s*\n\s*([+-][0-9]+%)/i,
       /Conversion Rate\s*\n\s*\?\s*\n\s*([0-9,.]+)%/i,
       // Standard patterns
@@ -46,7 +46,7 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       /([0-9,.]+)%\s*conversion rate/i
     ],
     downloads: [
-      // App Store Connect format with question mark on separate line
+      // App Store Connect format
       /(?:Total )?Downloads\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
       /(?:Total )?Downloads\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i,
       // Standard patterns
@@ -56,7 +56,7 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       /([0-9,.KMBkmb]+)\s*(?:total )?downloads/i
     ],
     proceeds: [
-      // App Store Connect format with question mark on separate line
+      // App Store Connect format
       /Proceeds\s*\n\s*\?\s*\n\s*\$?([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
       /Proceeds\s*\n\s*\?\s*\n\s*\$?([0-9,.KMBkmb]+)/i,
       // Standard patterns
@@ -66,7 +66,7 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       /\$?([0-9,.KMBkmb]+)\s*proceeds/i
     ],
     proceedsPerUser: [
-      // App Store Connect format with question mark on separate line
+      // App Store Connect format
       /Proceeds per (?:Paying )?User\s*\n\s*\?\s*\n\s*\$?([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9,.]+%)/i,
       /Proceeds per (?:Paying )?User\s*\n\s*\?\s*\n\s*\$?([0-9,.KMBkmb]+)/i,
       // Standard patterns
@@ -75,16 +75,16 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       /\$?([0-9,.KMBkmb]+)\s*proceeds per (?:paying )?user/i
     ],
     sessionsPerDevice: [
-      // App Store Connect format with question mark on separate line
-      /Sessions per (?:Active )?Device\s*\n\s*\?\s*\n\s*([0-9,.]+)\s*\n\s*([+-][0-9,.]+%)/i,
-      /Sessions per (?:Active )?Device\s*\n\s*\?\s*\n\s*([0-9,.]+)/i,
+      // App Store Connect format
+      /(?:Daily Average )?Sessions per (?:Active )?Device\s*\n\s*\?\s*\n\s*([0-9,.]+)\s*\n\s*([+-][0-9,.]+%)/i,
+      /(?:Daily Average )?Sessions per (?:Active )?Device\s*\n\s*\?\s*\n\s*([0-9,.]+)/i,
       // Standard patterns
-      /Sessions per (?:Active )?Device:?\s*\??\s*([0-9,.]+)\s*([+-][0-9,.]+%)/i,
-      /Sessions per (?:Active )?Device:?\s*\??\s*([0-9,.]+)/i,
-      /([0-9,.]+)\s*sessions per (?:active )?device/i
+      /(?:Daily Average )?Sessions per (?:Active )?Device:?\s*\??\s*([0-9,.]+)\s*([+-][0-9,.]+%)/i,
+      /(?:Daily Average )?Sessions per (?:Active )?Device:?\s*\??\s*([0-9,.]+)/i,
+      /([0-9,.]+)\s*(?:daily average )?sessions per (?:active )?device/i
     ],
     crashes: [
-      // App Store Connect format with question mark on separate line
+      // App Store Connect format
       /Crashes\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)\s*\n\s*([+-][0-9]+%)/i,
       /Crashes\s*\n\s*\?\s*\n\s*([0-9,.KMBkmb]+)/i,
       // Standard patterns
@@ -94,11 +94,46 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
       /Crashes\s*\n\s*([0-9,.KMBkmb]+)\s*([+-][0-9]+%)?/i,
       /([0-9,.KMBkmb]+)\s*crashes/i
     ],
+    retentionDay1: [
+      /Day 1 Retention:?\s*([0-9,.]+)%/i,
+      /Day 1:?\s*([0-9,.]+)%/i,
+      /Day 1 retention rate:?\s*([0-9,.]+)%/i
+    ],
+    retentionDay7: [
+      /Day 7 Retention:?\s*([0-9,.]+)%/i,
+      /Day 7:?\s*([0-9,.]+)%/i,
+      /Day 7 retention rate:?\s*([0-9,.]+)%/i
+    ],
+    retentionDay14: [
+      /Day 14 Retention:?\s*([0-9,.]+)%/i,
+      /Day 14:?\s*([0-9,.]+)%/i,
+      /Day 14 retention rate:?\s*([0-9,.]+)%/i
+    ],
+    retentionDay28: [
+      /Day 28 Retention:?\s*([0-9,.]+)%/i,
+      /Day 28:?\s*([0-9,.]+)%/i,
+      /Day 28 retention rate:?\s*([0-9,.]+)%/i
+    ],
     dateRange: [
       /([A-Za-z]+ \d{1,2}[-–]\w+ \d{1,2},? \d{4})/i,
       /Date Range:?\s*(.+?)(?:\n|$)/i,
       /([A-Za-z]+ \d{1,2} ?[-–] ?[A-Za-z]+ \d{1,2},? \d{4})/i,
       /([A-Za-z]+ \d{1,2} to [A-Za-z]+ \d{1,2},? \d{4})/i
+    ],
+    territorySection: [
+      /Total Downloads by Territory[\s\S]*?See All([\s\S]*?)(?=Total Downloads|$)/i,
+      /Downloads by Territory[\s\S]*?See All([\s\S]*?)(?=Downloads by|$)/i,
+      /Territory Breakdown[\s\S]*?See All([\s\S]*?)(?=Territory|$)/i
+    ],
+    deviceSection: [
+      /Total Downloads by Device[\s\S]*?See All([\s\S]*?)(?=Total Downloads|$)/i,
+      /Downloads by Device[\s\S]*?See All([\s\S]*?)(?=Downloads by|$)/i,
+      /Device Breakdown[\s\S]*?See All([\s\S]*?)(?=Device|$)/i
+    ],
+    sourceSection: [
+      /Total Downloads by Source[\s\S]*?See All([\s\S]*?)(?=Total Downloads|$)/i,
+      /Downloads by Source[\s\S]*?See All([\s\S]*?)(?=Downloads by|$)/i,
+      /Source Breakdown[\s\S]*?See All([\s\S]*?)(?=Source|$)/i
     ]
   };
   
@@ -164,14 +199,11 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
                                   .trim();
       
       // Extract key metrics
-      this.extractMetric(normalizedInput, 'impressions', result);
-      this.extractMetric(normalizedInput, 'pageViews', result);
-      this.extractMetric(normalizedInput, 'conversionRate', result);
-      this.extractMetric(normalizedInput, 'downloads', result);
-      this.extractMetric(normalizedInput, 'proceeds', result);
-      this.extractMetric(normalizedInput, 'proceedsPerUser', result);
-      this.extractMetric(normalizedInput, 'sessionsPerDevice', result);
-      this.extractMetric(normalizedInput, 'crashes', result);
+      this.extractAcquisitionMetrics(normalizedInput, result);
+      this.extractFinancialMetrics(normalizedInput, result);
+      this.extractEngagementMetrics(normalizedInput, result);
+      this.extractTechnicalMetrics(normalizedInput, result);
+      this.extractGeographicalMetrics(normalizedInput, result);
       
       // Extract date range
       for (const pattern of this.patterns.dateRange) {
@@ -182,146 +214,458 @@ export class AppStoreExtractor implements BaseExtractor<ProcessedAnalytics> {
         }
       }
       
-      // Calculate crash-free users
-      if (result.technical.crashes.value > 0) {
-        // Using a heuristic for active users (if we don't have the actual number)
-        const estimatedActiveUsers = 100000; // Default estimate
-        const crashFreePercentage = 100 - (result.technical.crashes.value / estimatedActiveUsers * 100);
-        result.technical.crashFreeUsers = { 
-          value: Math.min(Math.max(crashFreePercentage, 0), 100), // Ensure value is between 0-100%
-          change: 0 // We don't have change data for this derived metric
-        };
-      } else {
-        // If no crashes detected, assume 100% crash-free
-        result.technical.crashFreeUsers = { value: 100, change: 0 };
-      }
-      
       // Calculate derived metrics
-      if (result.acquisition.impressions.value > 0 && result.acquisition.pageViews.value > 0) {
-        result.acquisition.funnelMetrics.impressionsToViews = 
-          (result.acquisition.pageViews.value / result.acquisition.impressions.value) * 100;
-      }
+      this.calculateDerivedMetrics(result);
       
-      if (result.acquisition.pageViews.value > 0 && result.acquisition.downloads.value > 0) {
-        result.acquisition.funnelMetrics.viewsToDownloads = 
-          (result.acquisition.downloads.value / result.acquisition.pageViews.value) * 100;
-      }
-      
-      if (result.financial.proceeds.value > 0 && result.acquisition.downloads.value > 0) {
-        result.financial.derivedMetrics.arpd = 
-          result.financial.proceeds.value / result.acquisition.downloads.value;
-      }
-      
-      // Validate the extracted data
-      const isValid = this.validate(result);
-      if (!isValid) {
-        console.log('[AppStoreExtractor] Validation failed');
-        return null;
-      }
+      // Generate a basic executive summary based on the extracted metrics
+      result.summary.executiveSummary = this.generateExecutiveSummary(result);
       
       return result;
     } catch (error) {
-      console.error('[AppStoreExtractor] Error extracting metrics:', error);
+      console.error('[AppStoreExtractor] Error extracting App Store metrics:', error);
       return null;
     }
   }
   
   /**
-   * Extract a specific metric and update the result
+   * Extract acquisition metrics
    */
-  private extractMetric(input: string, metricName: string, result: ProcessedAnalytics): void {
-    const patterns = this.patterns[metricName as keyof typeof this.patterns];
-    if (!patterns) return;
+  private extractAcquisitionMetrics(text: string, result: ProcessedAnalytics): void {
+    // Extract impressions
+    const impressions = this.extractMetricWithChange(text, this.patterns.impressions);
+    if (impressions) {
+      result.acquisition.impressions = impressions;
+    }
     
-    for (const pattern of patterns) {
-      const match = input.match(pattern);
+    // Extract page views
+    const pageViews = this.extractMetricWithChange(text, this.patterns.pageViews);
+    if (pageViews) {
+      result.acquisition.pageViews = pageViews;
+    }
+    
+    // Extract conversion rate (percentage)
+    const conversionRate = this.extractMetricWithChange(text, this.patterns.conversionRate);
+    if (conversionRate) {
+      result.acquisition.conversionRate = conversionRate;
+    }
+    
+    // Extract downloads
+    const downloads = this.extractMetricWithChange(text, this.patterns.downloads);
+    if (downloads) {
+      result.acquisition.downloads = downloads;
+    }
+  }
+  
+  /**
+   * Extract financial metrics
+   */
+  private extractFinancialMetrics(text: string, result: ProcessedAnalytics): void {
+    // Extract proceeds
+    const proceeds = this.extractMetricWithChange(text, this.patterns.proceeds);
+    if (proceeds) {
+      result.financial.proceeds = proceeds;
+    }
+    
+    // Extract proceeds per user
+    const proceedsPerUser = this.extractMetricWithChange(text, this.patterns.proceedsPerUser);
+    if (proceedsPerUser) {
+      result.financial.proceedsPerUser = proceedsPerUser;
+    }
+  }
+  
+  /**
+   * Extract engagement metrics
+   */
+  private extractEngagementMetrics(text: string, result: ProcessedAnalytics): void {
+    // Extract sessions per device
+    const sessionsPerDevice = this.extractMetricWithChange(text, this.patterns.sessionsPerDevice);
+    if (sessionsPerDevice) {
+      result.engagement.sessionsPerDevice = sessionsPerDevice;
+    }
+    
+    // Extract retention rates
+    // Day 1 retention
+    const day1Retention = this.extractSingleMetric(text, this.patterns.retentionDay1);
+    if (day1Retention) {
+      result.engagement.retention.day1 = { value: day1Retention, benchmark: 0 };
+    }
+    
+    // Day 7 retention
+    const day7Retention = this.extractSingleMetric(text, this.patterns.retentionDay7);
+    if (day7Retention) {
+      result.engagement.retention.day7 = { value: day7Retention, benchmark: 0 };
+    }
+    
+    // Day 14 retention
+    const day14Retention = this.extractSingleMetric(text, this.patterns.retentionDay14);
+    if (day14Retention) {
+      result.engagement.retention.day14 = { value: day14Retention, benchmark: 0 };
+    }
+    
+    // Day 28 retention
+    const day28Retention = this.extractSingleMetric(text, this.patterns.retentionDay28);
+    if (day28Retention) {
+      result.engagement.retention.day28 = { value: day28Retention, benchmark: 0 };
+    }
+  }
+  
+  /**
+   * Extract technical metrics
+   */
+  private extractTechnicalMetrics(text: string, result: ProcessedAnalytics): void {
+    // Extract crashes
+    const crashes = this.extractMetricWithChange(text, this.patterns.crashes);
+    if (crashes) {
+      result.technical.crashes = crashes;
+      
+      // Estimate crash rate if we have downloads data
+      if (result.acquisition.downloads.value > 0) {
+        result.technical.crashRate = {
+          value: (crashes.value / result.acquisition.downloads.value) * 100,
+          percentile: ""
+        };
+      }
+      
+      // Estimate crash-free users (as a percentage)
+      // Using a heuristic if we don't have the actual number
+      const estimatedActiveUsers = result.acquisition.downloads.value || 100000;
+      const crashFreePercentage = 100 - (crashes.value / estimatedActiveUsers * 100);
+      result.technical.crashFreeUsers = {
+        value: Math.min(Math.max(crashFreePercentage, 0), 100),
+        change: 0
+      };
+    }
+  }
+  
+  /**
+   * Extract geographical metrics
+   */
+  private extractGeographicalMetrics(text: string, result: ProcessedAnalytics): void {
+    // Extract territory breakdown
+    const markets = this.extractTerritoryBreakdown(text);
+    if (markets.length > 0) {
+      result.geographical.markets = markets;
+    }
+    
+    // Extract device breakdown
+    const devices = this.extractDeviceBreakdown(text);
+    if (devices.length > 0) {
+      result.geographical.devices = devices;
+    }
+    
+    // Extract source breakdown
+    const sources = this.extractSourceBreakdown(text);
+    if (sources.length > 0) {
+      result.geographical.sources = sources;
+    }
+  }
+  
+  /**
+   * Extract market/territory breakdown
+   */
+  private extractTerritoryBreakdown(text: string): MarketBreakdown[] {
+    const territories: MarketBreakdown[] = [];
+    
+    // Try to find the territory section
+    let territoriesSection = null;
+    for (const pattern of this.patterns.territorySection) {
+      const match = text.match(pattern);
       if (match && match[1]) {
-        let value: number;
-        
-        // Handle K, M, B suffixes properly 
-        if (metricName === 'conversionRate') {
-          value = parseFloat(match[1]);
-        } else {
-          const rawValue = match[1];
-          value = this.parseValueWithSuffix(rawValue);
-        }
-        
-        // Extract change value from the second capture group if it exists
-        let change = 0;
-        if (match[2] && typeof match[2] === 'string') {
-          // Handle the change value that might be on a separate line
-          const changeMatch = match[2].match(/([+-]?\d+(?:\.\d+)?)%/);
-          if (changeMatch && changeMatch[1]) {
-            change = parseFloat(changeMatch[1]);
-          }
-        }
-        
-        // Update the appropriate section of the result
-        switch (metricName) {
-          case 'impressions':
-            result.acquisition.impressions = { value, change };
-            break;
-          case 'pageViews':
-            result.acquisition.pageViews = { value, change };
-            break;
-          case 'conversionRate':
-            result.acquisition.conversionRate = { value, change };
-            break;
-          case 'downloads':
-            result.acquisition.downloads = { value, change };
-            break;
-          case 'proceeds':
-            result.financial.proceeds = { value, change };
-            break;
-          case 'proceedsPerUser':
-            result.financial.proceedsPerUser = { value, change };
-            break;
-          case 'sessionsPerDevice':
-            result.engagement.sessionsPerDevice = { value, change };
-            break;
-          case 'crashes':
-            result.technical.crashes = { value, change };
-            break;
-        }
-        
-        console.log(`[AppStoreExtractor] Extracted ${metricName}: ${value} (change: ${change}%)`);
+        territoriesSection = match[1];
         break;
+      }
+    }
+    
+    if (!territoriesSection) return territories;
+    
+    // Process territory data
+    const territoryLines = territoriesSection.split('\n').filter(line => line.trim());
+    
+    for (const line of territoryLines) {
+      // Try different patterns
+      const patterns = [
+        /([A-Za-z\s]+)\s+([0-9,]+)\s+([0-9.]+%)?/,  // Country Downloads Percentage
+        /([A-Za-z\s]+)\s+([0-9.]+%)\s+([0-9,]+)/,   // Country Percentage Downloads
+        /([A-Za-z\s]+)\s+([0-9,]+)/                // Country Downloads
+      ];
+      
+      for (const pattern of patterns) {
+        const match = line.match(pattern);
+        if (match) {
+          // Handle different pattern matches
+          if (pattern.toString().includes('[0-9.]+%')) {
+            // Pattern with percentage
+            territories.push({
+              country: match[1].trim(),
+              downloads: parseInt(match[3].replace(/,/g, '')),
+              percentage: parseFloat(match[2].replace(/%/g, ''))
+            });
+          } else {
+            // Pattern without percentage
+            territories.push({
+              country: match[1].trim(),
+              downloads: parseInt(match[2].replace(/,/g, '')),
+              percentage: 0
+            });
+          }
+          break;
+        }
+      }
+    }
+    
+    return territories;
+  }
+  
+  /**
+   * Extract device breakdown
+   */
+  private extractDeviceBreakdown(text: string): DeviceBreakdown[] {
+    const devices: DeviceBreakdown[] = [];
+    
+    // Try to find the device section
+    let devicesSection = null;
+    for (const pattern of this.patterns.deviceSection) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        devicesSection = match[1];
+        break;
+      }
+    }
+    
+    if (!devicesSection) return devices;
+    
+    // Process device data
+    const deviceLines = devicesSection.split('\n').filter(line => line.trim());
+    
+    for (const line of deviceLines) {
+      // Try different patterns
+      const patterns = [
+        /([A-Za-z\s]+)\s+([0-9.]+%)\s+([0-9,]+)/,  // Device Percentage Downloads
+        /([A-Za-z\s]+)\s+([0-9,]+)\s+([0-9.]+%)?/, // Device Downloads Percentage
+        /([A-Za-z\s]+)\s+([0-9,]+)/                // Device Downloads
+      ];
+      
+      for (const pattern of patterns) {
+        const match = line.match(pattern);
+        if (match) {
+          // Handle different pattern matches
+          if (pattern.toString().includes('[0-9.]+%\\s+\\([0-9,]+\\)')) {
+            // Pattern with percentage then downloads
+            devices.push({
+              type: match[1].trim(),
+              count: parseInt(match[3].replace(/,/g, '')),
+              percentage: parseFloat(match[2].replace(/%/g, ''))
+            });
+          } else if (pattern.toString().includes('\\([0-9,]+\\)\\s+[0-9.]+%')) {
+            // Pattern with downloads then percentage
+            devices.push({
+              type: match[1].trim(),
+              count: parseInt(match[2].replace(/,/g, '')),
+              percentage: parseFloat(match[3].replace(/%/g, ''))
+            });
+          } else {
+            // Pattern without percentage
+            devices.push({
+              type: match[1].trim(),
+              count: parseInt(match[2].replace(/,/g, '')),
+              percentage: 0
+            });
+          }
+          break;
+        }
+      }
+    }
+    
+    return devices;
+  }
+  
+  /**
+   * Extract source breakdown
+   */
+  private extractSourceBreakdown(text: string): SourceBreakdown[] {
+    const sources: SourceBreakdown[] = [];
+    
+    // Try to find the source section
+    let sourcesSection = null;
+    for (const pattern of this.patterns.sourceSection) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        sourcesSection = match[1];
+        break;
+      }
+    }
+    
+    if (!sourcesSection) return sources;
+    
+    // Process source data
+    const sourceLines = sourcesSection.split('\n').filter(line => line.trim());
+    
+    for (const line of sourceLines) {
+      // Try different patterns
+      const patterns = [
+        /([A-Za-z\s]+)\s+([0-9.]+%)\s+([0-9,]+)/,  // Source Percentage Downloads
+        /([A-Za-z\s]+)\s+([0-9,]+)\s+([0-9.]+%)?/, // Source Downloads Percentage
+        /([A-Za-z\s]+)\s+([0-9,]+)/                // Source Downloads
+      ];
+      
+      for (const pattern of patterns) {
+        const match = line.match(pattern);
+        if (match) {
+          // Handle different pattern matches
+          if (pattern.toString().includes('[0-9.]+%\\s+\\([0-9,]+\\)')) {
+            // Pattern with percentage then downloads
+            sources.push({
+              source: match[1].trim(),
+              downloads: parseInt(match[3].replace(/,/g, '')),
+              percentage: parseFloat(match[2].replace(/%/g, ''))
+            });
+          } else if (pattern.toString().includes('\\([0-9,]+\\)\\s+[0-9.]+%')) {
+            // Pattern with downloads then percentage
+            sources.push({
+              source: match[1].trim(),
+              downloads: parseInt(match[2].replace(/,/g, '')),
+              percentage: parseFloat(match[3].replace(/%/g, ''))
+            });
+          } else {
+            // Pattern without percentage
+            sources.push({
+              source: match[1].trim(),
+              downloads: parseInt(match[2].replace(/,/g, '')),
+              percentage: 0
+            });
+          }
+          break;
+        }
+      }
+    }
+    
+    return sources;
+  }
+  
+  /**
+   * Calculate derived metrics
+   */
+  private calculateDerivedMetrics(result: ProcessedAnalytics): void {
+    // Calculate funnel metrics
+    if (result.acquisition.impressions.value > 0 && result.acquisition.pageViews.value > 0) {
+      result.acquisition.funnelMetrics.impressionsToViews = 
+        (result.acquisition.pageViews.value / result.acquisition.impressions.value) * 100;
+    }
+    
+    if (result.acquisition.pageViews.value > 0 && result.acquisition.downloads.value > 0) {
+      result.acquisition.funnelMetrics.viewsToDownloads = 
+        (result.acquisition.downloads.value / result.acquisition.pageViews.value) * 100;
+    }
+    
+    // Calculate financial derived metrics
+    if (result.financial.proceeds.value > 0 && result.acquisition.downloads.value > 0) {
+      result.financial.derivedMetrics.arpd = 
+        result.financial.proceeds.value / result.acquisition.downloads.value;
+    }
+    
+    if (result.financial.proceeds.value > 0 && result.acquisition.impressions.value > 0) {
+      result.financial.derivedMetrics.revenuePerImpression = 
+        result.financial.proceeds.value / result.acquisition.impressions.value;
+    }
+    
+    // We'll use a heuristic for the percentage of paying users if we don't have real data
+    // Typically only a small percentage of users pay
+    const estimatedPayingUsers = result.acquisition.downloads.value * 0.03; // 3% as a default
+    
+    if (estimatedPayingUsers > 0) {
+      result.financial.derivedMetrics.payingUserPercentage = 3; // Our default assumption
+      
+      if (result.financial.proceeds.value > 0) {
+        result.financial.derivedMetrics.monetizationEfficiency = 
+          result.financial.proceeds.value / estimatedPayingUsers;
       }
     }
   }
   
   /**
-   * Parse a value string that might have K, M, B suffixes
+   * Generate a basic executive summary based on metrics
    */
-  private parseValueWithSuffix(valueStr: string): number {
-    const cleanValue = valueStr.trim().replace(/,/g, '');
+  private generateExecutiveSummary(result: ProcessedAnalytics): string {
+    // Simple executive summary generation based on the most important metrics
+    const summaryParts = [];
     
-    // Check for suffixes
-    if (/\d+(\.\d+)?[Kk]$/.test(cleanValue)) {
-      return parseFloat(cleanValue.replace(/[Kk]$/, '')) * 1000;
-    } else if (/\d+(\.\d+)?[Mm]$/.test(cleanValue)) {
-      return parseFloat(cleanValue.replace(/[Mm]$/, '')) * 1000000;
-    } else if (/\d+(\.\d+)?[Bb]$/.test(cleanValue)) {
-      return parseFloat(cleanValue.replace(/[Bb]$/, '')) * 1000000000;
+    if (result.acquisition.downloads.value > 0) {
+      const trend = result.acquisition.downloads.change > 0 ? 'increased' : 'decreased';
+      summaryParts.push(`Downloads ${trend} by ${Math.abs(result.acquisition.downloads.change)}%.`);
     }
     
-    return parseFloat(cleanValue);
+    if (result.financial.proceeds.value > 0) {
+      const trend = result.financial.proceeds.change > 0 ? 'increased' : 'decreased';
+      summaryParts.push(`Revenue ${trend} by ${Math.abs(result.financial.proceeds.change)}%.`);
+    }
+    
+    if (result.technical.crashes.value > 0) {
+      const trend = result.technical.crashes.change > 0 ? 'increased' : 'decreased';
+      summaryParts.push(`Crashes ${trend} by ${Math.abs(result.technical.crashes.change)}%.`);
+    }
+    
+    if (summaryParts.length === 0) {
+      return "No significant metrics were detected in the data.";
+    }
+    
+    return summaryParts.join(' ');
   }
   
   /**
-   * Validate the extracted data
+   * Extract a metric with its change value
    */
-  validate(result: ProcessedAnalytics): boolean {
-    // Ensure we have at least some key metrics
-    const hasAcquisitionMetrics = 
-      result.acquisition.downloads.value > 0 || 
-      result.acquisition.impressions.value > 0;
-      
-    const hasFinancialMetrics = result.financial.proceeds.value > 0;
-    const hasTechnicalMetrics = result.technical.crashes.value > 0;
-    const hasEngagementMetrics = result.engagement.sessionsPerDevice.value > 0;
+  private extractMetricWithChange(text: string, patterns: RegExp[]): { value: number, change: number } | null {
+    // Try each pattern
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        // Convert value to number (handling K/M/B suffixes)
+        const value = normalizeValue(match[1]);
+        
+        // Extract change percentage if available
+        let change = 0;
+        if (match[2]) {
+          change = this.parsePercentageChange(match[2]);
+        }
+        
+        return { value, change };
+      }
+    }
     
-    // At least one category of metrics should have data
-    return hasAcquisitionMetrics || hasFinancialMetrics || hasTechnicalMetrics || hasEngagementMetrics;
+    return null;
+  }
+  
+  /**
+   * Extract a single metric value without change
+   */
+  private extractSingleMetric(text: string, patterns: RegExp[]): number | null {
+    // Try each pattern
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        // Convert value to number
+        return parseFloat(match[1]);
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Parse percentage change value
+   */
+  private parsePercentageChange(changeStr: string): number {
+    if (!changeStr) return 0;
+    
+    // Remove the % symbol and convert to number
+    const cleanChange = changeStr.replace(/[%\s]/g, '');
+    
+    if (cleanChange.startsWith('+')) {
+      return parseFloat(cleanChange.substring(1));
+    } else if (cleanChange.startsWith('-')) {
+      return parseFloat(cleanChange);
+    } else {
+      return parseFloat(cleanChange);
+    }
   }
 }

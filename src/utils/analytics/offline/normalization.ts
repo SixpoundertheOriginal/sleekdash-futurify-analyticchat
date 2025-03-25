@@ -1,64 +1,46 @@
 
 /**
- * Normalize metric values (handling K, M, B suffixes, etc.)
+ * Normalize a value with K/M/B suffix to a number
+ * @param value The value to normalize (e.g., "2.91M")
+ * @returns Normalized number value
  */
-export const normalizeValue = (value: string | number): number => {
-  if (typeof value === 'number') return value;
-  
+export function normalizeValue(value: string): number {
   if (!value) return 0;
   
-  try {
-    // Clean the value (remove commas, whitespace, etc.)
-    const cleanValue = value.toString().trim().replace(/,/g, '');
-    
-    // Handle suffixes (K, M, B)
-    if (/\d+(\.\d+)?[Kk]$/.test(cleanValue)) {
-      return parseFloat(cleanValue.replace(/[Kk]$/, '')) * 1000;
-    } else if (/\d+(\.\d+)?[Mm]$/.test(cleanValue)) {
-      return parseFloat(cleanValue.replace(/[Mm]$/, '')) * 1000000;
-    } else if (/\d+(\.\d+)?[Bb]$/.test(cleanValue)) {
-      return parseFloat(cleanValue.replace(/[Bb]$/, '')) * 1000000000;
-    }
-    
-    // Regular numeric value
-    return parseFloat(cleanValue);
-  } catch (error) {
-    console.error('Error normalizing value:', error, 'Value was:', value);
-    return 0;
+  // Remove commas
+  let normalized = value.replace(/,/g, '');
+  
+  // Handle K/M/B suffixes
+  if (/\d+(\.\d+)?[kK]$/i.test(normalized)) {
+    return parseFloat(normalized.replace(/[kK]$/i, '')) * 1000;
+  } else if (/\d+(\.\d+)?[mM]$/i.test(normalized)) {
+    return parseFloat(normalized.replace(/[mM]$/i, '')) * 1000000;
+  } else if (/\d+(\.\d+)?[bB]$/i.test(normalized)) {
+    return parseFloat(normalized.replace(/[bB]$/i, '')) * 1000000000;
   }
-};
+  
+  // Handle currency symbols
+  normalized = normalized.replace(/[$€£¥]/g, '');
+  
+  return parseFloat(normalized) || 0;
+}
 
 /**
- * Parse percent change values like "+15%" or "-3%"
+ * Format a percentage change value
+ * @param changeStr The percentage change string (e.g., "+30%")
+ * @returns Normalized percentage change value
  */
-export const normalizePercentChange = (change: string | number): number => {
-  if (typeof change === 'number') return change;
+export function normalizePercentageChange(changeStr: string): number {
+  if (!changeStr) return 0;
   
-  if (!change) return 0;
+  // Remove the % symbol and convert to number
+  const cleanChange = changeStr.replace(/[%\s]/g, '');
   
-  try {
-    // Clean the value
-    const cleanValue = change.toString().trim();
-    
-    // Extract the number from percentage strings like "+15%"
-    const percentMatch = cleanValue.match(/([+-]?\d+(?:\.\d+)?)%/);
-    if (percentMatch && percentMatch[1]) {
-      return parseFloat(percentMatch[1]);
-    }
-    
-    // Handle text values like "increased by 10%" or "decreased by 5%"
-    if (cleanValue.toLowerCase().includes('increased')) {
-      const numMatch = cleanValue.match(/(\d+(?:\.\d+)?)%/);
-      return numMatch ? parseFloat(numMatch[1]) : 0;
-    } else if (cleanValue.toLowerCase().includes('decreased')) {
-      const numMatch = cleanValue.match(/(\d+(?:\.\d+)?)%/);
-      return numMatch ? -parseFloat(numMatch[1]) : 0;
-    }
-    
-    // Default: try to parse as a number
-    return parseFloat(cleanValue);
-  } catch (error) {
-    console.error('Error normalizing percent change:', error, 'Value was:', change);
-    return 0;
+  if (cleanChange.startsWith('+')) {
+    return parseFloat(cleanChange.substring(1));
+  } else if (cleanChange.startsWith('-')) {
+    return parseFloat(cleanChange);
+  } else {
+    return parseFloat(cleanChange);
   }
-};
+}

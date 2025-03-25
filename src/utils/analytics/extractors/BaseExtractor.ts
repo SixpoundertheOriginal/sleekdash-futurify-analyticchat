@@ -1,69 +1,47 @@
 
 /**
- * Base interface for all data extractors
+ * Base extractor interface for consistent implementation
  */
 export interface BaseExtractor<T> {
-  /** Unique identifier for this extractor */
+  /**
+   * Unique identifier for the extractor
+   */
   id: string;
   
-  /** Human-readable name of this extractor */
+  /**
+   * Human-readable name for the extractor
+   */
   name: string;
   
-  /** Extracts data from the input */
-  extract: (input: string) => T | null;
-  
-  /** Priority for this extractor (higher runs first) */
+  /**
+   * Priority level (higher number = higher priority)
+   */
   priority: number;
   
-  /** Confidence level of this extractor (0-1) */
-  confidence?: number;
+  /**
+   * Base confidence level (0-1)
+   */
+  confidence: number;
   
-  /** Optional validation function */
-  validate?: (result: T) => boolean;
+  /**
+   * Extract data from text input
+   * @param input The raw text to extract from
+   * @returns Extracted data or null if extraction failed
+   */
+  extract(input: string): T | null;
 }
 
 /**
- * Base configuration for extractors
- */
-export interface ExtractorConfig {
-  /** Whether to log detailed extraction info */
-  debug?: boolean;
-  
-  /** Custom preprocessing function */
-  preprocess?: (input: string) => string;
-  
-  /** Custom validation function */
-  validate?: (result: any) => boolean;
-}
-
-/**
- * Result of the extraction process
+ * Standard extraction result format
  */
 export interface ExtractionResult<T> {
-  /** The extracted data */
-  data: T | null;
-  
-  /** Whether the extraction was successful */
   success: boolean;
-  
-  /** Error message if extraction failed */
+  data: T | null;
   error?: string;
-  
-  /** Metadata about the extraction process */
   metadata?: {
-    /** ID of the extractor that produced this result */
-    extractorId: string;
-    
-    /** Time taken for extraction in ms */
-    executionTime: number;
-    
-    /** Preprocessing time in ms */
-    preprocessingTime?: number;
-    
-    /** Validation time in ms */
-    validationTime?: number;
-    
-    /** Confidence score (0-1) */
-    confidence?: number;
+    confidence: number;
+    extractedFields: string[];
+    missingFields: string[];
+    warnings: string[];
   };
 }
