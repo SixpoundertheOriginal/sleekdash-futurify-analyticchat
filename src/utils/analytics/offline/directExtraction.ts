@@ -1,33 +1,48 @@
 
 import { ProcessedAnalytics } from "../types";
-import { normalizeValue, normalizePercentChange } from "./normalization";
-import { 
-  extractAcquisitionMetrics, 
-  extractFinancialMetrics, 
-  extractTechnicalMetrics, 
-  extractEngagementMetrics,
-  extractDateRange,
-  calculateDerivedMetrics
-} from "./extractors";
+import { extractorService } from "../extractors/ExtractorService";
 
 /**
- * Directly extract metrics from text input
+ * Extract metrics directly from text input without API calls
+ * @param text Raw text to extract metrics from
+ * @returns Extracted metrics in ProcessedAnalytics format
  */
-export const extractDirectMetrics = (input: string): Partial<ProcessedAnalytics> => {
-  if (!input || typeof input !== 'string') {
-    console.log('Invalid input to extractDirectMetrics');
+export function extractDirectMetrics(text: string): Partial<ProcessedAnalytics> {
+  if (!text || typeof text !== 'string') {
+    console.log('[DirectExtraction] Invalid input: not a string or empty');
     return {};
   }
   
-  console.log('Starting direct extraction from text of length:', input.length);
+  try {
+    console.log('[DirectExtraction] Extracting metrics from text, length:', text.length);
+    
+    // Use the extractor service to process the text
+    const result = extractorService.processAppStoreData(text);
+    
+    if (result.success && result.data) {
+      console.log('[DirectExtraction] Successfully extracted metrics');
+      return result.data;
+    } else {
+      console.log('[DirectExtraction] Failed to extract metrics:', result.error || 'Unknown error');
+      return extractBaseMetrics(text);
+    }
+  } catch (error) {
+    console.error('[DirectExtraction] Error during extraction:', error);
+    // Fallback to simpler extraction
+    return extractBaseMetrics(text);
+  }
+}
+
+/**
+ * Extracts basic metrics using simplified pattern matching
+ * Less comprehensive but more forgiving than the full extractor
+ */
+export function extractBaseMetrics(text: string): Partial<ProcessedAnalytics> {
+  if (!text || typeof text !== 'string') {
+    return {};
+  }
   
-  // Initialize metrics structure
-  const metrics: Partial<ProcessedAnalytics> = {
-    summary: {
-      title: "App Analytics",
-      dateRange: "",
-      executiveSummary: ""
-    },
+  const result: Partial<ProcessedAnalytics> = {
     acquisition: {
       impressions: { value: 0, change: 0 },
       pageViews: { value: 0, change: 0 },
@@ -62,74 +77,108 @@ export const extractDirectMetrics = (input: string): Partial<ProcessedAnalytics>
     }
   };
   
-  // Extract date range
-  const dateInfo = extractDateRange(input, metrics);
-  if (dateInfo.summary?.dateRange) {
-    metrics.summary!.dateRange = dateInfo.summary.dateRange;
-    console.log('Extracted date range:', metrics.summary!.dateRange);
+  // Try to extract date range
+  const dateRangeMatch = text.match(/(?:Date Range|Period):\s*([^\n]+)/i) || 
+                          text.match(/([A-Za-z]+ \d+[^\n]*\d{4})/);
+  
+  if (dateRangeMatch) {
+    result.summary = {
+      title: "App Store Analytics",
+      dateRange: dateRangeMatch[1].trim(),
+      executiveSummary: "Basic metrics extracted from text."
+    };
+  } else {
+    result.summary = {
+      title: "App Store Analytics",
+      dateRange: "Unknown date range",
+      executiveSummary: "Basic metrics extracted from text."
+    };
   }
   
-  // Use specialized extractors for each metric type
-  const withAcquisition = extractAcquisitionMetrics(input, metrics);
-  const withFinancial = extractFinancialMetrics(input, withAcquisition);
-  const withTechnical = extractTechnicalMetrics(input, withFinancial);
-  const withEngagement = extractEngagementMetrics(input, withTechnical);
+  // Simple pattern matching for key metrics
+  const patterns = {
+    impressions: /impressions[^0-9]*([0-9,.kmb]+)/i,
+    pageViews: /page views[^0-9]*([0-9,.kmb]+)/i,
+    conversionRate: /conversion rate[^0-9]*([0-9,.]+)%/i,
+    downloads: /downloads[^0-9]*([0-9,.kmb]+)/i,
+    proceeds: /proceeds[^0-9]*\$?([0-9,.kmb]+)/i,
+    proceedsPerUser: /proceeds per [^0-9]*\$?([0-9,.kmb]+)/i,
+    sessionsPerDevice: /sessions per device[^0-9]*([0-9,.]+)/i,
+    crashes: /crashes[^0-9]*([0-9,.kmb]+)/i
+  };
   
-  // Calculate derived metrics based on the extracted base metrics
-  const finalMetrics = calculateDerivedMetrics(withEngagement);
+  // Extract metrics
+  for (const [key, pattern] of Object.entries(patterns)) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      let value = match[1].replace(/,/g, '');
+      
+      // Handle K/M/B suffixes
+      if (/\d+(\.\d+)?[kK]$/.test(value)) {
+        value = (parseFloat(value.replace(/[kK]$/, '')) * 1000).toString();
+      } else if (/\d+(\.\d+)?[mM]$/.test(value)) {
+        value = (parseFloat(value.replace(/[mM]$/, '')) * 1000000).toString();
+      } else if (/\d+(\.\d+)?[bB]$/.test(value)) {
+        value = (parseFloat(value.replace(/[bB]$/, '')) * 1000000000).toString();
+      }
+      
+      const numValue = parseFloat(value);
+      
+      // Set the value in the appropriate place in the result object
+      if (key === 'impressions' && result.acquisition) {
+        result.acquisition.impressions.value = numValue;
+      } else if (key === 'pageViews' && result.acquisition) {
+        result.acquisition.pageViews.value = numValue;
+      } else if (key === 'conversionRate' && result.acquisition) {
+        result.acquisition.conversionRate.value = numValue;
+      } else if (key === 'downloads' && result.acquisition) {
+        result.acquisition.downloads.value = numValue;
+      } else if (key === 'proceeds' && result.financial) {
+        result.financial.proceeds.value = numValue;
+      } else if (key === 'proceedsPerUser' && result.financial) {
+        result.financial.proceedsPerUser.value = numValue;
+      } else if (key === 'sessionsPerDevice' && result.engagement) {
+        result.engagement.sessionsPerDevice.value = numValue;
+      } else if (key === 'crashes' && result.technical) {
+        result.technical.crashes.value = numValue;
+      }
+    }
+  }
   
-  console.log('Direct extraction completed with success rate:', getExtractionSuccessRate(finalMetrics));
-  return finalMetrics;
-};
-
-/**
- * Check if the metrics contain enough valid data for visualization
- */
-export const hasValidMetricsForVisualization = (metrics: Partial<ProcessedAnalytics>): boolean => {
-  if (!metrics) return false;
-  
-  // Check if we have at least acquisition or financial data
-  const hasAcquisitionData = 
-    (metrics.acquisition?.downloads?.value || 0) > 0 || 
-    (metrics.acquisition?.impressions?.value || 0) > 0;
+  // Calculate basic derived metrics
+  if (result.acquisition) {
+    // Calculate funnel metrics if possible
+    if (result.acquisition.impressions.value > 0 && result.acquisition.pageViews.value > 0) {
+      result.acquisition.funnelMetrics.impressionsToViews = 
+        (result.acquisition.pageViews.value / result.acquisition.impressions.value) * 100;
+    }
     
-  const hasFinancialData = (metrics.financial?.proceeds?.value || 0) > 0;
+    if (result.acquisition.pageViews.value > 0 && result.acquisition.downloads.value > 0) {
+      result.acquisition.funnelMetrics.viewsToDownloads = 
+        (result.acquisition.downloads.value / result.acquisition.pageViews.value) * 100;
+    }
+  }
   
-  return hasAcquisitionData || hasFinancialData;
-};
+  // ARPD calculation
+  if (result.financial && result.acquisition && 
+      result.financial.proceeds.value > 0 && result.acquisition.downloads.value > 0) {
+    result.financial.derivedMetrics.arpd = 
+      result.financial.proceeds.value / result.acquisition.downloads.value;
+  }
+  
+  return result;
+}
 
 /**
- * Extract base metrics from text for quick visualization
+ * Checks if the extracted metrics are valid for visualization
  */
-export const extractBaseMetrics = (input: string): Partial<ProcessedAnalytics> => {
-  return extractDirectMetrics(input);
-};
-
-/**
- * Calculate a percentage indicating extraction success rate
- */
-const getExtractionSuccessRate = (metrics: Partial<ProcessedAnalytics>): string => {
-  const totalPossibleMetrics = 10; // Key metrics we expect to potentially find
-  let foundMetrics = 0;
+export function hasValidMetricsForVisualization(data: Partial<ProcessedAnalytics> | null): boolean {
+  if (!data) return false;
   
-  // Count acquisition metrics
-  if (metrics.acquisition?.impressions?.value) foundMetrics++;
-  if (metrics.acquisition?.pageViews?.value) foundMetrics++;
-  if (metrics.acquisition?.conversionRate?.value) foundMetrics++;
-  if (metrics.acquisition?.downloads?.value) foundMetrics++;
+  // Check if we have at least one of these key metrics
+  const hasDownloads = data.acquisition?.downloads?.value > 0;
+  const hasProceeds = data.financial?.proceeds?.value > 0;
+  const hasSessions = data.engagement?.sessionsPerDevice?.value > 0;
   
-  // Count financial metrics
-  if (metrics.financial?.proceeds?.value) foundMetrics++;
-  if (metrics.financial?.proceedsPerUser?.value) foundMetrics++;
-  
-  // Count engagement metrics
-  if (metrics.engagement?.sessionsPerDevice?.value) foundMetrics++;
-  if (metrics.engagement?.retention?.day1?.value) foundMetrics++;
-  
-  // Count technical metrics
-  if (metrics.technical?.crashes?.value) foundMetrics++;
-  if (metrics.technical?.crashRate?.value) foundMetrics++;
-  
-  const successRate = (foundMetrics / totalPossibleMetrics) * 100;
-  return `${foundMetrics}/${totalPossibleMetrics} metrics (${successRate.toFixed(1)}%)`;
-};
+  return hasDownloads || hasProceeds || hasSessions;
+}
