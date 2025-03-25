@@ -5,6 +5,7 @@
 export interface BaseMetric {
   value: number;
   change: number;
+  formatted?: string; // Adding formatted property to BaseMetric
 }
 
 /**
@@ -81,6 +82,23 @@ export interface FinancialMetrics {
 }
 
 /**
+ * Confidence scores for metrics
+ */
+export interface ConfidenceScores {
+  overall: number;
+  sessionsPerDevice: number;
+  retention: number;
+}
+
+/**
+ * Validation state for metrics
+ */
+export interface ValidationState {
+  valid: boolean;
+  warnings: string[];
+}
+
+/**
  * Engagement metrics
  */
 export interface EngagementMetrics {
@@ -91,6 +109,8 @@ export interface EngagementMetrics {
     day14?: RetentionMetric;
     day28?: RetentionMetric;
   };
+  confidenceScores?: ConfidenceScores; // Adding confidenceScores to EngagementMetrics
+  validationState?: ValidationState; // Adding validationState to EngagementMetrics
 }
 
 /**
@@ -124,6 +144,17 @@ export interface AnalyticsSummary {
 }
 
 /**
+ * Keyword metrics for ASO
+ */
+export interface KeywordMetrics {
+  keyword: string;
+  rank: number;
+  difficulty: number;
+  traffic: number;
+  relevance: number;
+}
+
+/**
  * Complete processed analytics data
  */
 export interface ProcessedAnalytics {
@@ -133,4 +164,5 @@ export interface ProcessedAnalytics {
   engagement: EngagementMetrics;
   technical: TechnicalMetrics;
   geographical: GeographicalMetrics;
+  keywords?: KeywordMetrics[]; // Adding optional keywords property
 }

@@ -1,9 +1,8 @@
-
 /**
  * Extractor for acquisition-related metrics
  */
 import { ProcessedAnalytics } from "../../types";
-import { normalizeValue, normalizePercentChange } from "../normalization";
+import { normalizeValue, normalizePercentageChange } from "../normalization";
 
 /**
  * Extract acquisition metrics from raw input
@@ -54,7 +53,7 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
     if (match && match[1]) {
       result.acquisition.impressions = {
         value: normalizeValue(match[1]),
-        change: match[2] ? normalizePercentChange(match[2]) : 0
+        change: match[2] ? normalizePercentageChange(match[2]) : 0
       };
       console.log('Extracted App Store impressions:', result.acquisition.impressions);
       matchFound = true;
@@ -69,7 +68,7 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
       if (match && match[1]) {
         result.acquisition.impressions = {
           value: normalizeValue(match[1]),
-          change: match[2] ? normalizePercentChange(match[2]) : 0
+          change: match[2] ? normalizePercentageChange(match[2]) : 0
         };
         console.log('Extracted standard impressions:', result.acquisition.impressions);
         break;
@@ -99,7 +98,7 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
     if (match && match[1]) {
       result.acquisition.pageViews = {
         value: normalizeValue(match[1]),
-        change: match[2] ? normalizePercentChange(match[2]) : 0
+        change: match[2] ? normalizePercentageChange(match[2]) : 0
       };
       console.log('Extracted App Store page views:', result.acquisition.pageViews);
       matchFound = true;
@@ -114,7 +113,7 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
       if (match && match[1]) {
         result.acquisition.pageViews = {
           value: normalizeValue(match[1]),
-          change: match[2] ? normalizePercentChange(match[2]) : 0
+          change: match[2] ? normalizePercentageChange(match[2]) : 0
         };
         console.log('Extracted standard page views:', result.acquisition.pageViews);
         break;
@@ -145,7 +144,7 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
     if (match && match[1]) {
       result.acquisition.conversionRate = {
         value: parseFloat(match[1]),
-        change: match[2] ? normalizePercentChange(match[2]) : 0
+        change: match[2] ? normalizePercentageChange(match[2]) : 0
       };
       console.log('Extracted App Store conversion rate:', result.acquisition.conversionRate);
       matchFound = true;
@@ -160,7 +159,7 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
       if (match && match[1]) {
         result.acquisition.conversionRate = {
           value: parseFloat(match[1]),
-          change: match[2] ? normalizePercentChange(match[2]) : 0
+          change: match[2] ? normalizePercentageChange(match[2]) : 0
         };
         console.log('Extracted standard conversion rate:', result.acquisition.conversionRate);
         break;
@@ -190,7 +189,7 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
     if (match && match[1]) {
       result.acquisition.downloads = {
         value: normalizeValue(match[1]),
-        change: match[2] ? normalizePercentChange(match[2]) : 0
+        change: match[2] ? normalizePercentageChange(match[2]) : 0
       };
       console.log('Extracted App Store downloads:', result.acquisition.downloads);
       matchFound = true;
@@ -205,7 +204,7 @@ export const extractAcquisitionMetrics = (rawInput: any, result: Partial<Process
       if (match && match[1]) {
         result.acquisition.downloads = {
           value: normalizeValue(match[1]),
-          change: match[2] ? normalizePercentChange(match[2]) : 0
+          change: match[2] ? normalizePercentageChange(match[2]) : 0
         };
         console.log('Extracted standard downloads:', result.acquisition.downloads);
         break;

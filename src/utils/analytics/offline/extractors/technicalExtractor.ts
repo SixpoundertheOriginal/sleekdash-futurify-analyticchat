@@ -1,4 +1,3 @@
-
 /**
  * Extractor for technical-related metrics
  */
@@ -143,16 +142,14 @@ export const extractTechnicalMetrics = (rawInput: any, result: Partial<Processed
   if (result.technical.crashRate.value > 0) {
     result.technical.crashFreeUsers = {
       value: 100 - result.technical.crashRate.value,
-      change: result.technical.crashes.change ? -result.technical.crashes.change : 0,
-      formatted: `${(100 - result.technical.crashRate.value).toFixed(2)}%`
+      change: result.technical.crashes.change ? -result.technical.crashes.change : 0
     };
     console.log('Calculated crash-free users:', result.technical.crashFreeUsers);
   } else {
     // Default value if crash rate not available
     result.technical.crashFreeUsers = {
       value: 99.5,
-      change: 0,
-      formatted: "99.5%"
+      change: 0
     };
   }
 

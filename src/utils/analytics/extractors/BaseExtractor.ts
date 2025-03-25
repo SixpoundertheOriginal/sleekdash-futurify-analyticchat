@@ -1,5 +1,17 @@
 
 /**
+ * Configuration options for extractors
+ */
+export interface ExtractorConfig {
+  debug?: boolean;
+  preprocess?: (input: string) => string;
+  validate?: (data: any) => boolean;
+  stopOnFirstSuccess?: boolean;
+  runValidation?: boolean;
+  trackPerformance?: boolean;
+}
+
+/**
  * Base extractor interface for consistent implementation
  */
 export interface BaseExtractor<T> {
@@ -29,6 +41,13 @@ export interface BaseExtractor<T> {
    * @returns Extracted data or null if extraction failed
    */
   extract(input: string): T | null;
+  
+  /**
+   * Optional validate method for the extractor
+   * @param data The data to validate
+   * @returns True if valid, false otherwise
+   */
+  validate?: (data: T) => boolean;
 }
 
 /**
@@ -43,5 +62,13 @@ export interface ExtractionResult<T> {
     extractedFields: string[];
     missingFields: string[];
     warnings: string[];
+    extractorId?: string;
+    executionTime?: number;
+    preprocessingTime?: number;
+    validationTime?: number;
+    mergedFrom?: string[];
+    fieldSources?: Record<string, string>;
+    totalExtractors?: number;
+    calculatedFields?: string[];
   };
 }

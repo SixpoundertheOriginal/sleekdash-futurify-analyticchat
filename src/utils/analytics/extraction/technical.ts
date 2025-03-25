@@ -1,4 +1,3 @@
-
 import { ProcessedAnalytics } from "../types";
 
 /**
@@ -118,15 +117,13 @@ export const extractTechnicalMetrics = (text: string): ProcessedAnalytics["techn
   if (result.crashRate.value > 0) {
     result.crashFreeUsers = {
       value: 100 - result.crashRate.value,
-      change: -result.crashes.change, // Inverse of crash change
-      formatted: `${(100 - result.crashRate.value).toFixed(2)}%`
+      change: -result.crashes.change // Inverse of crash change
     };
   } else {
     // Default value if crash rate not available
     result.crashFreeUsers = {
       value: 99.5,
-      change: 0,
-      formatted: "99.5%"
+      change: 0
     };
   }
 
