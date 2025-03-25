@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react';
 import { useFileProcessor } from '../useFileProcessor';
 import { createMockFile, createMockCsvData, createMockJsonData } from '@/test/mocks/fileMocks';
 

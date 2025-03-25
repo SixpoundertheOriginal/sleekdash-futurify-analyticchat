@@ -7,3 +7,5 @@ import { cleanup } from '@testing-library/react';
 afterEach(() => {
   cleanup();
 });
+
+// Add any React 18 specific test setup here

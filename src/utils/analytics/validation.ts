@@ -17,6 +17,7 @@ export function hasValidMetrics(data: ProcessedAnalytics | null): boolean {
 
 /**
  * Deep comparison utility for verifying state equivalence during migration
+ * Used for Zustand migration to ensure state is preserved
  */
 export function compareAnalyticsState(contextState: any, zustandState: any): {
   equivalent: boolean;
