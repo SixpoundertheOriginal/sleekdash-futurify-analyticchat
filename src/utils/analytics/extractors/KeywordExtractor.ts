@@ -1,5 +1,6 @@
+
 import { BaseExtractor, ExtractionResult } from './BaseExtractor';
-import { ProcessedAnalytics } from '../types';
+import { ProcessedAnalytics, KeywordMetrics } from '../types';
 
 /**
  * Extractor for keyword-related data from App Store
@@ -75,9 +76,7 @@ export class KeywordExtractor implements BaseExtractor<ProcessedAnalytics> {
           devices: [],
           sources: []
         },
-        keywords: {
-          terms: []
-        }
+        keywords: []
       };
       
       // Extract keyword section
@@ -107,7 +106,10 @@ export class KeywordExtractor implements BaseExtractor<ProcessedAnalytics> {
           keywordsMap.set(keyword, {
             keyword,
             volume: volume || this.estimateVolume(keyword, keywordSection),
-            difficulty: this.estimateDifficulty(keyword, keywordSection)
+            difficulty: this.estimateDifficulty(keyword, keywordSection),
+            rank: 0, // Default values for required properties
+            traffic: 0,
+            relevance: 0
           });
         }
       }
@@ -118,12 +120,10 @@ export class KeywordExtractor implements BaseExtractor<ProcessedAnalytics> {
         .sort((a, b) => (b.volume || 0) - (a.volume || 0));
       
       // Add to result
-      result.keywords = {
-        terms: keywordTerms.slice(0, 20) // Limit to top 20 keywords
-      };
+      result.keywords = keywordTerms.slice(0, 20) as KeywordMetrics[]; // Limit to top 20 keywords
       
       // Check if we have enough keywords to consider this valid
-      if (result.keywords.terms.length < 3) {
+      if (result.keywords.length < 3) {
         console.log('[KeywordExtractor] Not enough keywords found to consider valid');
         return null;
       }
@@ -182,6 +182,6 @@ export class KeywordExtractor implements BaseExtractor<ProcessedAnalytics> {
    */
   validate(result: ProcessedAnalytics): boolean {
     // Ensure we have at least some keywords
-    return result.keywords?.terms && result.keywords.terms.length > 0;
+    return result.keywords && result.keywords.length > 0;
   }
 }

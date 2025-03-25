@@ -175,7 +175,10 @@ export class ExtractionPipeline<T> {
             executionTime: extractionTime,
             preprocessingTime,
             validationTime,
-            confidence: extractor.confidence || 0.8
+            confidence: extractor.confidence || 0.8,
+            extractedFields: [], // Adding missing required properties
+            missingFields: [],
+            warnings: []
           }
         });
         
